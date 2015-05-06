@@ -48,7 +48,46 @@
         {
     %>
     <tr>
-        <td> <%= PageFlowUtil.textLink("Review request", new ActionURL(WorkflowController.ReviewRequestAction.class, getViewContext().getContainer()).addParameter("requestId", task.getProcessInstanceId())) %></td>
+        <%
+            if ("reviewExportRequest".equals(task.getTaskDefinitionKey()))
+            {
+        %>
+        <td> <%= PageFlowUtil.textLink("Review request", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+        <%
+            }
+            else if ("downloadDataSet".equals(task.getTaskDefinitionKey()))
+            {
+        %>
+        <td> <%= PageFlowUtil.textLink("Download data set", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+        <%
+            }
+            else if ("makeExportRequest".equals(task.getTaskDefinitionKey()))
+            {
+            %>
+        <td> <%= PageFlowUtil.textLink("Finish export request", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+            <%
+            }
+            else if ("handleExportRequest".equals(task.getTaskDefinitionKey()))
+            {
+            %>
+        <td> <%= PageFlowUtil.textLink("Handle export request", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+
+        <%
+            }
+            else if ("reviseExportRequest".equals(task.getTaskDefinitionKey()))
+            {
+                %>
+        <td> <%= PageFlowUtil.textLink("Revise export request", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+        <%
+            }
+            else
+            {
+        %>
+        <td> <%= PageFlowUtil.textLink(task.getTaskDefinitionKey(), new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
+        <%
+            }
+        %>
+
         <td> <%= h(task.getCreateTime()) %></td>
         <td> <%= h(task.getDescription()) %></td>
     </tr>
@@ -77,10 +116,10 @@
         {
     %>
     <tr>
-        <td> <%= PageFlowUtil.textLink(h(instance.getProcessInstanceId()), new ActionURL(WorkflowController.ReviewRequestAction.class, getViewContext().getContainer()).addParameter("requestId", instance.getProcessInstanceId())) %></td>
+        <td> <%= PageFlowUtil.textLink(h(instance.getProcessInstanceId()), new ActionURL(WorkflowController.ViewProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", instance.getProcessInstanceId())) %></td>
         <td> <%= h(instance.getProcessDefinitionName()) %></td>
         <td> <%= h(instance.getProcessVariables().get("dataSetId")) %></td>
-        <td> <%= h(StringUtils.join(WorkflowManager.get().getCurrentProcessTasks(instance.getProcessInstanceId()), ", "))%></td>
+        <td> <%= h(StringUtils.join(WorkflowManager.get().getCurrentProcessTaskNames(instance.getProcessInstanceId()), ", "))%></td>
 
     </tr>
     <%
@@ -98,11 +137,11 @@
         <td><strong>Description</strong></td>
     </tr>
     <tr>
-       <td><%= PageFlowUtil.button("Request export").href(new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 1)) %></td>
+       <td><%= PageFlowUtil.textLink("Request export", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 1)) %></td>
         <td>Data set 1</td>
     </tr>
     <tr>
-        <td><%= PageFlowUtil.button("Request export").href(new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 2)) %></td>
+        <td><%= PageFlowUtil.textLink("Request export", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 2)) %></td>
         <td>Data set 2</td>
     </tr>
 </table>
@@ -112,5 +151,3 @@
 <strong>Current Process Diagram</strong> <%= PageFlowUtil.textLink("Deploy New Version", new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processName", "argosDataExport")) %>
 <br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processName", "argosDataExport")%>">
-
-

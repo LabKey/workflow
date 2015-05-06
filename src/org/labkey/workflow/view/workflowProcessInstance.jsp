@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.view.ExportRequestDetailsBean" %>
+<%@ page import="org.labkey.workflow.WorkflowController.ExportRequestDetailsBean" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -26,14 +26,14 @@
     HttpView me = HttpView.currentView();
     ExportRequestDetailsBean bean = (ExportRequestDetailsBean) me.getModelBean();
 %>
-<%= PageFlowUtil.textLink("Return to request summary", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <br>
 <br>
 <strong>Request Details</strong>
 <table class="labkey-proj">
     <tr>
         <td>Id</td>
-        <td><%= bean.getRequestId() %></td>
+        <td><%= bean.getProcessInstanceId() %></td>
     </tr>
     <tr>
         <td>Requester</td>
@@ -53,16 +53,7 @@
     </tr>
 </table>
 
-<%
-    if (bean.isReviewer())
-    {
-%>
-<%= PageFlowUtil.textLink("Approve", new ActionURL(WorkflowController.ApproveRequestAction.class, getViewContext().getContainer()).addParameter("requestId", bean.getRequestId()))%>
-<%
-    }
-%>
-
 <br>
 <strong>Request Diagram</strong>
 <br>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("requestId", bean.getRequestId())%>">
+<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">

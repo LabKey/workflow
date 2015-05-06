@@ -26,7 +26,11 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.workflow.view.ProcessSummaryBean;
 
 import javax.sql.DataSource;
 import java.io.InputStream;
@@ -36,7 +40,7 @@ import java.util.Map;
 public class WorkflowManager
 {
     private static final WorkflowManager _instance = new WorkflowManager();
-    private static ProcessEngine _processEngine = null;
+    private ProcessEngine _processEngine = null;
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
 
     private WorkflowManager()
@@ -49,7 +53,7 @@ public class WorkflowManager
         return _instance;
     }
 
-    protected ProcessEngine getActivitiProcessEngine()
+    private ProcessEngine getActivitiProcessEngine()
     {
         if (_processEngine == null)
         {
@@ -58,11 +62,19 @@ public class WorkflowManager
 
             // TODO figure out how to make this work putting the tables in a schema instead.
             // Currently if you set the schema and the tables do not exist, they are created without the schema
+            // TODO put configuration in a file so we can add the parse handlers there.
             processConfig = ProcessEngineConfiguration.createStandaloneInMemProcessEngineConfiguration()
                     .setDataSource(dataSource)
                     .setHistoryLevel(HistoryLevel.NONE) // if not set to NONE, it will try to recreate the tables even if they exist
                     .setDbIdentityUsed(false); // must be set to true initially so the tables are created, but then set to false since
                                                // if set to true, it will try to recreate the id tables even if they exist, but I think we want this false anyway
+
+//
+//            ProcessEngineConfigurationImpl processEngineConfiguration = ((ProcessEngineImpl)_processEngine).getProcessEngineConfiguration();
+//            List<BpmnParseHandler> parseHandlers = new ArrayList<BpmnParseHandler>();
+//            parseHandlers.add(new CandidateGroupParseHandler());
+//            processEngineConfiguration.setPostBpmnParseHandlers(parseHandlers); // the parse handlers have to be added BEFORE the engine is built
+
             _processEngine = processConfig.buildProcessEngine();
         }
         return _processEngine;
@@ -83,67 +95,107 @@ public class WorkflowManager
         return getActivitiProcessEngine().getRepositoryService();
     }
 
-    protected long getProcessDefinitionCount()
+    /**
+     * Returns the number of process definitions currently deployed in the system.
+     * @return
+     * @param container
+     */
+    protected long getProcessDefinitionCount(Container container)
     {
-        return getRepositoryService().createProcessDefinitionQuery().count();
+        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).count();
     }
 
-    // TODO create our own UserTask class that this returns
-    public List<Task> getTaskList(User user)
+    // TODO create our own WorkflowTask class that this returns?
+    public List<Task> getTaskList(User user, Container container)
     {
         List<Task> tasks = getGroupTasks(user);
         tasks.addAll(getTaskService().createNativeTaskQuery().list()); // TODO construct query to select tasks for this user
         return tasks;
     }
 
-    public List<Task> getGroupTasks(User user)
+    public List<Task> getTaskList(Group group)
     {
-        // TODO use actual groups
-        return getTaskService().createTaskQuery().taskCandidateGroup("Project Administrator").list();
+        return getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(group.getUserId())).list();
+    }
+
+
+    public List<Task> getGroupTasks(UserPrincipal principal)
+    {
+        // TODO use actual groups.  This requires(?) that the groups and users are translated into ids when the process XML is parsed.
+        // TODO hook into the XML parsing when a deployment happens so that group names are associated with group ids in the database
+//        List<Task> tasks = new ArrayList<Task>();
+//        for (int groupId : principal.getGroups())
+//        {
+//            tasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(groupId)).list());
+//        }
+
+
+        List<Task> groupTasks = getTaskService().createTaskQuery().taskCandidateGroup("Project Administrator").list();
+        groupTasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup("Users").list());
+        return groupTasks;
+    }
+
+
+    public Task getTask(String taskId)
+    {
+        return getTaskService().createTaskQuery().taskId(taskId).includeProcessVariables().singleResult();
+    }
+
+    public void updateProcessVariables(String taskId, Map<String, Object> variables)
+    {
+        if (variables != null)
+        {
+            Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+            Map<String, Object> currentVariables = task.getProcessVariables();
+            currentVariables.putAll(variables);
+            getRuntimeService().setVariables(task.getProcessInstanceId(), currentVariables);
+        }
     }
 
     // TODO create own ProcessInstance class?
-    public List<ProcessInstance> getProcessInstances(User user)
+    public List<ProcessInstance> getProcessInstances(User user, Container container)
     {
-        return getRuntimeService().createProcessInstanceQuery().variableValueEquals("userId", user.getUserId()).includeProcessVariables().list();
+        return getRuntimeService().createProcessInstanceQuery().variableValueEquals("requesterId", user.getUserId()).includeProcessVariables().list();
     }
 
-    public List<String> getCurrentProcessTasks(String processInstanceId)
+
+    /**
+     * Given the id of a task, returns the corresponding process instance
+     * @param taskId
+     * @return
+     */
+    public ProcessInstance getProcessInstance(String taskId)
+    {
+        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        return getRuntimeService().createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
+    }
+
+    public List<String> getCurrentProcessTaskNames(String processInstanceId)
     {
         return getRuntimeService().getActiveActivityIds(processInstanceId);
     }
 
-    public String startWorkflow(String processKey, Map<String, Object> variables, User user)
+    public String startWorkflow(WorkflowProcess workflow, User user, Container container)
     {
-        ProcessInstance instance = WorkflowManager.get().getRuntimeService().startProcessInstanceByKey(processKey, variables);
-
-        List<Task> processTasks = getTaskService().createTaskQuery().processInstanceId(instance.getId()).list();
-        Task requestTask = processTasks.get(0);
-        getTaskService().setOwner(requestTask.getId(), String.valueOf(user.getUserId()));
-        getTaskService().setAssignee(requestTask.getId(), String.valueOf(user.getUserId())); // assign this user the first task
+        workflow.getProcessVariables().put("requester", user);
+        workflow.getProcessVariables().put("container", container.getId());
+        ProcessInstance instance = getRuntimeService().startProcessInstanceByKey(workflow.getProcessKey(), workflow.getProcessVariables());
         return instance.getId();
     }
 
+
     public Map<String, Object> getProcessInstanceDetails(String processInstanceId) throws Exception
     {
-        List<ProcessInstance> instanceList = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).list();
-        if (instanceList.size() != 1)
-        {
-            throw new Exception("Number of requests with id " + processInstanceId + " not 1 as expected"); // TODO what's the proper exception class
-        }
-        ProcessInstance processInstance  = instanceList.get(0);
+        ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
         Map<String, Object> details = processInstance.getProcessVariables();
-        details.put("currentTasks", getCurrentProcessTasks(processInstanceId));
+        details.put("currentTasks", getCurrentProcessTaskNames(processInstanceId));
 
         return details;
     }
 
-
-    public void completeWorkflowTask(String processInstanceId, int taskIndex)
+    public void completeTask(String taskId)
     {
-        List<Task> processTasks = getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
-        Task requestTask = processTasks.get(taskIndex);
-        WorkflowManager.get().getTaskService().complete(requestTask.getId());
+        WorkflowManager.get().getTaskService().complete(taskId);
     }
 
     public InputStream getProcessDiagram(String processInstanceId)
@@ -161,9 +213,10 @@ public class WorkflowManager
             return null;
     }
 
-    public String deployWorkflow(String workflowName)
+    public String deployWorkflow(String workflowName, Container container)
     {
-        Deployment deployment = getRepositoryService().createDeployment().addClasspathResource(getWorkflowFileName(workflowName)).deploy();
+        Deployment deployment = getRepositoryService().createDeployment().tenantId(container.getId()).addClasspathResource(getWorkflowFileName(workflowName)).deploy();
+
         return deployment.getId();
     }
 
@@ -171,4 +224,15 @@ public class WorkflowManager
     {
         return workflowName + WORKFLOW_FILE_NAME_EXTENSION;
     }
+
+    protected ProcessSummaryBean getProcessSummary(User user, Container container)
+    {
+        ProcessSummaryBean summaryBean = new ProcessSummaryBean();
+        summaryBean.setNumDefinitions(WorkflowManager.get().getProcessDefinitionCount(container));
+        summaryBean.setAssignedTasks(WorkflowManager.get().getTaskList(user, container));
+        summaryBean.setInstances(WorkflowManager.get().getProcessInstances(user, container));
+        return summaryBean;
+    }
+
+
 }

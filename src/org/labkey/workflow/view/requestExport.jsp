@@ -23,17 +23,18 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     User user = getUser();
-    JspView<WorkflowController.ExportRequestForm> me = (JspView<WorkflowController.ExportRequestForm>)HttpView.currentView();
-    WorkflowController.ExportRequestForm bean = me.getModelBean();
+    JspView<WorkflowController.ExportRequestDetailsBean> me = (JspView<WorkflowController.ExportRequestDetailsBean>)HttpView.currentView();
+    WorkflowController.ExportRequestDetailsBean bean = me.getModelBean();
 %>
-Make a data request (process id: <%= bean.getProcessId() %>
+Make a data request
 <form id="requestForm" action="<%= new ActionURL(WorkflowController.SubmitRequestAction.class, getContainer())%>">
     <input type="hidden" name="processInstanceId" value="<%= bean.getProcessInstanceId() %>">
     Data set id: <input type="text" name="dataSetId" value="<%= bean.getDataSetId() %>">
     <br>
-
+    <textarea name="reason" rows="5" cols="60">Enter your reason for requesting this data here ...</textarea>
+    <br>
     <input type="submit" value="Make request">
 </form>
 
-<textarea name="reason" form="requestForm">Enter your reason for requesting this data here ...</textarea>
+
 
