@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/processdef">
+  <process id="submitForApprovalWithoutRetry" name="Submit request for approval without the a feedback loop" isExecutable="true">
+    <documentation>User submits a request to a group or user for approval.</documentation>
+    <startEvent id="theStart" name="Request">
+      <documentation>User makes a request for exporting data</documentation>
+    </startEvent>
+    <userTask id="handleRequest" name="Handle user request" activiti:candidateGroups="Users">
+      <documentation>User makes a request that requires approval</documentation>
+    </userTask>
+    <endEvent id="fulfilled" name="Finish"></endEvent>
+    <userTask id="fulfillRequest" name="Fulfill request" activiti:candidateGroups="Users">
+      <documentation>User's request is fulfilled</documentation>
+    </userTask>
+    <exclusiveGateway id="reviewRequest" name="Review">
+      <documentation>Review user request and approve or deny</documentation>
+    </exclusiveGateway>
+    <sequenceFlow id="startExportRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
+    <sequenceFlow id="approvedRequest" name="approved" sourceRef="reviewRequest" targetRef="fulfillRequest">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="submittedRequest" name="submitted" sourceRef="handleRequest" targetRef="reviewRequest"></sequenceFlow>
+    <sequenceFlow id="fulfilledRequest" sourceRef="fulfillRequest" targetRef="fulfilled"></sequenceFlow>
+    <endEvent id="unfulfilled" name="Finish"></endEvent>
+    <sequenceFlow id="deniedRequest" name="denied" sourceRef="reviewRequest" targetRef="unfulfilled">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${!approved}]]></conditionExpression>
+    </sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_submitForApproval">
+    <bpmndi:BPMNPlane bpmnElement="submitForApproval" id="BPMNPlane_submitForApproval">
+      <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="135.0" y="145.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="handleRequest" id="BPMNShape_handleRequest">
+        <omgdc:Bounds height="80.0" width="100.0" x="210.0" y="120.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="fulfilled" id="BPMNShape_fulfilled">
+        <omgdc:Bounds height="28.0" width="28.0" x="690.0" y="146.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="fulfillRequest" id="BPMNShape_fulfillRequest">
+        <omgdc:Bounds height="80.0" width="100.0" x="525.0" y="120.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reviewRequest" id="BPMNShape_reviewRequest">
+        <omgdc:Bounds height="40.0" width="40.0" x="390.0" y="140.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="unfulfilled" id="BPMNShape_unfulfilled">
+        <omgdc:Bounds height="28.0" width="28.0" x="396.0" y="255.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="deniedRequest" id="BPMNEdge_deniedRequest">
+        <omgdi:waypoint x="412.0902073685783" y="177.9097926314217"></omgdi:waypoint>
+        <omgdi:waypoint x="410.32116736728204" y="255.003684359011"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="approvedRequest" id="BPMNEdge_approvedRequest">
+        <omgdi:waypoint x="429.5579268292683" y="160.4420731707317"></omgdi:waypoint>
+        <omgdi:waypoint x="525.0" y="160.15197568389058"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="submittedRequest" id="BPMNEdge_submittedRequest">
+        <omgdi:waypoint x="310.0" y="160.2187040278639"></omgdi:waypoint>
+        <omgdi:waypoint x="390.5711286351047" y="160.5711286351047"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="fulfilledRequest" id="BPMNEdge_fulfilledRequest">
+        <omgdi:waypoint x="625.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="690.0" y="160.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="startExportRequestFlow" id="BPMNEdge_startExportRequestFlow">
+        <omgdi:waypoint x="165.0" y="160.0"></omgdi:waypoint>
+        <omgdi:waypoint x="210.0" y="160.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
