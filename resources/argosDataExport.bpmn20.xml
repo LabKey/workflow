@@ -6,7 +6,7 @@
       <documentation>User makes a request for exporting data</documentation>
     </startEvent>
     <userTask id="handleExportRequest" name="Handle export request" activiti:candidateGroups="Project Administrator">
-      <documentation>${requester} has requested download of data set ${dataSetId}</documentation>
+      <documentation>Requested download of data set ${dataSetId}</documentation>
     </userTask>
     <userTask id="reviseExportRequest" name="Revise export request" activiti:candidateGroups="Project Administrator">
       <documentation>Revise export of data set ${dataSetId}</documentation>

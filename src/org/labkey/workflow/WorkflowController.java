@@ -91,16 +91,10 @@ public class WorkflowController extends SpringActionController
 
         private WorkflowTask getTaskDetails(String taskId, User user) throws Exception
         {
-            Task task = WorkflowManager.get().getTask(taskId);
-            if (task != null)
+            Task engineTask = WorkflowManager.get().getTask(taskId);
+            if (engineTask != null)
             {
-                WorkflowTask bean = new WorkflowTask();
-                bean.setTaskId(taskId);
-                bean.setTaskDefinitionId(task.getTaskDefinitionKey());
-                bean.setDocumentation(task.getDescription());
-                Map<String, Object> details = task.getProcessVariables();
-                bean.setTaskParameters(details);
-
+                WorkflowTask bean = new WorkflowTask(engineTask.getId(), engineTask.getTaskDefinitionKey(), engineTask.getProcessInstanceId(), engineTask.getDescription(), engineTask.getProcessVariables());
                 return bean;
             }
             else
@@ -179,7 +173,7 @@ public class WorkflowController extends SpringActionController
             if (getViewContext().getRequest().getParameter("processInstanceId") != null)
                 stream = WorkflowManager.get().getProcessDiagram(getViewContext().getRequest().getParameter("processInstanceId"));
             else if (getViewContext().getRequest().getParameter("processName") != null)
-                stream = WorkflowManager.get().getProcessDiagramByKey(getViewContext().getRequest().getParameter("processName"));
+                stream = WorkflowManager.get().getProcessDiagramByKey(getViewContext().getRequest().getParameter("processName"), getContainer());
             if (stream == null)
             {
                 contentType = "text/plain";
@@ -201,6 +195,45 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AssignTaskAction extends ApiAction<TaskAssignmentForm>
+    {
+        @Override
+        public Object execute(TaskAssignmentForm form, BindException errors) throws Exception
+        {
+            Task engineTask = WorkflowManager.get().getTask(form.getTaskId());
+            engineTask.setAssignee(String.valueOf(form.getUserId()));
+            return success();
+        }
+    }
+
+    public static class TaskAssignmentForm
+    {
+        private String _taskId;
+        private int _userId;
+
+        public String getTaskId()
+        {
+            return _taskId;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            _taskId = taskId;
+        }
+
+        public int getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            _userId = userId;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetTasksAction extends ApiAction<TaskListRequestForm>
     {
         @Override
@@ -211,7 +244,7 @@ public class WorkflowController extends SpringActionController
             {
                 User user = UserManager.getUser(form.getPrincipalId());
                 tasks.addAll(WorkflowManager.get().getTaskList(user, getContainer()));
-                if (form.getIncludeGroupTasks())
+                if (form.getIncludeGroupTasks() )
                 {
                     tasks.addAll(WorkflowManager.get().getGroupTasks(user));
                 }
@@ -283,9 +316,24 @@ public class WorkflowController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            String instanceId = WorkflowManager.get().startWorkflow(form, getUser(), getContainer());
+            String instanceId = WorkflowManager.get().startWorkflow(form);
             response.put("processInstanceId", instanceId);
             return success(response);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RemoveProcessAction extends ApiAction<WorkflowProcess>
+    {
+
+        @Override
+        public Object execute(WorkflowProcess form, BindException errors) throws Exception
+        {
+            if (form.getId() == null)
+                throw new Exception("No process id provided");
+
+            WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), null);
+            return success();
         }
     }
 
@@ -377,7 +425,7 @@ public class WorkflowController extends SpringActionController
             {
                 response.put("deploymentId", WorkflowManager.get().deployWorkflow(form.getProcessName(), getContainer()));
             }
-            return response;
+            return success(response);
         }
     }
 
@@ -397,7 +445,7 @@ public class WorkflowController extends SpringActionController
     }
 
     // TODO the methods below here are specific to the data export example.
-    // TODO change ExportRequestForm to generic WorkflowForm with userId; extend this to add other fields
+    // TODO change ExportRequestDetailsForm to generic WorkflowForm?
     @RequiresPermissionClass(ReadPermission.class)
     public class RequestExportAction extends SimpleViewAction<ExportRequestDetailsBean>
     {
@@ -437,9 +485,12 @@ public class WorkflowController extends SpringActionController
                 variables.put("requesterId", getUser().getUserId());
                 variables.put("dataSetId", form.getDataSetId());
                 variables.put("reason", form.getReason());
+                variables.put("requester", form.getUser());
+                variables.put("container", getContainer().getId());
                 process.setProcessVariables(variables);
 
-                String instanceId = WorkflowManager.get().startWorkflow(process, getUser(), getContainer());
+                String instanceId = WorkflowManager.get().startWorkflow(process);
+
                 form.setProcessInstanceId(instanceId);
 
                 response.put("processInstanceId", form.getProcessInstanceId());

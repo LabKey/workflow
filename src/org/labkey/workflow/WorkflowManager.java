@@ -26,6 +26,8 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
@@ -53,57 +55,6 @@ public class WorkflowManager
         return _instance;
     }
 
-    private ProcessEngine getActivitiProcessEngine()
-    {
-        if (_processEngine == null)
-        {
-            ProcessEngineConfiguration processConfig;
-            DataSource dataSource = WorkflowSchema.getInstance().getSchema().getScope().getDataSource();
-
-            // TODO figure out how to make this work putting the tables in a schema instead.
-            // Currently if you set the schema and the tables do not exist, they are created without the schema
-            // TODO put configuration in a file so we can add the parse handlers there.
-            processConfig = ProcessEngineConfiguration.createStandaloneInMemProcessEngineConfiguration()
-                    .setDataSource(dataSource)
-                    .setHistoryLevel(HistoryLevel.NONE) // if not set to NONE, it will try to recreate the tables even if they exist
-                    .setDbIdentityUsed(false); // must be set to true initially so the tables are created, but then set to false since
-                                               // if set to true, it will try to recreate the id tables even if they exist, but I think we want this false anyway
-
-//
-//            ProcessEngineConfigurationImpl processEngineConfiguration = ((ProcessEngineImpl)_processEngine).getProcessEngineConfiguration();
-//            List<BpmnParseHandler> parseHandlers = new ArrayList<BpmnParseHandler>();
-//            parseHandlers.add(new CandidateGroupParseHandler());
-//            processEngineConfiguration.setPostBpmnParseHandlers(parseHandlers); // the parse handlers have to be added BEFORE the engine is built
-
-            _processEngine = processConfig.buildProcessEngine();
-        }
-        return _processEngine;
-    }
-
-    protected RuntimeService getRuntimeService()
-    {
-        return getActivitiProcessEngine().getRuntimeService();
-    }
-
-    protected TaskService getTaskService()
-    {
-        return getActivitiProcessEngine().getTaskService();
-    }
-
-    protected RepositoryService getRepositoryService()
-    {
-        return getActivitiProcessEngine().getRepositoryService();
-    }
-
-    /**
-     * Returns the number of process definitions currently deployed in the system.
-     * @return
-     * @param container
-     */
-    protected long getProcessDefinitionCount(Container container)
-    {
-        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).count();
-    }
 
     // TODO create our own WorkflowTask class that this returns?
     public List<Task> getTaskList(User user, Container container)
@@ -113,7 +64,7 @@ public class WorkflowManager
         return tasks;
     }
 
-    public List<Task> getTaskList(Group group)
+    public List<Task> getTaskList(@NotNull Group group)
     {
         return getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(group.getUserId())).list();
     }
@@ -136,55 +87,102 @@ public class WorkflowManager
     }
 
 
-    public Task getTask(String taskId)
+    public Task getTask(@NotNull String taskId)
     {
         return getTaskService().createTaskQuery().taskId(taskId).includeProcessVariables().singleResult();
     }
 
-    public void updateProcessVariables(String taskId, Map<String, Object> variables)
+    public void completeTask(@NotNull String taskId)
     {
-        if (variables != null)
-        {
-            Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
-            Map<String, Object> currentVariables = task.getProcessVariables();
-            currentVariables.putAll(variables);
-            getRuntimeService().setVariables(task.getProcessInstanceId(), currentVariables);
-        }
+        WorkflowManager.get().getTaskService().complete(taskId);
     }
 
-    // TODO create own ProcessInstance class?
-    public List<ProcessInstance> getProcessInstances(User user, Container container)
+    public void assignTask(@NotNull String taskId, @NotNull int principalId)
     {
-        return getRuntimeService().createProcessInstanceQuery().variableValueEquals("requesterId", user.getUserId()).includeProcessVariables().list();
+        getTaskService().setAssignee(taskId, String.valueOf(principalId));
     }
 
+    public void delegateTask(@NotNull String taskId, @NotNull int principalId)
+    {
+        getTaskService().delegateTask(taskId, String.valueOf(principalId));
+    }
+
+    public void deleteTask(@NotNull String taskId, @Nullable String reason)
+    {
+        getTaskService().deleteTask(taskId, reason);
+    }
+
+    /**
+     * Creates a new process instance for the given workflow and returns the id for this new instance.
+     * @param workflow the workflow for which an instance is requested
+     * @return the id of the new process instance for this workflow
+     */
+    public String startWorkflow(@NotNull WorkflowProcess workflow)
+    {
+        ProcessInstance instance = getRuntimeService().startProcessInstanceByKey(workflow.getProcessKey(), workflow.getProcessVariables());
+        return instance.getId();
+    }
+
+    public List<String> getCurrentProcessTaskNames(@NotNull String processInstanceId)
+    {
+        return getRuntimeService().getActiveActivityIds(processInstanceId);
+    }
+
+    public List<ProcessInstance> getProcessInstances(@NotNull User user, @NotNull Container container)
+    {
+        return getRuntimeService().createProcessInstanceQuery()
+                .processInstanceTenantId(container.getId())
+                .variableValueEquals("requesterId", user.getUserId())
+                .includeProcessVariables().list();
+    }
 
     /**
      * Given the id of a task, returns the corresponding process instance
      * @param taskId
      * @return
      */
-    public ProcessInstance getProcessInstance(String taskId)
+    public ProcessInstance getProcessInstance(@NotNull String taskId)
     {
         Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
         return getRuntimeService().createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
     }
 
-    public List<String> getCurrentProcessTaskNames(String processInstanceId)
+    /**
+     * Given the id of a particular task, will update the process instance variables for the instance that
+     * contains this task
+     * @param taskId -
+     *               id of the task whose process variables should be updated
+     * @param variables -
+     *                  variables that will be merged into the existing set of variables; if null, nothing will happen
+     *
+     */
+    public void updateProcessVariables(@NotNull String taskId, @NotNull Map<String, Object> variables)
     {
-        return getRuntimeService().getActiveActivityIds(processInstanceId);
+        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        Map<String, Object> currentVariables = task.getProcessVariables();
+        currentVariables.putAll(variables);
+        getRuntimeService().setVariables(task.getProcessInstanceId(), currentVariables);
     }
 
-    public String startWorkflow(WorkflowProcess workflow, User user, Container container)
+    public void replaceProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
     {
-        workflow.getProcessVariables().put("requester", user);
-        workflow.getProcessVariables().put("container", container.getId());
-        ProcessInstance instance = getRuntimeService().startProcessInstanceByKey(workflow.getProcessKey(), workflow.getProcessVariables());
-        return instance.getId();
+        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        getRuntimeService().setVariables(task.getProcessInstanceId(), variables);
+
     }
 
+    public void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason)
+    {
+        getRuntimeService().deleteProcessInstance(processInstanceId, reason);
+    }
 
-    public Map<String, Object> getProcessInstanceDetails(String processInstanceId) throws Exception
+    /**
+     * Returns the set of variables associated with the given processInstance as well as a list of the current active tasks for that instance
+     * @param processInstanceId
+     * @return
+     * @throws Exception
+     */
+    public Map<String, Object> getProcessInstanceDetails(@NotNull String processInstanceId) throws Exception
     {
         ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
         Map<String, Object> details = processInstance.getProcessVariables();
@@ -193,34 +191,43 @@ public class WorkflowManager
         return details;
     }
 
-    public void completeTask(String taskId)
+    /**
+     * @param container the container for which this query is being made
+     * @return the number of process definitions currently deployed in the system.
+     */
+    protected long getProcessDefinitionCount(@NotNull Container container)
     {
-        WorkflowManager.get().getTaskService().complete(taskId);
+        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).count();
     }
 
-    public InputStream getProcessDiagram(String processInstanceId)
+    public InputStream getProcessDiagram(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
         return getRepositoryService().getProcessDiagram(instance.getProcessDefinitionId());
     }
 
-    public InputStream getProcessDiagramByKey(String processDefinitionKey)
+    public InputStream getProcessDiagramByKey(@NotNull String processDefinitionKey, @NotNull Container container)
     {
-        ProcessDefinition definition = getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).latestVersion().singleResult();
+        ProcessDefinition definition = getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).processDefinitionTenantId(container.getId()).latestVersion().singleResult();
         if (definition != null)
             return getRepositoryService().getProcessDiagram(definition.getId());
         else
             return null;
     }
 
-    public String deployWorkflow(String workflowName, Container container)
+    public String deployWorkflow(@NotNull String workflowName, @NotNull Container container)
     {
         Deployment deployment = getRepositoryService().createDeployment().tenantId(container.getId()).addClasspathResource(getWorkflowFileName(workflowName)).deploy();
 
         return deployment.getId();
     }
 
-    private String getWorkflowFileName(String workflowName)
+    public void deleteWorkflow(@NotNull String deploymentId)
+    {
+        getRepositoryService().deleteDeployment(deploymentId);
+    }
+
+    private String getWorkflowFileName(@NotNull String workflowName)
     {
         return workflowName + WORKFLOW_FILE_NAME_EXTENSION;
     }
@@ -234,5 +241,47 @@ public class WorkflowManager
         return summaryBean;
     }
 
+    protected RuntimeService getRuntimeService()
+    {
+        return getActivitiProcessEngine().getRuntimeService();
+    }
+
+    protected TaskService getTaskService()
+    {
+        return getActivitiProcessEngine().getTaskService();
+    }
+
+    protected RepositoryService getRepositoryService()
+    {
+        return getActivitiProcessEngine().getRepositoryService();
+    }
+
+
+    private ProcessEngine getActivitiProcessEngine()
+    {
+        if (_processEngine == null)
+        {
+            ProcessEngineConfiguration processConfig;
+            DataSource dataSource = WorkflowSchema.getInstance().getSchema().getScope().getDataSource();
+
+            // TODO figure out how to make this work putting the tables in a schema instead.
+            // Currently if you set the schema and the tables do not exist, they are created without the schema
+            // TODO put configuration in a file so we can add the parse handlers there.
+            processConfig = ProcessEngineConfiguration.createStandaloneInMemProcessEngineConfiguration()
+                    .setDataSource(dataSource)
+                    .setHistoryLevel(HistoryLevel.NONE) // if not set to NONE, it will try to recreate the tables even if they exist
+                    .setDbIdentityUsed(false); // must be set to true initially so the tables are created, but then set to false since
+            // if set to true, it will try to recreate the id tables even if they exist, but I think we want this false anyway
+
+//
+//            ProcessEngineConfigurationImpl processEngineConfiguration = ((ProcessEngineImpl)_processEngine).getProcessEngineConfiguration();
+//            List<BpmnParseHandler> parseHandlers = new ArrayList<BpmnParseHandler>();
+//            parseHandlers.add(new CandidateGroupParseHandler());
+//            processEngineConfiguration.setPostBpmnParseHandlers(parseHandlers); // the parse handlers have to be added BEFORE the engine is built
+
+            _processEngine = processConfig.buildProcessEngine();
+        }
+        return _processEngine;
+    }
 
 }

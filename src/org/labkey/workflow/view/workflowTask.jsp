@@ -35,11 +35,11 @@
 <table class="labkey-proj">
     <tr>
         <td>Id</td>
-        <td><%= bean.getTaskId() %></td>
+        <td><%= bean.getId() %></td>
     </tr>
     <tr>
         <td>Description</td>
-        <td><%= bean.getDocumentation() %></td>
+        <td><%= bean.getDescription() %></td>
     </tr>
     <tr>
         <td>Reason for request</td>
@@ -51,15 +51,15 @@
     if ("reviewExportRequest".equals(bean.getTaskDefinitionId()) || "handleExportRequest".equals(bean.getTaskDefinitionId()))
     {
 %>
-<%= PageFlowUtil.textLink("Approve", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getTaskId()).addParameter("approved", "true"))%>
-<%= PageFlowUtil.textLink("Deny", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getTaskId()).addParameter("approved", "false"))%>
+<%= PageFlowUtil.textLink("Approve", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("approved", "true"))%>
+<%= PageFlowUtil.textLink("Deny", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("approved", "false"))%>
 
 <%
     }
     else if ("downloadDataSet".equals(bean.getTaskDefinitionId()))
     {
 %>
-<%= PageFlowUtil.textLink("Download data set", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getTaskId()))%>
+<%= PageFlowUtil.textLink("Download data set", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
 <%
     }
 %>
