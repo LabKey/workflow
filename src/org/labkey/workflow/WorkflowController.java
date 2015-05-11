@@ -58,6 +58,9 @@ public class WorkflowController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    /**
+     * Shows a summary of the workflows for the current container and user
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
@@ -65,9 +68,7 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowSummary.jsp", WorkflowManager.get().getProcessSummary(getUser(), getContainer()));
-
-            return jsp;
+            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", WorkflowManager.get().getProcessSummary(getUser(), getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -77,6 +78,9 @@ public class WorkflowController extends SpringActionController
     }
 
 
+    /**
+     * Shows the data about a task
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class ViewTaskAction extends SimpleViewAction<ProcessInstanceDetailsForm>
     {
@@ -307,7 +311,6 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class StartProcessAction extends ApiAction<WorkflowProcess>
     {
-
         @Override
         public Object execute(WorkflowProcess form, BindException errors) throws Exception
         {
@@ -316,7 +319,7 @@ public class WorkflowController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            String instanceId = WorkflowManager.get().startWorkflow(form);
+            String instanceId = WorkflowManager.get().startWorkflow(form, getContainer());
             response.put("processInstanceId", instanceId);
             return success(response);
         }
@@ -325,7 +328,6 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class RemoveProcessAction extends ApiAction<WorkflowProcess>
     {
-
         @Override
         public Object execute(WorkflowProcess form, BindException errors) throws Exception
         {
@@ -344,8 +346,8 @@ public class WorkflowController extends SpringActionController
         public Object execute(TaskCompletionForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            if (form.getTaskId() == null)
-                throw new Exception("Task id is missing.");
+            if (form.getTaskId() == null) // TODO convert to "validate" method
+                throw new Exception("Task id cannot be null.");
             else
             {
                 // TODO remove this hack and use variables from the form
@@ -489,7 +491,8 @@ public class WorkflowController extends SpringActionController
                 variables.put("container", getContainer().getId());
                 process.setProcessVariables(variables);
 
-                String instanceId = WorkflowManager.get().startWorkflow(process);
+
+                String instanceId = WorkflowManager.get().startWorkflow(process, getContainer());
 
                 form.setProcessInstanceId(instanceId);
 

@@ -29,13 +29,15 @@ import org.activiti.engine.task.Task;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.*;
 import org.labkey.workflow.view.ProcessSummaryBean;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +45,9 @@ public class WorkflowManager
 {
     private static final WorkflowManager _instance = new WorkflowManager();
     private ProcessEngine _processEngine = null;
+    private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
+    private static final String WORKFLOW_MODEL_DIR = "resources/workflow/model";
 
     private WorkflowManager()
     {
@@ -69,21 +73,24 @@ public class WorkflowManager
         return getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(group.getUserId())).list();
     }
 
+    public void addGroupAssignment(Task task, UserPrincipal principal)
+    {
+        getTaskService().addCandidateGroup(task.getId(), String.valueOf(principal.getUserId()));
+    }
 
     public List<Task> getGroupTasks(UserPrincipal principal)
     {
-        // TODO use actual groups.  This requires(?) that the groups and users are translated into ids when the process XML is parsed.
-        // TODO hook into the XML parsing when a deployment happens so that group names are associated with group ids in the database
-//        List<Task> tasks = new ArrayList<Task>();
-//        for (int groupId : principal.getGroups())
-//        {
-//            tasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(groupId)).list());
-//        }
+        List<Task> tasks = new ArrayList<Task>();
+        for (int groupId : principal.getGroups())
+        {
+            tasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(groupId)).list());
+        }
 
+        return tasks;
 
-        List<Task> groupTasks = getTaskService().createTaskQuery().taskCandidateGroup("Project Administrator").list();
-        groupTasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup("Users").list());
-        return groupTasks;
+//        List<Task> groupTasks = getTaskService().createTaskQuery().taskCandidateGroup("Project Administrator").list();
+//        groupTasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup("Users").list());
+//        return groupTasks;
     }
 
 
@@ -115,11 +122,13 @@ public class WorkflowManager
     /**
      * Creates a new process instance for the given workflow and returns the id for this new instance.
      * @param workflow the workflow for which an instance is requested
+     * @param container the container in which this process is being created
      * @return the id of the new process instance for this workflow
      */
-    public String startWorkflow(@NotNull WorkflowProcess workflow)
+    public String startWorkflow(@NotNull WorkflowProcess workflow, @NotNull Container container)
     {
-        ProcessInstance instance = getRuntimeService().startProcessInstanceByKey(workflow.getProcessKey(), workflow.getProcessVariables());
+
+        ProcessInstance instance = getRuntimeService().startProcessInstanceByKeyAndTenantId(workflow.getProcessKey(), workflow.getProcessVariables(), container.getId());
         return instance.getId();
     }
 
@@ -218,7 +227,6 @@ public class WorkflowManager
     public String deployWorkflow(@NotNull String workflowName, @NotNull Container container)
     {
         Deployment deployment = getRepositoryService().createDeployment().tenantId(container.getId()).addClasspathResource(getWorkflowFileName(workflowName)).deploy();
-
         return deployment.getId();
     }
 
@@ -229,7 +237,7 @@ public class WorkflowManager
 
     private String getWorkflowFileName(@NotNull String workflowName)
     {
-        return workflowName + WORKFLOW_FILE_NAME_EXTENSION;
+        return WORKFLOW_MODEL_DIR + File.separator + workflowName + WORKFLOW_FILE_NAME_EXTENSION;
     }
 
     protected ProcessSummaryBean getProcessSummary(User user, Container container)
@@ -266,20 +274,15 @@ public class WorkflowManager
 
             // TODO figure out how to make this work putting the tables in a schema instead.
             // Currently if you set the schema and the tables do not exist, they are created without the schema
-            // TODO put configuration in a file so we can add the parse handlers there.
-            processConfig = ProcessEngineConfiguration.createStandaloneInMemProcessEngineConfiguration()
-                    .setDataSource(dataSource)
-                    .setHistoryLevel(HistoryLevel.NONE) // if not set to NONE, it will try to recreate the tables even if they exist
-                    .setDbIdentityUsed(false); // must be set to true initially so the tables are created, but then set to false since
-            // if set to true, it will try to recreate the id tables even if they exist, but I think we want this false anyway
 
-//
-//            ProcessEngineConfigurationImpl processEngineConfiguration = ((ProcessEngineImpl)_processEngine).getProcessEngineConfiguration();
-//            List<BpmnParseHandler> parseHandlers = new ArrayList<BpmnParseHandler>();
-//            parseHandlers.add(new CandidateGroupParseHandler());
-//            processEngineConfiguration.setPostBpmnParseHandlers(parseHandlers); // the parse handlers have to be added BEFORE the engine is built
-
+//            processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
+//                    .setDbIdentityUsed(false);
+                processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
+                        .setDataSource(dataSource)// TRY THIS .setTablePrefixIsSchema(true).setDatabaseTablePrefix("workflow")
+                        .setHistoryLevel(HistoryLevel.NONE) // FIXME if not set to NONE, it will try to recreate the tables even if they exist
+                        .setDbIdentityUsed(false);
             _processEngine = processConfig.buildProcessEngine();
+//            getRuntimeService().addEventListener(new WorkflowEventListener());
         }
         return _processEngine;
     }

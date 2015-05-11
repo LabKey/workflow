@@ -4,24 +4,24 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
        <bean id="processEngineConfiguration" class="org.activiti.engine.impl.cfg.StandaloneProcessEngineConfiguration">
-           <!--
            <property name="jdbcUrl" value="jdbc:postgresql://localhost:5432/labkey" />
            <property name="jdbcDriver" value="org.postgresql.Driver" />
            <property name="jdbcUsername" value="labkey" />
            <property name="jdbcPassword" value="labkeysa" />
-           <property name="databaseSchema" value="workflow" />
-           -->
+           <!--property name="databaseSchema" value="workflow" /-->
            <property name="postBpmnParseHandlers">
                <list>
-                   <bean class="org.activiti.engine.impl.bpmn.parser.handler.UserTaskParseHandler" />
+                   <bean class="org.labkey.workflow.CandidateAssigneeParseHandler" />
                </list>
            </property>
 
            <property name="databaseSchemaUpdate" value="true" />
 
-              <property name="jobExecutorActivate" value="false" />
-              <property name="asyncExecutorEnabled" value="true" />
-              <property name="asyncExecutorActivate" value="false" />
+           <!--
+           <property name="jobExecutorActivate" value="false" />
+           <property name="asyncExecutorEnabled" value="true" />
+           <property name="asyncExecutorActivate" value="false" />
+           -->
 
        </bean>
 </beans>

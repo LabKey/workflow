@@ -18,9 +18,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.WorkflowController.ExportRequestDetailsBean" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
 <%@ page import="org.labkey.workflow.WorkflowTask" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
