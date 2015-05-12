@@ -2,32 +2,47 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/processdef">
   <process id="argosDataExportSimple" name="Argos data export - simple" isExecutable="true">
     <documentation>Data export process for the Argos application</documentation>
-    <startEvent id="theStart" name="Request">
+    <startEvent id="theStart" name="Request Export" activiti:initiator="userId">
       <documentation>User makes a request for exporting data</documentation>
     </startEvent>
-    <userTask id="handleExportRequest" name="Handle export request" activiti:candidateGroups="Project Administrator">
-      <documentation>User makes a request to export a data set</documentation>
+    <sequenceFlow id="startExportRequestFlow" sourceRef="theStart" targetRef="handleExportRequest"></sequenceFlow>
+
+
+    <userTask id="handleExportRequest" name="Handle export request">
+      <documentation>Handle request made by user to export a data set</documentation>
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>Administrators</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
     </userTask>
-    <endEvent id="requestFulfilled" name="Finish"></endEvent>
-    <userTask id="downloadDataSet" name="Download data set" activiti:candidateGroups="Users">
-      <documentation>Download the requested data set</documentation>
-    </userTask>
+    <sequenceFlow id="beginReview" sourceRef="handleExportRequest" targetRef="reviewRequest"></sequenceFlow>
+
     <exclusiveGateway id="reviewRequest" name="Review">
       <documentation>Review export request</documentation>
     </exclusiveGateway>
     <sequenceFlow id="approvedExport" name="approved" sourceRef="reviewRequest" targetRef="downloadDataSet">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
     </sequenceFlow>
-    <sequenceFlow id="beginReview" sourceRef="handleExportRequest" targetRef="reviewRequest"></sequenceFlow>
+    <userTask id="downloadDataSet" name="Download data set">
+      <documentation>Download the requested data set</documentation>
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>${userId}</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
     <sequenceFlow id="finishReview" sourceRef="downloadDataSet" targetRef="requestFulfilled"></sequenceFlow>
-    <sequenceFlow id="startExportRequestFlow" sourceRef="theStart" targetRef="handleExportRequest"></sequenceFlow>
-    <endEvent id="requestDenied" name="Finish"></endEvent>
+
     <sequenceFlow id="deniedExportRequest" name="denied" sourceRef="reviewRequest" targetRef="requestDenied">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${!approved}]]></conditionExpression>
     </sequenceFlow>
+
+    <endEvent id="requestFulfilled" name="Finish"></endEvent>
+    <endEvent id="requestDenied" name="Finish"></endEvent>
   </process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_argosDataExport">
-    <bpmndi:BPMNPlane bpmnElement="argosDataExport" id="BPMNPlane_argosDataExport">
+    <bpmndi:BPMNPlane bpmnElement="argosDataExportSimple" id="BPMNPlane_argosDataExport">
       <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
         <omgdc:Bounds height="30.0" width="30.0" x="135.0" y="145.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>

@@ -29,13 +29,13 @@ import org.activiti.engine.task.Task;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.workflow.view.ProcessSummaryBean;
 
 import javax.sql.DataSource;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,12 +59,29 @@ public class WorkflowManager
         return _instance;
     }
 
+    public List<String> getProcessNames() throws Exception
+    {
+        List<String> names = new ArrayList<>();
+        names.add("argosDataExport");
+        names.add("argosDataExportSimple");
+        names.add("submitForApprovalWithRetry");
+        names.add("submitForApprovalWithoutRetry");
+//        if (WorkflowManager.class.getClassLoader().getResource(WORKFLOW_MODEL_DIR) != null)
+//        {
+//            List<String> files = IOUtils.readLines(WorkflowManager.class.getClassLoader().getResourceAsStream(WORKFLOW_MODEL_DIR), Charsets.UTF_8);
+//            for (String fileName : files)
+//            {
+//                names.add(FilenameUtils.getBaseName(fileName));
+//            }
+//        }
+        return names;
+    }
 
     // TODO create our own WorkflowTask class that this returns?
     public List<Task> getTaskList(User user, Container container)
     {
         List<Task> tasks = getGroupTasks(user);
-        tasks.addAll(getTaskService().createNativeTaskQuery().list()); // TODO construct query to select tasks for this user
+        tasks.addAll(getTaskService().createTaskQuery().list()); // TODO construct query to select tasks for this user
         return tasks;
     }
 
@@ -132,16 +149,16 @@ public class WorkflowManager
         return instance.getId();
     }
 
-    public List<String> getCurrentProcessTaskNames(@NotNull String processInstanceId)
+    public List<Task> getCurrentProcessTasks(@NotNull String processInstanceId)
     {
-        return getRuntimeService().getActiveActivityIds(processInstanceId);
+        return getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
     }
 
     public List<ProcessInstance> getProcessInstances(@NotNull User user, @NotNull Container container)
     {
         return getRuntimeService().createProcessInstanceQuery()
                 .processInstanceTenantId(container.getId())
-                .variableValueEquals("requesterId", user.getUserId())
+                .variableValueEquals("userId", String.valueOf(user.getUserId()))
                 .includeProcessVariables().list();
     }
 
@@ -169,7 +186,10 @@ public class WorkflowManager
     {
         Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
         Map<String, Object> currentVariables = task.getProcessVariables();
-        currentVariables.putAll(variables);
+        if (currentVariables == null)
+            currentVariables = variables;
+        else if (variables != null)
+            currentVariables.putAll(variables);
         getRuntimeService().setVariables(task.getProcessInstanceId(), currentVariables);
     }
 
@@ -195,7 +215,7 @@ public class WorkflowManager
     {
         ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
         Map<String, Object> details = processInstance.getProcessVariables();
-        details.put("currentTasks", getCurrentProcessTaskNames(processInstanceId));
+        details.put("currentTasks", getCurrentProcessTasks(processInstanceId));
 
         return details;
     }
@@ -243,9 +263,9 @@ public class WorkflowManager
     protected ProcessSummaryBean getProcessSummary(User user, Container container)
     {
         ProcessSummaryBean summaryBean = new ProcessSummaryBean();
-        summaryBean.setNumDefinitions(WorkflowManager.get().getProcessDefinitionCount(container));
-        summaryBean.setAssignedTasks(WorkflowManager.get().getTaskList(user, container));
-        summaryBean.setInstances(WorkflowManager.get().getProcessInstances(user, container));
+        summaryBean.setNumDefinitions(getProcessDefinitionCount(container));
+        summaryBean.setAssignedTasks(getTaskList(user, container));
+        summaryBean.setInstances(getProcessInstances(user, container));
         return summaryBean;
     }
 
@@ -272,17 +292,15 @@ public class WorkflowManager
             ProcessEngineConfiguration processConfig;
             DataSource dataSource = WorkflowSchema.getInstance().getSchema().getScope().getDataSource();
 
-            // TODO figure out how to make this work putting the tables in a schema instead.
-            // Currently if you set the schema and the tables do not exist, they are created without the schema
-
-//            processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
-//                    .setDbIdentityUsed(false);
-                processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
-                        .setDataSource(dataSource)// TRY THIS .setTablePrefixIsSchema(true).setDatabaseTablePrefix("workflow")
-                        .setHistoryLevel(HistoryLevel.NONE) // FIXME if not set to NONE, it will try to recreate the tables even if they exist
-                        .setDbIdentityUsed(false);
+            // you set the database schema so it will look there when deciding if the tables exist
+            // you set the table prefix and prefixIsSchema so it will prepend the schema name in the SQL statements
+            processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
+                    .setDataSource(dataSource).setDatabaseSchema(WorkflowSchema.NAME)
+                    .setTablePrefixIsSchema(true).setDatabaseTablePrefix(WorkflowSchema.NAME + ".")
+                    .setHistoryLevel(HistoryLevel.ACTIVITY)
+                    .setDbIdentityUsed(false);
             _processEngine = processConfig.buildProcessEngine();
-//            getRuntimeService().addEventListener(new WorkflowEventListener());
+            getRuntimeService().addEventListener(new WorkflowEventListener());
         }
         return _processEngine;
     }

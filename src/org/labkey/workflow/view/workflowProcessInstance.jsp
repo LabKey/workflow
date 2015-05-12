@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.workflow.WorkflowController.ExportRequestDetailsBean" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
+<%@ page import="org.activiti.engine.task.Task" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -49,8 +50,19 @@
     </tr>
     <tr>
         <td>Current Task(s)</td>
-        <td><%= StringUtils.join(bean.getCurrentTasks(), ",") %></td>
+        <td></td>
     </tr>
+    <%
+        for (Task task: bean.getCurrentTasks())
+        {
+    %>
+    <tr>
+        <td></td>
+        <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())) %></td>
+    <%
+        }
+    %>
+
 </table>
 
 <br>

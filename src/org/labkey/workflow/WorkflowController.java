@@ -34,6 +34,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.workflow.view.ProcessSummaryBean;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -51,7 +52,7 @@ public class WorkflowController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WorkflowController.class);
     public static final String NAME = "workflow";
-    private static final String ARGOS_PROCESS_KEY = "argosDataExport";
+    private static final String ARGOS_PROCESS_KEY = "argosDataExportSimple";
 
     public WorkflowController()
     {
@@ -68,7 +69,9 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", WorkflowManager.get().getProcessSummary(getUser(), getContainer()));
+            ProcessSummaryBean bean = WorkflowManager.get().getProcessSummary(getUser(), getContainer());
+            bean.setCurrentProcessKey(ARGOS_PROCESS_KEY);
+            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -471,23 +474,21 @@ public class WorkflowController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class SubmitRequestAction extends ApiAction<ExportRequestDetailsBean>
+    public class SubmitRequestAction extends SimpleViewAction<ExportRequestDetailsBean>
     {
+
         @Override
-        public Object execute(ExportRequestDetailsBean form, BindException errors) throws Exception
+        public ModelAndView getView(ExportRequestDetailsBean form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getDataSetId() != null)
             {
                 WorkflowProcess process = new WorkflowProcess();
                 process.setProcessKey(ARGOS_PROCESS_KEY);
 
                 Map<String, Object> variables = new HashMap<String, Object>();
-                variables.put("requester", getUser());
-                variables.put("requesterId", getUser().getUserId());
+                variables.put("userId", String.valueOf(getUser().getUserId())); // N.B. This needs to be a string if used as a variable for the candidate assignment
                 variables.put("dataSetId", form.getDataSetId());
                 variables.put("reason", form.getReason());
-                variables.put("requester", form.getUser());
                 variables.put("container", getContainer().getId());
                 process.setProcessVariables(variables);
 
@@ -496,11 +497,18 @@ public class WorkflowController extends SpringActionController
 
                 form.setProcessInstanceId(instanceId);
 
-                response.put("processInstanceId", form.getProcessInstanceId());
-                return success(response);
+                ProcessSummaryBean bean = WorkflowManager.get().getProcessSummary(getUser(), getContainer());
+                bean.setCurrentProcessKey(ARGOS_PROCESS_KEY);
+                return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
             }
             else
                 throw new Exception("Data set id cannot be null");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 
@@ -510,7 +518,7 @@ public class WorkflowController extends SpringActionController
         private User _user;
         private Integer _dataSetId;
         private String _reason;
-        private List<String> _currentTasks;
+        private List<Task> _currentTasks;
         private String _taskId;
         private String _taskState;
 
@@ -525,7 +533,7 @@ public class WorkflowController extends SpringActionController
             this.setReason((String) details.get("reason"));
             this.setUser((User) details.get("requester"));
             this.setProcessInstanceId(processInstanceId);
-            this.setCurrentTasks((List<String>) details.get("currentTasks"));
+            this.setCurrentTasks((List<Task>) details.get("currentTasks"));
         }
 
         public String getTaskState()
@@ -548,12 +556,12 @@ public class WorkflowController extends SpringActionController
             _taskId = taskId;
         }
 
-        public void setCurrentTasks(List<String> currentTasks)
+        public void setCurrentTasks(List<Task> currentTasks)
         {
             _currentTasks = currentTasks;
         }
 
-        public List<String> getCurrentTasks()
+        public List<Task> getCurrentTasks()
         {
             return _currentTasks;
         }

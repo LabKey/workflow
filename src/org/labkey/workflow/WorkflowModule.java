@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.workflow.query.WorkflowQuerySchema;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +61,7 @@ public class WorkflowModule extends DefaultModule
     protected void init()
     {
         addController(WorkflowController.NAME, WorkflowController.class);
+        WorkflowQuerySchema.register(this);
     }
 
     @Override

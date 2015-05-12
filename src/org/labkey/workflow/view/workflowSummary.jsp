@@ -24,13 +24,13 @@
 <%@ page import="org.activiti.engine.runtime.ProcessInstance" %>
 <%@ page import="org.labkey.workflow.WorkflowManager" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     ProcessSummaryBean bean = (ProcessSummaryBean) me.getModelBean();
 %>
-
-
 <%
     if (!bean.getAssignedTasks().isEmpty())
     {
@@ -48,46 +48,7 @@
         {
     %>
     <tr>
-        <%
-            if ("reviewExportRequest".equals(task.getTaskDefinitionKey()))
-            {
-        %>
-        <td> <%= PageFlowUtil.textLink("Review request", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-        <%
-            }
-            else if ("downloadDataSet".equals(task.getTaskDefinitionKey()))
-            {
-        %>
-        <td> <%= PageFlowUtil.textLink("Download data set", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-        <%
-            }
-            else if ("makeExportRequest".equals(task.getTaskDefinitionKey()))
-            {
-            %>
-        <td> <%= PageFlowUtil.textLink("Finish export request", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-            <%
-            }
-            else if ("handleExportRequest".equals(task.getTaskDefinitionKey()))
-            {
-            %>
-        <td> <%= PageFlowUtil.textLink("Handle export request", new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-
-        <%
-            }
-            else if ("reviseExportRequest".equals(task.getTaskDefinitionKey()))
-            {
-                %>
-        <td> <%= PageFlowUtil.textLink("Revise export request", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-        <%
-            }
-            else
-            {
-        %>
-        <td> <%= PageFlowUtil.textLink(task.getTaskDefinitionKey(), new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-        <%
-            }
-        %>
-
+        <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
         <td> <%= h(task.getCreateTime()) %></td>
         <td> <%= h(task.getDescription()) %></td>
     </tr>
@@ -103,7 +64,7 @@
     {
 %>
 <br>
-<strong>My outstanding export requests</strong>
+<strong>My outstanding requests</strong>
 <table class="labkey-proj">
     <tr>
         <td><strong>Id</strong></td>
@@ -114,13 +75,17 @@
     <%
         for (ProcessInstance instance : bean.getInstances())
         {
+            List<String> links = new ArrayList<>();
+            for (Task task : WorkflowManager.get().getCurrentProcessTasks(instance.getProcessInstanceId()))
+            {
+                links.add(PageFlowUtil.textLink(h(task.getName()), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())));
+            }
     %>
     <tr>
         <td> <%= PageFlowUtil.textLink(h(instance.getProcessInstanceId()), new ActionURL(WorkflowController.ViewProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", instance.getProcessInstanceId())) %></td>
         <td> <%= h(instance.getProcessDefinitionName()) %></td>
         <td> <%= h(instance.getProcessVariables().get("dataSetId")) %></td>
-        <td> <%= h(StringUtils.join(WorkflowManager.get().getCurrentProcessTaskNames(instance.getProcessInstanceId()), ", "))%></td>
-
+        <td> <%= StringUtils.join(links, ", ") %></td>
     </tr>
     <%
         }
@@ -147,7 +112,23 @@
 </table>
 
 
+
 <br>
-<strong>Current Process Diagram</strong> <%= PageFlowUtil.textLink("Deploy New Version", new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processName", "argosDataExportSimple")) %>
+<strong>Current Process Diagram</strong> <%= PageFlowUtil.textLink("Deploy New Version", new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processName", bean.getCurrentProcessKey())) %>
 <br>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processName", "argosDataExportSimple")%>">
+<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processName", bean.getCurrentProcessKey())%>">
+<!--
+<form id="deployForm" action="<%= new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer())%>">
+    <select name="processName">
+        <%
+            for (String processName : WorkflowManager.get().getProcessNames())
+            {
+        %>
+        <option value="<%= processName%>"><%= processName %></option>
+        <%
+            }
+        %>
+    </select>
+    <input type="submit" value="Deploy new process">
+</form>
+-->

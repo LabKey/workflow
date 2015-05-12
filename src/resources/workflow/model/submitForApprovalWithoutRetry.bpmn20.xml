@@ -3,19 +3,19 @@
   <process id="submitForApprovalWithoutRetry" name="Submit request for approval without the a feedback loop" isExecutable="true">
     <documentation>User submits a request to a group or user for approval.</documentation>
     <startEvent id="theStart" name="Request">
-      <documentation>User makes a request for exporting data</documentation>
+      <documentation>User makes a request requiring approval</documentation>
     </startEvent>
-    <userTask id="handleRequest" name="Handle user request" activiti:candidateGroups="Users">
+    <userTask id="handleRequest" name="Handle user request" activiti:candidateGroups="Administrator">
       <documentation>User makes a request that requires approval</documentation>
     </userTask>
     <endEvent id="fulfilled" name="Finish"></endEvent>
-    <userTask id="fulfillRequest" name="Fulfill request" activiti:candidateGroups="Users">
+    <userTask id="fulfillRequest" name="Fulfill request" activiti:candidateGroups="User">
       <documentation>User's request is fulfilled</documentation>
     </userTask>
     <exclusiveGateway id="reviewRequest" name="Review">
       <documentation>Review user request and approve or deny</documentation>
     </exclusiveGateway>
-    <sequenceFlow id="startExportRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
+    <sequenceFlow id="startRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
     <sequenceFlow id="approvedRequest" name="approved" sourceRef="reviewRequest" targetRef="fulfillRequest">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
     </sequenceFlow>
@@ -27,7 +27,7 @@
     </sequenceFlow>
   </process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_submitForApproval">
-    <bpmndi:BPMNPlane bpmnElement="submitForApproval" id="BPMNPlane_submitForApproval">
+    <bpmndi:BPMNPlane bpmnElement="submitForApprovalWithoutRetry" id="BPMNPlane_submitForApproval">
       <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
         <omgdc:Bounds height="30.0" width="30.0" x="135.0" y="145.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
@@ -62,7 +62,7 @@
         <omgdi:waypoint x="625.0" y="160.0"></omgdi:waypoint>
         <omgdi:waypoint x="690.0" y="160.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="startExportRequestFlow" id="BPMNEdge_startExportRequestFlow">
+      <bpmndi:BPMNEdge bpmnElement="startRequestFlow" id="BPMNEdge_startRequestFlow">
         <omgdi:waypoint x="165.0" y="160.0"></omgdi:waypoint>
         <omgdi:waypoint x="210.0" y="160.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>

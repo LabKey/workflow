@@ -5,10 +5,10 @@
     <startEvent id="theStart" name="Request">
       <documentation>User makes a request for exporting data</documentation>
     </startEvent>
-    <userTask id="handleExportRequest" name="Handle export request" activiti:candidateGroups="Project Administrator">
+    <userTask id="handleExportRequest" name="Handle export request" activiti:candidateGroups="Administrators">
       <documentation>Requested download of data set ${dataSetId}</documentation>
     </userTask>
-    <userTask id="reviseExportRequest" name="Revise export request" activiti:candidateGroups="Project Administrator">
+    <userTask id="reviseExportRequest" name="Revise export request" activiti:candidateGroups="Administrators">
       <documentation>Revise export of data set ${dataSetId}</documentation>
     </userTask>
     <endEvent id="theEnd"></endEvent>

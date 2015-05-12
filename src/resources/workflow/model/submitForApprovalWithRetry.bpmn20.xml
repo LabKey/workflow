@@ -1,37 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/processdef">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:activiti="http://activiti.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath"
+             targetNamespace="http://www.activiti.org/processdef">
   <process id="submitForApprovalWithRetry" name="Submit request for approval and possibly retry if not approved" isExecutable="true">
-    <startEvent id="theStart" name="Request">
+    <startEvent id="theStart" name="Request" activiti:initiator="userId">
       <documentation>User makes a request to an approver, with the ability to resubmit or abort a request after denial.</documentation>
     </startEvent>
-    <userTask id="handleRequest" name="Handle user request" activiti:candidateGroups="Users">
+    <sequenceFlow id="startRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
+    <userTask id="handleRequest" name="Handle user request">
       <documentation>User makes a request that requires approval</documentation>
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>Administrator</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
     </userTask>
-    <userTask id="reviseRequest" name="Revise request" activiti:candidateGroups="Project Administrator">
-      <documentation>Request revised</documentation>
-    </userTask>
-    <endEvent id="fulfilled" name="Finish"></endEvent>
-    <userTask id="fulfillRequest" name="Fulfill request" activiti:candidateGroups="Users">
-      <documentation>User's request is fulfilled</documentation>
-    </userTask>
+    <sequenceFlow id="submittedRequest" name="submitted" sourceRef="handleRequest" targetRef="reviewRequest"></sequenceFlow>
     <exclusiveGateway id="reviewRequest" name="Review">
       <documentation>Review user request and approve or deny</documentation>
     </exclusiveGateway>
-    <sequenceFlow id="startExportRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
-    <endEvent id="abort" name="Abort"></endEvent>
     <sequenceFlow id="deniedRequest" name="denied" sourceRef="reviewRequest" targetRef="reviseRequest">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${!approved}]]></conditionExpression>
     </sequenceFlow>
     <sequenceFlow id="approvedRequest" name="approved" sourceRef="reviewRequest" targetRef="fulfillRequest">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
     </sequenceFlow>
-    <sequenceFlow id="submittedRequest" name="submitted" sourceRef="handleRequest" targetRef="reviewRequest"></sequenceFlow>
-    <sequenceFlow id="fulfilledRequest" sourceRef="fulfillRequest" targetRef="fulfilled"></sequenceFlow>
+    <userTask id="reviseRequest" name="Revise request" activiti:candidateGroups="Users">
+      <documentation>Request revised</documentation>
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>${userId}</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
     <sequenceFlow id="abortedRequest" name="!resent" sourceRef="reviseRequest" targetRef="abort"></sequenceFlow>
     <sequenceFlow id="revisedRequest" name="resent" sourceRef="reviseRequest" targetRef="handleRequest"></sequenceFlow>
+    <endEvent id="fulfilled" name="Finish"></endEvent>
+    <userTask id="fulfillRequest" name="Fulfill request" activiti:candidateGroups="Users">
+      <documentation>User's request is fulfilled</documentation>
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>${userId}</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <endEvent id="abort" name="Abort"></endEvent>
+    <sequenceFlow id="fulfilledRequest" sourceRef="fulfillRequest" targetRef="fulfilled"></sequenceFlow>
   </process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_submitForApproval">
-    <bpmndi:BPMNPlane bpmnElement="submitForApproval" id="BPMNPlane_submitForApproval">
+    <bpmndi:BPMNPlane bpmnElement="submitForApprovalWithRetry" id="BPMNPlane_submitForApproval">
       <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
         <omgdc:Bounds height="30.0" width="30.0" x="135.0" y="145.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
@@ -78,7 +102,7 @@
         <omgdi:waypoint x="260.0" y="295.0"></omgdi:waypoint>
         <omgdi:waypoint x="260.0" y="200.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="startExportRequestFlow" id="BPMNEdge_startExportRequestFlow">
+      <bpmndi:BPMNEdge bpmnElement="startRequestFlow" id="BPMNEdge_startRequestFlow">
         <omgdi:waypoint x="165.0" y="160.0"></omgdi:waypoint>
         <omgdi:waypoint x="210.0" y="160.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>

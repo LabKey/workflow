@@ -16,6 +16,17 @@ public class ProcessSummaryBean
     private List<Task> _groupTasks;
     private List<ProcessInstance> _instances;
     private String _feedback;
+    private String _currentProcessKey;
+
+    public String getCurrentProcessKey()
+    {
+        return _currentProcessKey;
+    }
+
+    public void setCurrentProcessKey(String currentProcessKey)
+    {
+        _currentProcessKey = currentProcessKey;
+    }
 
     public String getFeedback()
     {
