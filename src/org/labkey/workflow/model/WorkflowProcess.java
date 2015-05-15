@@ -1,8 +1,8 @@
-package org.labkey.workflow.view;
+package org.labkey.workflow.model;
 
 import org.activiti.engine.runtime.ProcessInstance;
-import org.activiti.engine.task.Task;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Created by susanh on 5/3/15.
  */
-public class WorkflowProcessBean implements HasViewContext
+public class WorkflowProcess implements HasViewContext
 {
     private ProcessInstance _engineProcessInstance;
 
@@ -29,24 +29,24 @@ public class WorkflowProcessBean implements HasViewContext
     private String _processInstanceId;
     private ViewContext _viewContext;
     private String _name; // the name for this process instance
-    private List<Task> _currentTasks; // TODO convert this to WorkflowTasks instead
+    private List<WorkflowTask> _currentTasks;
 
-    public WorkflowProcessBean()
+    public WorkflowProcess()
     {
     }
 
-    public WorkflowProcessBean(String id) throws Exception
+    public WorkflowProcess(String id, User user, Container container) throws Exception
     {
-        this(WorkflowManager.get().getProcessInstance(id));;
+        this(WorkflowManager.get().getProcessInstance(id), user, container);
     }
 
-    public WorkflowProcessBean(ProcessInstance engineProcessInstance) throws Exception
+    public WorkflowProcess(ProcessInstance engineProcessInstance, User user, Container container) throws Exception
     {
         _engineProcessInstance = engineProcessInstance;
         _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
         if (_processVariables.get(INITIATOR_ID) != null)
             this.setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
-        this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId()));
+        this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), user, container));
     }
 
     public String getId()
@@ -140,12 +140,12 @@ public class WorkflowProcessBean implements HasViewContext
         return null;
     }
 
-    public List<Task> getCurrentTasks()
+    public List<WorkflowTask> getCurrentTasks()
     {
         return _currentTasks;
     }
 
-    public void setCurrentTasks(List<Task> currentTasks)
+    public void setCurrentTasks(List<WorkflowTask> currentTasks)
     {
         _currentTasks = currentTasks;
     }

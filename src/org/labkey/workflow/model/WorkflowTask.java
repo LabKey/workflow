@@ -1,4 +1,4 @@
-package org.labkey.workflow.view;
+package org.labkey.workflow.model;
 
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
@@ -12,7 +12,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.workflow.WorkflowManager;
-import org.labkey.workflow.view.WorkflowProcessBean;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -23,18 +22,18 @@ import java.util.Map;
  * Created by susanh on 5/3/15.
  */
 @Marshal(Marshaller.Jackson)
-public class WorkflowTaskBean
+public class WorkflowTask
 {
     private Task _engineTask;
     private List<Integer> _groupIds = null;
     private String _processDefinitionKey;
 
-    public WorkflowTaskBean(String taskId)
+    public WorkflowTask(String taskId)
     {
         _engineTask = WorkflowManager.get().getTask(taskId);
     }
 
-    public WorkflowTaskBean(Task engineTask)
+    public WorkflowTask(Task engineTask)
     {
         _engineTask = engineTask;
     }
@@ -66,8 +65,8 @@ public class WorkflowTaskBean
     @Nullable
     public User getProcessInitiator()
     {
-        if ((getVariables() == null) || (getVariables().get(WorkflowProcessBean.INITIATOR_ID) != null))
-            return UserManager.getUser(Integer.valueOf((String) getVariables().get(WorkflowProcessBean.INITIATOR_ID)));
+        if ((getVariables() == null) || (getVariables().get(WorkflowProcess.INITIATOR_ID) != null))
+            return UserManager.getUser(Integer.valueOf((String) getVariables().get(WorkflowProcess.INITIATOR_ID)));
         else
             return null;
     }

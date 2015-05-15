@@ -37,7 +37,8 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.workflow.view.WorkflowProcessBean;
+import org.labkey.workflow.model.WorkflowProcess;
+import org.labkey.workflow.model.WorkflowTask;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -342,7 +343,7 @@ public class WorkflowManager
      * @param container the container in which this process is being created
      * @return the id of the new process instance for this workflow
      */
-    public String startWorkflow(@NotNull WorkflowProcessBean workflow, @NotNull Container container)
+    public String startWorkflow(@NotNull WorkflowProcess workflow, @NotNull Container container)
     {
         ProcessInstanceBuilder builder = getRuntimeService().createProcessInstanceBuilder().processDefinitionKey(workflow.getProcessDefinitionKey()).tenantId(container.getId());
         if (workflow.getName() != null) {
@@ -359,6 +360,17 @@ public class WorkflowManager
     public List<Task> getCurrentProcessTasks(@NotNull String processInstanceId)
     {
         return getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
+    }
+
+    public List<WorkflowTask> getCurrentProcessTasks(@NotNull String processInstanceId, @NotNull User user, @NotNull Container container)
+    {
+        List<Task> engineTasks = getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskTenantId(container.getId()).list();
+        List<WorkflowTask> tasks = new ArrayList<>();
+        for (Task engineTask : engineTasks)
+        {
+            tasks.add(new WorkflowTask(engineTask));
+        }
+        return tasks;
     }
 
     public List<ProcessInstance> getProcessInstances(@NotNull User user, @NotNull Container container)

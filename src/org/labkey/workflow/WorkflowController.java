@@ -43,9 +43,9 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.workflow.query.WorkflowQuerySchema;
-import org.labkey.workflow.view.WorkflowProcessBean;
-import org.labkey.workflow.view.WorkflowSummaryBean;
-import org.labkey.workflow.view.WorkflowTaskBean;
+import org.labkey.workflow.model.WorkflowProcess;
+import org.labkey.workflow.model.WorkflowSummary;
+import org.labkey.workflow.model.WorkflowTask;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -64,7 +64,7 @@ public class WorkflowController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WorkflowController.class);
     public static final String NAME = "workflow";
-    private static final String ARGOS_PROCESS_KEY = "argosDataExportSimple";
+
 
 
     public WorkflowController()
@@ -126,7 +126,7 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(WorkflowRequestForm form, BindException errors) throws Exception
         {
-            WorkflowSummaryBean bean = new WorkflowSummaryBean(form.getProcessDefinitionKey(), getUser(), getContainer());
+            WorkflowSummary bean = new WorkflowSummary(form.getProcessDefinitionKey(), getUser(), getContainer());
 
             return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
         }
@@ -203,7 +203,7 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(WorkflowTaskForm form, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTaskBean(WorkflowManager.get().getTask(form.getTaskId())), errors);
+            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(WorkflowManager.get().getTask(form.getTaskId())), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -222,7 +222,7 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(ProcessInstanceDetailsForm form, BindException errors) throws Exception
         {
-            WorkflowProcessBean bean = new WorkflowProcessBean(form.getProcessInstanceId());
+            WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
 
             return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -469,10 +469,10 @@ public class WorkflowController extends SpringActionController
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
     @RequiresPermissionClass(UpdatePermission.class)
-    public class StartProcessAction extends ApiAction<WorkflowProcessBean>
+    public class StartProcessAction extends ApiAction<WorkflowProcess>
     {
         @Override
-        public Object execute(WorkflowProcessBean form, BindException errors) throws Exception
+        public Object execute(WorkflowProcess form, BindException errors) throws Exception
         {
             if (form.getProcessDefinitionKey() == null)
                 throw new Exception("No process key provided");
@@ -490,10 +490,10 @@ public class WorkflowController extends SpringActionController
      * process and for administrators.
      */
     @RequiresPermissionClass(ReadPermission.class)
-    public class RemoveProcessAction extends ApiAction<WorkflowProcessBean>
+    public class RemoveProcessAction extends ApiAction<WorkflowProcess>
     {
         @Override
-        public Object execute(WorkflowProcessBean form, BindException errors) throws Exception
+        public Object execute(WorkflowProcess form, BindException errors) throws Exception
         {
             if (form.getId() == null)
                 throw new Exception("No process id provided");
@@ -623,6 +623,8 @@ public class WorkflowController extends SpringActionController
     }
 
     // TODO the methods and classes below here are specific to the data export example.
+    private static final String ARGOS_PROCESS_KEY = "argosDataExportSimple";
+
     @RequiresPermissionClass(ReadPermission.class)
     public class StartExportAction extends SimpleViewAction
     {
@@ -648,7 +650,7 @@ public class WorkflowController extends SpringActionController
         {
             if (form.getProcessInstanceId() != null)
             {
-                form = new ExportRequestDetailsBean(form.getProcessInstanceId());
+                form = new ExportRequestDetailsBean(form.getProcessInstanceId(), getUser(), getContainer());
             }
 
             return new JspView("/org/labkey/workflow/view/requestExport.jsp", form, errors);
@@ -670,7 +672,7 @@ public class WorkflowController extends SpringActionController
         {
             if (form.getDataSetId() != null)
             {
-                WorkflowProcessBean process = new WorkflowProcessBean();
+                WorkflowProcess process = new WorkflowProcess();
                 process.setProcessDefintionKey(ARGOS_PROCESS_KEY);
                 process.setInitiatorId(getUser().getUserId());
 
@@ -687,7 +689,7 @@ public class WorkflowController extends SpringActionController
 
                 form.setProcessInstanceId(instanceId);
 
-                WorkflowSummaryBean bean = new WorkflowSummaryBean(ARGOS_PROCESS_KEY, getUser(), getContainer());
+                WorkflowSummary bean = new WorkflowSummary(ARGOS_PROCESS_KEY, getUser(), getContainer());
 
                 return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
             }
@@ -708,7 +710,7 @@ public class WorkflowController extends SpringActionController
         private User _user;
         private Integer _dataSetId;
         private String _reason;
-        private List<Task> _currentTasks;
+        private List<WorkflowTask> _currentTasks;
         private String _taskId;
         private String _taskState;
 
@@ -716,14 +718,14 @@ public class WorkflowController extends SpringActionController
         {
         }
 
-        public ExportRequestDetailsBean(String processInstanceId) throws Exception
+        public ExportRequestDetailsBean(String processInstanceId, User user, Container container) throws Exception
         {
             Map<String, Object> details = WorkflowManager.get().getProcessInstanceVariables(processInstanceId);
             this.setDataSetId((Integer) details.get("dataSetId"));
             this.setReason((String) details.get("reason"));
             this.setUser((User) details.get("requester"));
             this.setProcessInstanceId(processInstanceId);
-            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(processInstanceId));
+            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(processInstanceId, user, container));
         }
 
         public String getTaskState()
@@ -746,12 +748,12 @@ public class WorkflowController extends SpringActionController
             _taskId = taskId;
         }
 
-        public void setCurrentTasks(List<Task> currentTasks)
+        public void setCurrentTasks(List<WorkflowTask> currentTasks)
         {
             _currentTasks = currentTasks;
         }
 
-        public List<Task> getCurrentTasks()
+        public List<WorkflowTask> getCurrentTasks()
         {
             return _currentTasks;
         }

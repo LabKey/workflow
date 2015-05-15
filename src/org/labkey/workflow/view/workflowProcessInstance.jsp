@@ -15,17 +15,17 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.activiti.engine.task.Task" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.workflow.view.WorkflowProcessBean" %>
+<%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
+<%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
-    WorkflowProcessBean bean = (WorkflowProcessBean) me.getModelBean();
+    WorkflowProcess bean = (WorkflowProcess) me.getModelBean();
 %>
 <%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefintionKey", bean.getProcessDefinitionKey()))%>
 <br>
@@ -81,7 +81,7 @@
         <td></td>
     </tr>
     <%
-        for (Task task: bean.getCurrentTasks())
+        for (WorkflowTask task: bean.getCurrentTasks())
         {
     %>
     <tr>

@@ -1,4 +1,4 @@
-package org.labkey.workflow.view;
+package org.labkey.workflow.model;
 
 import org.activiti.engine.repository.ProcessDefinition;
 import org.labkey.api.data.Container;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by susanh on 5/14/15.
  */
-public class WorkflowSummaryBean
+public class WorkflowSummary
 {
     private ProcessDefinition _engineProcessDefinition;
     private String _processDefinitionKey;
@@ -22,10 +22,10 @@ public class WorkflowSummaryBean
     private Long _numTotalTasks;
 
 
-    public WorkflowSummaryBean()
+    public WorkflowSummary()
     {}
 
-    public WorkflowSummaryBean(String processDefinitionKey, User user, Container container)
+    public WorkflowSummary(String processDefinitionKey, User user, Container container)
     {
         _processDefinitionKey = processDefinitionKey;
         _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey);

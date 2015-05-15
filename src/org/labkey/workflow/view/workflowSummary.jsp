@@ -20,12 +20,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.workflow.view.WorkflowSummaryBean" %>
+<%@ page import="org.labkey.workflow.model.WorkflowSummary" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
-    WorkflowSummaryBean bean = (WorkflowSummaryBean) me.getModelBean();
+    WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
 %>
 <%= PageFlowUtil.textLink("Return to overview", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <br>
