@@ -22,7 +22,7 @@ public class WorkflowEventListener implements ActivitiEventListener
                 logger.debug("Engine created execution id is " + event.getExecutionId() + " processInstanceId is " + event.getProcessInstanceId() + " processDefinition id is " + event.getProcessDefinitionId());
                 break;
             case TASK_CREATED:
-                Task task = WorkflowManager.get().getTask(event.getExecutionId());
+
             default:
                 logger.debug("Event " + event);
         }

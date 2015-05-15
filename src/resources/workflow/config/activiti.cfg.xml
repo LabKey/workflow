@@ -4,21 +4,31 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
        <bean id="processEngineConfiguration" class="org.activiti.engine.impl.cfg.StandaloneProcessEngineConfiguration">
+           <!-- set the database schema so it will look there when deciding if the tables exist -->
+           <property name="databaseSchema" value="workflow"/>
+           <!--set the table prefix and prefixIsSchema so it will prepend the schema name in the SQL statements.
+               Note that the '.' is necessary in the prefix. -->
+           <property name="databaseTablePrefix" value="workflow."/>
+           <property name="tablePrefixIsSchema" value="true"/>
            <!--
-           <property name="jdbcUrl" value="jdbc:postgresql://localhost:5432/labkey" />
-           <property name="jdbcDriver" value="org.postgresql.Driver" />
-           <property name="jdbcUsername" value="labkey" />
-           <property name="jdbcPassword" value="labkeysa" />
-           -->
            <property name="postBpmnParseHandlers">
                <list>
-                   <bean class="org.labkey.workflow.CandidateAssigneeParseHandler" />
+                   <bean class="org.labkey.workflow.parse.CandidateAssigneeParseHandler" />
                </list>
            </property>
 
+           <property name="eventListeners">
+               <list>
+                   <bean class="org.labkey.workflow.WorkflowEventListener"/>
+               </list>
+           </property>
+           -->
+
+           <property name="historyLevel" value="ACTIVITY"/>
+           <property name="dbIdentityUsed" value="false"/>
+           <!--
            <property name="databaseSchemaUpdate" value="true" />
 
-           <!--
            <property name="jobExecutorActivate" value="false" />
            <property name="asyncExecutorEnabled" value="true" />
            <property name="asyncExecutorActivate" value="false" />

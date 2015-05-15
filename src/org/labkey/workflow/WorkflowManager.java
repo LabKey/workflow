@@ -16,30 +16,37 @@
 
 package org.labkey.workflow;
 
+import org.activiti.engine.ActivitiException;
+import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.ManagementService;
 import org.activiti.engine.ProcessEngine;
 import org.activiti.engine.ProcessEngineConfiguration;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
-import org.activiti.engine.impl.history.HistoryLevel;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.runtime.ProcessInstanceBuilder;
+import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.workflow.view.ProcessSummaryBean;
+import org.labkey.workflow.view.WorkflowProcessBean;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class WorkflowManager
 {
@@ -48,6 +55,8 @@ public class WorkflowManager
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     private static final String WORKFLOW_MODEL_DIR = "resources/workflow/model";
+
+    public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
     private WorkflowManager()
     {
@@ -59,81 +68,272 @@ public class WorkflowManager
         return _instance;
     }
 
-    public List<String> getProcessNames() throws Exception
+    public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
-        List<String> names = new ArrayList<>();
-        names.add("argosDataExport");
-        names.add("argosDataExportSimple");
-        names.add("submitForApprovalWithRetry");
-        names.add("submitForApprovalWithoutRetry");
-//        if (WorkflowManager.class.getClassLoader().getResource(WORKFLOW_MODEL_DIR) != null)
-//        {
-//            List<String> files = IOUtils.readLines(WorkflowManager.class.getClassLoader().getResourceAsStream(WORKFLOW_MODEL_DIR), Charsets.UTF_8);
-//            for (String fileName : files)
-//            {
-//                names.add(FilenameUtils.getBaseName(fileName));
-//            }
-//        }
-        return names;
+
+        List<Integer> groupIds = new ArrayList<>();
+        Task task = getTask(taskId);
+        List<IdentityLink> links = getRuntimeService().getIdentityLinksForProcessInstance(task.getProcessInstanceId());
+        for (IdentityLink  link : links)
+        {
+            if (link.getGroupId() != null)
+            {
+                groupIds.add(Integer.valueOf(link.getGroupId()));
+            }
+        }
+        return groupIds;
     }
 
-    // TODO create our own WorkflowTask class that this returns?
-    public List<Task> getTaskList(User user, Container container)
+    /**
+     * Gets all the tasks that are associated with the given user with a particular level of involvement
+     * @param user
+     * @param container
+     * @param involvements
+     * @return
+     */
+    public List<Task> getTaskList(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Set<TaskInvolvement> involvements)
     {
-        List<Task> tasks = getGroupTasks(user);
-        tasks.addAll(getTaskService().createTaskQuery().list()); // TODO construct query to select tasks for this user
+        List<Task> tasks  = new ArrayList<>();
+        if (involvements.contains(TaskInvolvement.ASSIGNED))
+            tasks.addAll(getAssignedTaskList(user, container));
+        if (involvements.contains(TaskInvolvement.DELEGATION_OWNER))
+            tasks.addAll(getOwnedTaskList(user, container));
+        if (involvements.contains(TaskInvolvement.GROUP_TASK))
+        {
+            Map<UserPrincipal, List<Task>> groupTasks = getGroupTasks(user, container);
+            for (List<Task> groupList : groupTasks.values())
+            {
+                tasks.addAll(groupList);
+            }
+        }
         return tasks;
     }
 
+    /**
+     * Gets the total number of tasks currently active for the given processDefinition, user and container
+     * @param processDefinitionKey
+     * @param user
+     * @param container
+     * @return count of the number of tasks
+     */
+    public Long getTotalTaskCount(@NotNull String processDefinitionKey, @NotNull UserPrincipal user, @NotNull Container container)
+    {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
+                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_")
+                .append(" WHERE D.key_ = '" + processDefinitionKey + "'")
+                .append(" AND T.tenant_id_ = #{containerId} ");
+        return getTaskService().createNativeTaskQuery()
+                .sql(sql.toString())
+                .parameter("userId", String.valueOf(user.getUserId()))
+                .parameter("containerId", String.valueOf(container.getId()))
+                .count();
+    }
+
+    /**
+     * Retrieve the list of tasks currently assigned to a given user in the given container
+     * @param user the user whose tasks should be retrieved
+     * @param container the container of the tasks
+     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
+     */
+    @NotNull
+    public List<Task> getAssignedTaskList(@NotNull UserPrincipal user, @NotNull Container container)
+    {
+        return getTaskService().createNativeTaskQuery()
+                .sql("SELECT * FROM " + getManagementService().getTableName(Task.class) + " T WHERE T.assignee_ = #{userId} AND T.tenant_id_ = #{containerId}")
+                .parameter("userId", String.valueOf(user.getUserId()))
+                .parameter("containerId", String.valueOf(container.getId()))
+                .list();
+    }
+
+    /**
+     * Retrieve the count of the list of tasks currently assigned to a given user in the given container
+     * @param user the user whose tasks should be retrieved
+     * @param container the container of the tasks
+     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
+     */
+    @NotNull
+    public Long getAssignedTaskCount(@NotNull String processDefinitionKey, @NotNull UserPrincipal user, @NotNull Container container)
+    {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
+                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_")
+                .append(" WHERE D.key_ = '" + processDefinitionKey + "'")
+                .append(" AND T.assignee_ = #{userId}")
+                .append(" AND T.tenant_id_ = #{containerId} ");
+        return getTaskService().createNativeTaskQuery()
+                .sql(sql.toString())
+                .parameter("userId", String.valueOf(user.getUserId()))
+                .parameter("containerId", String.valueOf(container.getId()))
+                .count();
+    }
+
+    /**
+     * Retrieve the list of tasks currently owned by a given user in the given container
+     * @param principal the user whose tasks should be retrieved
+     * @param container the container of the tasks
+     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
+     */
+    @NotNull
+    public List<Task> getOwnedTaskList(@NotNull UserPrincipal principal, @NotNull Container container)
+    {
+        return getTaskService().createNativeTaskQuery()
+                .sql("SELECT * FROM " + getManagementService().getTableName(Task.class) + " T WHERE T.owner_ = #{userId} AND T.tenant_id_ = #{containerId}")
+                .parameter("userId", String.valueOf(principal.getUserId()))
+                .parameter("containerId", String.valueOf(container.getId()))
+                .list();
+    }
+
+    /**
+     * Retrieve the count of the list of tasks currently assigned to a given user in the given container
+     *
+     * @param processDefinitionKey
+     * @param principal the user whose tasks should be retrieved
+     * @param container the container of the tasks
+     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
+     */
+    @NotNull
+    public Long getOwnedTaskCount(String processDefinitionKey, @NotNull UserPrincipal principal, @NotNull Container container)
+    {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
+                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_")
+                .append(" WHERE D.key_ = '" + processDefinitionKey + "'")
+                .append(" AND T.owner_ = #{userId}")
+                .append(" AND T.tenant_id_ = #{containerId} ");
+        return getTaskService().createNativeTaskQuery()
+                .sql(sql.toString())
+                .parameter("userId", String.valueOf(principal.getUserId()))
+                .parameter("containerId", String.valueOf(container.getId()))
+                .count();
+    }
+
+    /**
+     * Find the list of tasks for which the given group is a candidate assignee
+     * @param group the group in question
+     * @return a list of workflow tasks currently having this group as a candidate assignee
+     */
     public List<Task> getTaskList(@NotNull Group group)
     {
         return getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(group.getUserId())).list();
     }
 
-    public void addGroupAssignment(Task task, UserPrincipal principal)
+    /**
+     * Adds a group as a candidate for a particular task
+     * @param task the task that is to have its list of candidate groups expanded
+     * @param group the group to add as a candidate.  If the group is already a candidate ???it will be added again???
+     */
+    public void addGroupAssignment(@NotNull Task task, @NotNull Group group)
     {
-        getTaskService().addCandidateGroup(task.getId(), String.valueOf(principal.getUserId()));
+        getTaskService().addCandidateGroup(task.getId(), String.valueOf(group.getUserId()));
     }
 
-    public List<Task> getGroupTasks(UserPrincipal principal)
+    /**
+     * @param principal the principal whose groups are being queried
+     * @param container the container context for the query
+     * @return a mapping between user principals and task lists for the groups the given principal is a member of
+     */
+    @NotNull
+    public Map<UserPrincipal, List<Task>> getGroupTasks(@NotNull UserPrincipal principal, @NotNull Container container)
     {
-        List<Task> tasks = new ArrayList<Task>();
+        Map<UserPrincipal, List<Task>> tasks = new HashMap<>();
         for (int groupId : principal.getGroups())
         {
-            tasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(groupId)).list());
+            List<Task> groupTasks = getTaskService().createTaskQuery().taskTenantId(container.getId()).taskCandidateGroup(String.valueOf(groupId)).list();
+            Group group = SecurityManager.getGroup(groupId);
+            if (groupTasks.size() > 0 && group != null)
+            {
+                tasks.put(group, groupTasks);
+            }
         }
 
         return tasks;
-
-//        List<Task> groupTasks = getTaskService().createTaskQuery().taskCandidateGroup("Project Administrator").list();
-//        groupTasks.addAll(getTaskService().createTaskQuery().taskCandidateGroup("Users").list());
-//        return groupTasks;
     }
 
+    /**
+     * @param processDefinitionKey
+     * @param principal the principal whose groups are being queried
+     * @param container the container context for the query
+     * @return a mapping between user principals and counts of tasks for the groups the given principal is a member of, excluding groups with 0 tasks
+     */
+    @NotNull
+    public Map<UserPrincipal, Long> getGroupTaskCounts(String processDefinitionKey, @NotNull UserPrincipal principal, @NotNull Container container)
+    {
+        Map<UserPrincipal, Long> tasks = new HashMap<>();
+        for (int groupId : principal.getGroups())
+        {
+            Long count = getTaskService().createTaskQuery().taskTenantId(container.getId()).processDefinitionKey(processDefinitionKey).taskCandidateGroup(String.valueOf(groupId)).count();
+            Group group = SecurityManager.getGroup(groupId);
+            if (group != null && count > 0)
+            {
+                tasks.put(group, count);
+            }
+        }
 
+        return tasks;
+    }
+
+    /**
+     * Retrieve a task given its id
+     * @param taskId
+     * @return a workflow task of the given Id.  If there is no such task, an exception is thrown.
+     */
     public Task getTask(@NotNull String taskId)
     {
-        return getTaskService().createTaskQuery().taskId(taskId).includeProcessVariables().singleResult();
+        return getTaskService().createTaskQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables().singleResult();
     }
 
+    /**
+     * Completes a task in a workflow given the id of the task
+     * @param taskId the id of an active task
+     * @throws ActivitiObjectNotFoundException when no task exists with the given id.
+     * @throws ActivitiException when this task is pending delegation.
+     */
     public void completeTask(@NotNull String taskId)
     {
         WorkflowManager.get().getTaskService().complete(taskId);
     }
 
-    public void assignTask(@NotNull String taskId, @NotNull int principalId)
+    /**
+     * Claim a task that one (or more) of the user's group is currently a candidate group for
+     * @param taskId id of the task to be claimed
+     * @param userId id of the user who is claiming the task
+     * @throws
+     */
+    public void claimTask(@NotNull String taskId, @NotNull Integer userId) throws Exception
     {
-        getTaskService().setAssignee(taskId, String.valueOf(principalId));
+        if (userId != null)
+        {
+            getTaskService().setOwner(taskId, String.valueOf(userId));
+            getTaskService().claim(taskId, String.valueOf(userId));
+        }
+        else
+        {
+            throw new Exception("No user specified");
+        }
     }
 
-    public void delegateTask(@NotNull String taskId, @NotNull int principalId)
+    public void assignTask(@NotNull String taskId, @NotNull Integer userId) throws Exception
     {
-        getTaskService().delegateTask(taskId, String.valueOf(principalId));
+        if (userId != null)
+        {
+            getTaskService().setOwner(taskId, String.valueOf(userId));
+            getTaskService().setAssignee(taskId, String.valueOf(userId));
+        }
+        else
+        {
+            throw new Exception("No user specified");
+        }
     }
 
-    public void deleteTask(@NotNull String taskId, @Nullable String reason)
+    public void delegateTask(@NotNull String taskId, @NotNull Integer ownerId, @NotNull Integer designateeId) throws Exception
     {
-        getTaskService().deleteTask(taskId, reason);
+        if (ownerId != null && designateeId != null)
+        {
+            getTaskService().delegateTask(taskId, String.valueOf(designateeId));
+            getTaskService().setOwner(taskId, String.valueOf(ownerId));
+        }
+        else
+        {
+            throw new Exception("Owner or assignee not specified");
+        }
     }
 
     /**
@@ -142,10 +342,17 @@ public class WorkflowManager
      * @param container the container in which this process is being created
      * @return the id of the new process instance for this workflow
      */
-    public String startWorkflow(@NotNull WorkflowProcess workflow, @NotNull Container container)
+    public String startWorkflow(@NotNull WorkflowProcessBean workflow, @NotNull Container container)
     {
-
-        ProcessInstance instance = getRuntimeService().startProcessInstanceByKeyAndTenantId(workflow.getProcessKey(), workflow.getProcessVariables(), container.getId());
+        ProcessInstanceBuilder builder = getRuntimeService().createProcessInstanceBuilder().processDefinitionKey(workflow.getProcessDefinitionKey()).tenantId(container.getId());
+        if (workflow.getName() != null) {
+            builder.processInstanceName(workflow.getName());
+        }
+        for (Map.Entry<String, Object> variable : workflow.getProcessVariables().entrySet())
+        {
+            builder.addVariable(variable.getKey(), variable.getValue());
+        }
+        ProcessInstance instance = builder.start();
         return instance.getId();
     }
 
@@ -158,19 +365,27 @@ public class WorkflowManager
     {
         return getRuntimeService().createProcessInstanceQuery()
                 .processInstanceTenantId(container.getId())
-                .variableValueEquals("userId", String.valueOf(user.getUserId()))
+                .variableValueEquals("initiatorId", String.valueOf(user.getUserId()))
                 .includeProcessVariables().list();
+    }
+
+    public Long getProcessInstanceCount(String processDefinitionKey, @NotNull User initiator, @NotNull Container container)
+    {
+        return getRuntimeService().createProcessInstanceQuery()
+                .processInstanceTenantId(container.getId())
+                .processDefinitionKey(processDefinitionKey)
+                .variableValueEquals("initiatorId", String.valueOf(initiator.getUserId()))
+                .includeProcessVariables().count();
     }
 
     /**
      * Given the id of a task, returns the corresponding process instance
-     * @param taskId
+     * @param processInstanceId id of process instance to retrieve
      * @return
      */
-    public ProcessInstance getProcessInstance(@NotNull String taskId)
+    public ProcessInstance getProcessInstance(@NotNull String processInstanceId)
     {
-        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
-        return getRuntimeService().createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId()).singleResult();
+        return getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
     }
 
     /**
@@ -211,13 +426,15 @@ public class WorkflowManager
      * @return
      * @throws Exception
      */
-    public Map<String, Object> getProcessInstanceDetails(@NotNull String processInstanceId) throws Exception
+    public Map<String, Object> getProcessInstanceVariables(@NotNull String processInstanceId) throws Exception
     {
         ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-        Map<String, Object> details = processInstance.getProcessVariables();
-        details.put("currentTasks", getCurrentProcessTasks(processInstanceId));
+        return processInstance.getProcessVariables();
+    }
 
-        return details;
+    public ProcessDefinition getProcessDefinition(@NotNull String processDefinitionKey)
+    {
+        return getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).latestVersion().singleResult();
     }
 
     /**
@@ -227,6 +444,23 @@ public class WorkflowManager
     protected long getProcessDefinitionCount(@NotNull Container container)
     {
         return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).count();
+    }
+
+    public List<ProcessDefinition> getProcessDefinitionList(@NotNull Container container)
+    {
+        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).latestVersion().list();
+    }
+
+    public Map<String, String> getProcessDefinitionNames(@NotNull Container container)
+    {
+        Map<String, String> keyToNameMap = new HashMap<>();
+
+        List<ProcessDefinition> definitions = WorkflowManager.get().getProcessDefinitionList(container);
+        for (ProcessDefinition definition : definitions)
+        {
+            keyToNameMap.put(definition.getKey(), definition.getName());
+        }
+        return keyToNameMap;
     }
 
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
@@ -260,47 +494,37 @@ public class WorkflowManager
         return WORKFLOW_MODEL_DIR + File.separator + workflowName + WORKFLOW_FILE_NAME_EXTENSION;
     }
 
-    protected ProcessSummaryBean getProcessSummary(User user, Container container)
-    {
-        ProcessSummaryBean summaryBean = new ProcessSummaryBean();
-        summaryBean.setNumDefinitions(getProcessDefinitionCount(container));
-        summaryBean.setAssignedTasks(getTaskList(user, container));
-        summaryBean.setInstances(getProcessInstances(user, container));
-        return summaryBean;
-    }
-
     protected RuntimeService getRuntimeService()
     {
-        return getActivitiProcessEngine().getRuntimeService();
+        return getProcessEngine().getRuntimeService();
+    }
+
+    protected ManagementService getManagementService()
+    {
+        return getProcessEngine().getManagementService();
     }
 
     protected TaskService getTaskService()
     {
-        return getActivitiProcessEngine().getTaskService();
+        return getProcessEngine().getTaskService();
     }
 
     protected RepositoryService getRepositoryService()
     {
-        return getActivitiProcessEngine().getRepositoryService();
+        return getProcessEngine().getRepositoryService();
     }
 
 
-    private ProcessEngine getActivitiProcessEngine()
+    private ProcessEngine getProcessEngine()
     {
         if (_processEngine == null)
         {
             ProcessEngineConfiguration processConfig;
             DataSource dataSource = WorkflowSchema.getInstance().getSchema().getScope().getDataSource();
 
-            // you set the database schema so it will look there when deciding if the tables exist
-            // you set the table prefix and prefixIsSchema so it will prepend the schema name in the SQL statements
             processConfig = ProcessEngineConfiguration.createProcessEngineConfigurationFromResource(ACTIVITI_CONFIG_FILE)
-                    .setDataSource(dataSource).setDatabaseSchema(WorkflowSchema.NAME)
-                    .setTablePrefixIsSchema(true).setDatabaseTablePrefix(WorkflowSchema.NAME + ".")
-                    .setHistoryLevel(HistoryLevel.ACTIVITY)
-                    .setDbIdentityUsed(false);
+                    .setDataSource(dataSource);
             _processEngine = processConfig.buildProcessEngine();
-            getRuntimeService().addEventListener(new WorkflowEventListener());
         }
         return _processEngine;
     }

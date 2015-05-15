@@ -15,39 +15,67 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.activiti.engine.task.Task" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.WorkflowController.ExportRequestDetailsBean" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.api.gwt.client.util.StringUtils" %>
-<%@ page import="org.activiti.engine.task.Task" %>
+<%@ page import="org.labkey.workflow.view.WorkflowProcessBean" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
-    ExportRequestDetailsBean bean = (ExportRequestDetailsBean) me.getModelBean();
+    WorkflowProcessBean bean = (WorkflowProcessBean) me.getModelBean();
 %>
-<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefintionKey", bean.getProcessDefinitionKey()))%>
 <br>
 <br>
-<strong>Request Details</strong>
+<%
+    if (bean.getName() == null)
+    {
+%>
+<strong>Process <%= bean.getId() %></strong>
+<%
+    }
+    else
+    {
+%>
+<strong><%= bean.getName() %></strong>
+<%
+    }
+%>
+
+<br>
+<strong>Process Instance Details</strong>
 <table class="labkey-proj">
     <tr>
-        <td>Id</td>
-        <td><%= bean.getProcessInstanceId() %></td>
+        <td>Initiator</td>
+        <td><%= bean.getInitiator() %></td>
     </tr>
+
+
+<%
+    if (!bean.getProcessVariables().isEmpty())
+    {
+%>
+        <%
+            for (Map.Entry<String, Object> variable : bean.getProcessVariables().entrySet())
+            {
+                if (!"initiatorId".equalsIgnoreCase(variable.getKey())  &&
+                    !"userId".equalsIgnoreCase(variable.getKey()) &&
+                    !"container".equalsIgnoreCase(variable.getKey()))
+                {
+
+    %>
     <tr>
-        <td>Requester</td>
-        <td><%= bean.getUser() %></td>
+        <td><%= variable.getKey() %></td>
+        <td><%= variable.getValue() %></td>
     </tr>
-    <tr>
-        <td>Data set</td>
-        <td><%= bean.getDataSetId() %></td>
-    </tr>
-    <tr>
-        <td>Reason</td>
-        <td><%= bean.getReason() %></td>
-    </tr>
+        <%
+                }
+            }
+        }
+    %>
     <tr>
         <td>Current Task(s)</td>
         <td></td>
@@ -58,14 +86,13 @@
     %>
     <tr>
         <td></td>
-        <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())) %></td>
-    <%
+        <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.TaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())) %></td>
+            <%
         }
     %>
-
 </table>
 
 <br>
-<strong>Request Diagram</strong>
+<strong>Process Diagram</strong>
 <br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">

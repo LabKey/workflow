@@ -21,6 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 

@@ -1,4 +1,4 @@
-package org.labkey.workflow;
+package org.labkey.workflow.parse;
 
 import org.activiti.bpmn.model.*;
 import org.activiti.engine.impl.bpmn.parser.BpmnParse;
@@ -51,7 +51,8 @@ public class CandidateAssigneeParseHandler implements BpmnParseHandler
             }
             else
             {
-                logger.warn("No site-wide group found for group '" + group + "'; removing");
+                groupIds.add(group);
+                logger.warn("No site-wide group found for group '" + group + "'");
             }
         }
         return groupIds;

@@ -12,19 +12,17 @@ import java.util.Set;
  */
 public class WorkflowTenantTable extends SimpleUserSchema.SimpleTable<WorkflowQuerySchema>
 {
-    private Set<String> _columnsToIgnore;
 
-    public WorkflowTenantTable(WorkflowQuerySchema userSchema, String tableName, @Nullable Set<String> columnsToIgnore)
+    public WorkflowTenantTable(WorkflowQuerySchema userSchema, String tableName)
     {
         super(userSchema, userSchema.getDbSchema().getTable(tableName));
-        this._columnsToIgnore = columnsToIgnore;
         wrapAllColumns();
     }
 
     @Override
-    public boolean acceptColumn(ColumnInfo columnInfo)
+    protected String getContainerFilterColumn()
     {
-        return _columnsToIgnore == null || !_columnsToIgnore.contains(columnInfo.getName());
+        return "tenant_id_";
     }
 
     @Override

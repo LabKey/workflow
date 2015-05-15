@@ -12,7 +12,7 @@
       <documentation>Handle request made by user to export a data set</documentation>
       <potentialOwner>
         <resourceAssignmentExpression>
-          <formalExpression>Administrators</formalExpression>
+          <formalExpression>${approverGroupId}</formalExpression>
         </resourceAssignmentExpression>
       </potentialOwner>
     </userTask>
@@ -26,11 +26,11 @@
     </sequenceFlow>
     <userTask id="downloadDataSet" name="Download data set">
       <documentation>Download the requested data set</documentation>
-      <potentialOwner>
+      <humanPerformer>
         <resourceAssignmentExpression>
           <formalExpression>${userId}</formalExpression>
         </resourceAssignmentExpression>
-      </potentialOwner>
+      </humanPerformer>
     </userTask>
     <sequenceFlow id="finishReview" sourceRef="downloadDataSet" targetRef="requestFulfilled"></sequenceFlow>
 

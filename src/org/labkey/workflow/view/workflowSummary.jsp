@@ -15,120 +15,139 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.activiti.engine.task.Task" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.view.ProcessSummaryBean" %>
+<%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.activiti.engine.runtime.ProcessInstance" %>
-<%@ page import="org.labkey.workflow.WorkflowManager" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.workflow.WorkflowController" %>
+<%@ page import="org.labkey.workflow.view.WorkflowSummaryBean" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
-    ProcessSummaryBean bean = (ProcessSummaryBean) me.getModelBean();
+    WorkflowSummaryBean bean = (WorkflowSummaryBean) me.getModelBean();
 %>
-<%
-    if (!bean.getAssignedTasks().isEmpty())
-    {
-%>
+<%= PageFlowUtil.textLink("Return to overview", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <br>
-<strong>My Tasks</strong>
-<table class="labkey-proj">
-    <tr>
-        <td></td>
-        <td><strong>Created</strong></td>
-        <td><strong>Description</strong></td>
-    </tr>
-    <%
-        for (Task task : bean.getAssignedTasks())
-        {
-    %>
-    <tr>
-        <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("processInstanceId", task.getProcessInstanceId()).addParameter("taskId", task.getId())) %></td>
-        <td> <%= h(task.getCreateTime()) %></td>
-        <td> <%= h(task.getDescription()) %></td>
-    </tr>
-    <%
-        }
-    %>
-</table>
-<%
-    }
-%>
-<%
-    if (!bean.getInstances().isEmpty())
-    {
-%>
 <br>
-<strong>My outstanding requests</strong>
-<table class="labkey-proj">
-    <tr>
-        <td><strong>Id</strong></td>
-        <td><strong>Request Type</strong></td>
-        <td><strong>Data Set</strong></td>
-        <td><strong>Queued Tasks</strong></td>
-    </tr>
-    <%
-        for (ProcessInstance instance : bean.getInstances())
-        {
-            List<String> links = new ArrayList<>();
-            for (Task task : WorkflowManager.get().getCurrentProcessTasks(instance.getProcessInstanceId()))
-            {
-                links.add(PageFlowUtil.textLink(h(task.getName()), new ActionURL(WorkflowController.ViewTaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())));
-            }
-    %>
-    <tr>
-        <td> <%= PageFlowUtil.textLink(h(instance.getProcessInstanceId()), new ActionURL(WorkflowController.ViewProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", instance.getProcessInstanceId())) %></td>
-        <td> <%= h(instance.getProcessDefinitionName()) %></td>
-        <td> <%= h(instance.getProcessVariables().get("dataSetId")) %></td>
-        <td> <%= StringUtils.join(links, ", ") %></td>
-    </tr>
-    <%
-        }
-    %>
-</table>
-<%
-    }
-%>
+<strong><%= bean.getName() %></strong>
 <br>
-<strong>Data sets</strong>
-<table class="labkey-proj">
-    <tr>
-        <td></td>
-        <td><strong>Description</strong></td>
-    </tr>
-    <tr>
-       <td><%= PageFlowUtil.textLink("Request export", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 1)) %></td>
-        <td>Data set 1</td>
-    </tr>
-    <tr>
-        <td><%= PageFlowUtil.textLink("Request export", new ActionURL(WorkflowController.RequestExportAction.class, getViewContext().getContainer()).addParameter("dataSetId", 2)) %></td>
-        <td>Data set 2</td>
-    </tr>
-</table>
+<%= bean.getDescription() %>
+<ul>
 
-
-
-<br>
-<strong>Current Process Diagram</strong> <%= PageFlowUtil.textLink("Deploy New Version", new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processName", bean.getCurrentProcessKey())) %>
-<br>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processName", bean.getCurrentProcessKey())%>">
-<!--
-<form id="deployForm" action="<%= new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer())%>">
-    <select name="processName">
+    <li>
         <%
-            for (String processName : WorkflowManager.get().getProcessNames())
+            if (bean.getNumTotalTasks() == 0)
             {
         %>
-        <option value="<%= processName%>"><%= processName %></option>
+        No current tasks
+        <%
+        }
+        else
+        {
+        %>
+        <%= PageFlowUtil.textLink(bean.getNumTotalTasks() + " tasks total", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
         <%
             }
         %>
-    </select>
-    <input type="submit" value="Deploy new process">
-</form>
--->
+    </li>
+
+    <li>
+        <%
+            if (bean.getNumAssignedTasks() == 0)
+            {
+        %>
+        No currently assigned tasks
+        <%
+            }
+            else
+            {
+        %>
+        <%= PageFlowUtil.textLink(bean.getNumAssignedTasks() + " assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+        <%
+            }
+        %>
+    </li>
+    <li>
+        <%
+            if (bean.getNumOwnedTasks() == 0)
+            {
+        %>
+        No currently owned tasks
+        <%
+            }
+            else
+            {
+        %>
+        <%= PageFlowUtil.textLink(bean.getNumOwnedTasks() + " owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
+        <%
+            }
+        %>
+    </li>
+    <li>
+        <%
+            if (bean.getNumGroupTasks().isEmpty())
+            {
+        %>
+        No tasks associated with your groups
+        <%
+            }
+            else
+            {
+        %>
+        Unassigned tasks
+        <ul>
+        <%
+                for (Map.Entry<UserPrincipal, Long> entry : bean.getNumGroupTasks().entrySet())
+                {
+        %>
+        <li><%= entry.getKey() %> <%= PageFlowUtil.textLink(entry.getValue() + " tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
+        <%
+                }
+        %>
+            </ul>
+        <%
+            }
+        %>
+
+    </li>
+    <li>
+        <%
+            if (bean.getNumInstances() == 0)
+            {
+        %>
+        No currently active processes
+        <%
+            }
+            else
+            {
+        %>
+        <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getViewContext().getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%
+            }
+        %>
+    </li>
+</ul>
+
+<br>
+<strong>Current Process Diagram</strong> <%= PageFlowUtil.button("Deploy New Version").href(new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+<br>
+<br>
+<%
+    if (bean.hasDiagram())
+    {
+%>
+<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())%>">
+<%
+    }
+    else
+    {
+%>
+No process diagram available.
+<%
+
+    }
+%>
+<br>
+<br>
+<%= PageFlowUtil.textLink("Return to overview", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
