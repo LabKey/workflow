@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables xmlns="http://labkey.org/data/xml">
+  <table tableName="act_hi_comment" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="type_"/>
+      <column columnName="time_"/>
+      <column columnName="user_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="action_"/>
+      <column columnName="message_"/>
+      <column columnName="full_msg_"/>
+    </columns>
+  </table>
+  <table tableName="act_hi_taskinst" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="task_def_key_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="name_"/>
+      <column columnName="parent_task_id_"/>
+      <column columnName="description_"/>
+      <column columnName="owner_"/>
+      <column columnName="assignee_"/>
+      <column columnName="start_time_"/>
+      <column columnName="claim_time_"/>
+      <column columnName="end_time_"/>
+      <column columnName="duration_"/>
+      <column columnName="delete_reason_"/>
+      <column columnName="priority_"/>
+      <column columnName="due_date_"/>
+      <column columnName="form_key_"/>
+      <column columnName="category_"/>
+      <column columnName="tenant_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_ru_job" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="type_"/>
+      <column columnName="lock_exp_time_"/>
+      <column columnName="lock_owner_"/>
+      <column columnName="exclusive_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="process_instance_id_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="retries_"/>
+      <column columnName="exception_stack_id_"/>
+      <column columnName="exception_msg_"/>
+      <column columnName="duedate_"/>
+      <column columnName="repeat_"/>
+      <column columnName="handler_type_"/>
+      <column columnName="handler_cfg_"/>
+      <column columnName="tenant_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_ru_task" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+        <columnTitle>Row Id</columnTitle>
+      </column>
+      <column columnName="rev_">
+        <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="execution_id_">
+        <columnTitle>Execution Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_inst_id_">
+        <columnTitle>Process Instance Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_def_id_">
+        <columnTitle>Process Definition Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RE_PROCDEF</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+          <fkDisplayColumnName>key_</fkDisplayColumnName>
+        </fk>
+      </column>
+      <column columnName="name_">
+        <columnTitle>Name</columnTitle>
+      </column>
+      <column columnName="parent_task_id_">
+              <columnTitle>Parent Task</columnTitle>
+      </column>
+      <column columnName="description_">
+              <columnTitle>Description</columnTitle>
+      </column>
+      <column columnName="task_def_key_">
+              <columnTitle>Task Definition Key</columnTitle>
+      </column>
+      <column columnName="owner_">
+        <columnTitle>Owner</columnTitle>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="assignee_">
+        <columnTitle>Assignee</columnTitle>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="delegation_">
+        <columnTitle>Delegation State</columnTitle>
+      </column>
+      <column columnName="priority_">
+              <columnTitle>Priority</columnTitle>
+      </column>
+      <column columnName="create_time_">
+              <columnTitle>Created</columnTitle>
+      </column>
+      <column columnName="due_date_">
+              <columnTitle>Due Date</columnTitle>
+      </column>
+      <column columnName="category_">
+              <columnTitle>Category</columnTitle>
+      </column>
+      <column columnName="suspension_state_">
+              <columnTitle>Suspension State</columnTitle>
+      </column>
+      <column columnName="tenant_id_">
+              <columnTitle>Container</columnTitle>
+      </column>
+      <column columnName="form_key_">
+              <columnTitle>Form Key</columnTitle>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_re_deployment" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+         <columnTitle>RowId</columnTitle>
+      </column>
+      <column columnName="name_">
+         <columnTitle>Name</columnTitle>
+      </column>
+      <column columnName="category_">
+         <columnTitle>Category</columnTitle>
+      </column>
+      <column columnName="tenant_id_">
+         <columnTitle>Container</columnTitle>
+      </column>
+      <column columnName="deploy_time_">
+         <columnTitle>Deployed</columnTitle>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_ge_property" tableDbType="TABLE">
+    <columns>
+      <column columnName="name_"/>
+      <column columnName="value_"/>
+      <column columnName="rev_"/>
+    </columns>
+  </table>
+  <table tableName="act_ru_event_subscr" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="event_type_"/>
+      <column columnName="event_name_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="activity_id_"/>
+      <column columnName="configuration_"/>
+      <column columnName="created_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="tenant_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_hi_actinst" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="act_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="call_proc_inst_id_"/>
+      <column columnName="act_name_"/>
+      <column columnName="act_type_"/>
+      <column columnName="assignee_"/>
+      <column columnName="start_time_"/>
+      <column columnName="end_time_"/>
+      <column columnName="duration_"/>
+      <column columnName="tenant_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_ru_variable" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+         <columnTitle>RowId</columnTitle>
+      </column>
+      <column columnName="rev_">
+         <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="type_">
+         <columnTitle>Type</columnTitle>
+      </column>
+      <column columnName="name_">
+         <columnTitle>Name</columnTitle>
+      </column>
+      <column columnName="execution_id_">
+        <columnTitle>Execution Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_inst_id_">
+        <columnTitle>Process Instance Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="task_id_">
+         <columnTitle>Task Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_TASK</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="bytearray_id_">
+         <columnTitle>Bytearray Id</columnTitle>
+      </column>
+      <column columnName="double_">
+         <columnTitle>Double</columnTitle>
+      </column>
+      <column columnName="long_">
+         <columnTitle>Long</columnTitle>
+      </column>
+      <column columnName="text_">
+         <columnTitle>Text</columnTitle>
+      </column>
+      <column columnName="text2_">
+         <columnTitle>Text 2</columnTitle>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_hi_identitylink" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+         <columnName>RowId</columnName>
+      </column>
+      <column columnName="group_id_">
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>principals</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="type_">
+         <columnName>Type</columnName>
+      </column>
+      <column columnName="user_id_">
+         <columnName>User Id</columnName>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="group_id_">
+         <columnName>Group Id</columnName>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Principals</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="task_id_">
+        <columnTitle>Task Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>act_ru_task</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_inst_id_">
+        <columnTitle>Process Instance Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_ru_execution" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+         <columnTitle>RowId</columnTitle>
+      </column>
+      <column columnName="rev_">
+         <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="proc_inst_id_">
+        <columnTitle>Process Instance Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="business_key_">
+         <columnTitle>Business Key</columnTitle>
+      </column>
+      <column columnName="parent_id_">
+        <columnTitle>Parent Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_def_id_">
+        <columnTitle>Process Definition Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RE_PROCDEF</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+          <fkDisplayColumnName>key_</fkDisplayColumnName>
+        </fk>
+      </column>
+      <column columnName="super_exec_"/>
+      <column columnName="act_id_"/>
+      <column columnName="is_active_">
+         <columnTitle>Is Active</columnTitle>
+      </column>
+      <column columnName="is_concurrent_">
+         <columnTitle>Is Concurrent</columnTitle>
+      </column>
+      <column columnName="is_scope_">
+         <columnTitle>Is Scope</columnTitle>
+      </column>
+      <column columnName="is_event_scope_">
+         <columnTitle>Is Event Scope</columnTitle>
+      </column>
+      <column columnName="suspension_state_">
+         <columnTitle>Suspension State</columnTitle>
+      </column>
+      <column columnName="cached_ent_state_">
+         <columnTitle>Cached Entity State</columnTitle>
+      </column>
+      <column columnName="tenant_id_">
+         <columnTitle>Container</columnTitle>
+      </column>
+      <column columnName="name_">
+         <columnTitle>Name</columnTitle>
+      </column>
+      <column columnName="lock_time_">
+         <columnTitle>Lock Time</columnTitle>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_ge_bytearray" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="name_"/>
+      <column columnName="deployment_id_"/>
+      <column columnName="bytes_"/>
+      <column columnName="generated_"/>
+    </columns>
+  </table>
+  <table tableName="act_re_model" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="name_"/>
+      <column columnName="key_"/>
+      <column columnName="category_"/>
+      <column columnName="create_time_"/>
+      <column columnName="last_update_time_"/>
+      <column columnName="version_"/>
+      <column columnName="meta_info_"/>
+      <column columnName="deployment_id_"/>
+      <column columnName="editor_source_value_id_"/>
+      <column columnName="editor_source_extra_value_id_"/>
+      <column columnName="tenant_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_re_procdef" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+         <columnTitle>RowId</columnTitle>
+      </column>
+      <column columnName="rev_">
+         <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="category_">
+         <columnTitle>Category</columnTitle>
+      </column>
+      <column columnName="name_">
+         <columnTitle>Name</columnTitle>
+      </column>
+      <column columnName="key_">
+         <columnTitle>Key</columnTitle>
+      </column>
+      <column columnName="version_">
+         <columnTitle>Version</columnTitle>
+      </column>
+      <column columnName="deployment_id_">
+        <columnTitle>Deployment Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>act_re_deployment</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+          <fkDisplayColumnName>deploymentKey_</fkDisplayColumnName>
+        </fk>
+      </column>
+      <column columnName="resource_name_">
+         <columnTitle>Resource Name</columnTitle>
+      </column>
+      <column columnName="dgrm_resource_name_">
+         <columnTitle>Diagram Resource Name</columnTitle>
+      </column>
+      <column columnName="description_">
+         <columnTitle>Description</columnTitle>
+      </column>
+      <column columnName="has_start_form_key_">
+         <columnTitle>Has Start Form Key</columnTitle>
+      </column>
+      <column columnName="has_graphical_notation_">
+         <columnTitle>Has Graphical Notation</columnTitle>
+      </column>
+      <column columnName="suspension_state_">
+         <columnTitle>Suspension State</columnTitle>
+      </column>
+      <column columnName="tenant_id_">
+         <columnTitle>Container</columnTitle>
+      </column>
+    </columns>
+  </table>
+  <table tableName="act_hi_procinst" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="business_key_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="start_time_"/>
+      <column columnName="end_time_"/>
+      <column columnName="duration_"/>
+      <column columnName="start_user_id_"/>
+      <column columnName="start_act_id_"/>
+      <column columnName="end_act_id_"/>
+      <column columnName="super_process_instance_id_"/>
+      <column columnName="delete_reason_"/>
+      <column columnName="tenant_id_"/>
+      <column columnName="name_"/>
+    </columns>
+  </table>
+  <table tableName="act_hi_attachment" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="user_id_"/>
+      <column columnName="name_"/>
+      <column columnName="description_"/>
+      <column columnName="type_"/>
+      <column columnName="task_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="url_"/>
+      <column columnName="content_id_"/>
+      <column columnName="time_"/>
+    </columns>
+  </table>
+  <table tableName="act_evt_log" tableDbType="TABLE">
+    <columns>
+      <column columnName="log_nr_"/>
+      <column columnName="type_"/>
+      <column columnName="proc_def_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="time_stamp_"/>
+      <column columnName="user_id_"/>
+      <column columnName="data_"/>
+      <column columnName="lock_owner_"/>
+      <column columnName="lock_time_"/>
+      <column columnName="is_processed_"/>
+    </columns>
+  </table>
+  <table tableName="act_hi_varinst" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="name_"/>
+      <column columnName="var_type_"/>
+      <column columnName="rev_"/>
+      <column columnName="bytearray_id_"/>
+      <column columnName="double_"/>
+      <column columnName="long_"/>
+      <column columnName="text_"/>
+      <column columnName="text2_"/>
+      <column columnName="create_time_"/>
+      <column columnName="last_updated_time_"/>
+    </columns>
+  </table>
+  <table tableName="act_ru_identitylink" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="rev_"/>
+      <column columnName="group_id_"/>
+      <column columnName="type_"/>
+      <column columnName="user_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="proc_def_id_"/>
+    </columns>
+  </table>
+  <table tableName="act_hi_detail" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_"/>
+      <column columnName="type_"/>
+      <column columnName="proc_inst_id_"/>
+      <column columnName="execution_id_"/>
+      <column columnName="task_id_"/>
+      <column columnName="act_inst_id_"/>
+      <column columnName="name_"/>
+      <column columnName="var_type_"/>
+      <column columnName="rev_"/>
+      <column columnName="time_"/>
+      <column columnName="bytearray_id_"/>
+      <column columnName="double_"/>
+      <column columnName="long_"/>
+      <column columnName="text_"/>
+      <column columnName="text2_"/>
+    </columns>
+  </table>
+</tables>
