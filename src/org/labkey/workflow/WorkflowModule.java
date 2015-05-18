@@ -21,8 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 
@@ -64,6 +63,13 @@ public class WorkflowModule extends DefaultModule
     {
         addController(WorkflowController.NAME, WorkflowController.class);
         WorkflowQuerySchema.register(this);
+    }
+
+    @NotNull
+    @Override
+    public Set<? extends ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.singleton(new WorkflowModuleResourceLoader());
     }
 
     @Override

@@ -28,7 +28,7 @@ public class WorkflowSummary
     public WorkflowSummary(String processDefinitionKey, User user, Container container)
     {
         _processDefinitionKey = processDefinitionKey;
-        _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey);
+        _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey, container);
         setSummaryCounts(user, container);
     }
 

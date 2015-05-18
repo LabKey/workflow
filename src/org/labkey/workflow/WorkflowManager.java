@@ -26,6 +26,7 @@ import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
+import org.activiti.engine.repository.ProcessDefinitionQuery;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.task.IdentityLink;
@@ -33,6 +34,8 @@ import org.activiti.engine.task.Task;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -42,12 +45,18 @@ import org.labkey.workflow.model.WorkflowTask;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class WorkflowManager
 {
@@ -55,7 +64,10 @@ public class WorkflowManager
     private ProcessEngine _processEngine = null;
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
-    private static final String WORKFLOW_MODEL_DIR = "resources/workflow/model";
+    public static final String WORKFLOW_MODEL_DIR = "workflow/model";
+    private final Set<Module> _workflowModules = new CopyOnWriteArraySet<>();
+    // map between module name and the list of workflow model files defined in that module
+    private Map<String, List<File>> _workflowModelFiles = new HashMap<>();
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -69,9 +81,70 @@ public class WorkflowManager
         return _instance;
     }
 
+    // At startup, we record all modules with "resources/workflow/model" directories and register a file listener to monitor for changes.
+    // Loading the list of models in each module and the descriptors themselves happens lazily.
+    public void registerModule(Module module)
+    {
+        _workflowModules.add(module);
+    }
+
+
+    @NotNull
+    public List<File> getWorkflowModels(@Nullable Container container)
+    {
+        Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        ArrayList<File> modelsList = new ArrayList<>();
+
+        for (Module module : activeModules)
+        {
+            if (!_workflowModules.contains(module))
+                continue;
+
+            modelsList.addAll(getWorkflowModels(module));
+
+        }
+        // now add the models defined in the workflow module itself
+        modelsList.addAll(getWorkflowModels(ModuleLoader.getInstance().getModule(WorkflowModule.NAME), "model"));
+
+        return Collections.unmodifiableList(modelsList);
+    }
+
+    private List<File> getWorkflowModels(@NotNull Module module)
+    {
+        return getWorkflowModels(module, WORKFLOW_MODEL_DIR);
+    }
+
+    private List<File> getWorkflowModels(@NotNull Module module, String directory)
+    {
+        List<File> models = new ArrayList<>();
+        if (_workflowModelFiles.get(module.getName()) == null)
+        {
+            File modelDir = new File(module.getExplodedPath(), directory);
+            if (modelDir.isDirectory())
+            {
+                String[] modelFiles = modelDir.list(new FilenameFilter()
+                {
+                    public boolean accept(File dir, String name)
+                    {
+                        return name.endsWith(WORKFLOW_FILE_NAME_EXTENSION);
+                    }
+                });
+                for (String modelFile : modelFiles)
+                {
+                    models.add(new File(modelDir, modelFile));
+                }
+                _workflowModelFiles.put(module.getName(), models);
+            }
+        }
+        else
+        {
+            models = _workflowModelFiles.get(module.getName());
+        }
+        return models;
+    }
+
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
-
         List<Integer> groupIds = new ArrayList<>();
         Task task = getTask(taskId);
         List<IdentityLink> links = getRuntimeService().getIdentityLinksForProcessInstance(task.getProcessInstanceId());
@@ -444,26 +517,36 @@ public class WorkflowManager
         return processInstance.getProcessVariables();
     }
 
-    public ProcessDefinition getProcessDefinition(@NotNull String processDefinitionKey)
+    public ProcessDefinition getProcessDefinition(@NotNull String processDefinitionKey, Container container)
     {
-        return getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).latestVersion().singleResult();
+        return getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).processDefinitionTenantId(container.getId()).latestVersion().singleResult();
     }
 
     /**
      * @param container the container for which this query is being made
      * @return the number of process definitions currently deployed in the system.
      */
-    protected long getProcessDefinitionCount(@NotNull Container container)
+    protected long getProcessDefinitionCount(@Nullable Container container)
     {
-        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).count();
+        ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery();
+        if (container != null)
+        {
+            query.processDefinitionTenantId(container.getId());
+        }
+        return query.count();
     }
 
-    public List<ProcessDefinition> getProcessDefinitionList(@NotNull Container container)
+    public List<ProcessDefinition> getProcessDefinitionList(@Nullable Container container)
     {
-        return getRepositoryService().createProcessDefinitionQuery().processDefinitionTenantId(container.getId()).latestVersion().list();
+        ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery();
+        if (container != null)
+        {
+            query.processDefinitionTenantId(container.getId());
+        }
+        return query.latestVersion().list();
     }
 
-    public Map<String, String> getProcessDefinitionNames(@NotNull Container container)
+    public Map<String, String> getProcessDefinitionNames(@Nullable Container container)
     {
         Map<String, String> keyToNameMap = new HashMap<>();
 
@@ -490,6 +573,13 @@ public class WorkflowManager
             return null;
     }
 
+    public String deployWorkflow(@NotNull File modelFile, @NotNull Container container) throws FileNotFoundException
+    {
+        FileInputStream stream = new FileInputStream(modelFile);
+        Deployment deployment = getRepositoryService().createDeployment().tenantId(container.getId()).addInputStream(modelFile.getAbsolutePath(), stream).deploy();
+        return deployment.getId();
+    }
+
     public String deployWorkflow(@NotNull String workflowName, @NotNull Container container)
     {
         Deployment deployment = getRepositoryService().createDeployment().tenantId(container.getId()).addClasspathResource(getWorkflowFileName(workflowName)).deploy();
@@ -503,7 +593,7 @@ public class WorkflowManager
 
     private String getWorkflowFileName(@NotNull String workflowName)
     {
-        return WORKFLOW_MODEL_DIR + File.separator + workflowName + WORKFLOW_FILE_NAME_EXTENSION;
+        return "resources/workflow/model" + File.separator + workflowName + WORKFLOW_FILE_NAME_EXTENSION;
     }
 
     protected RuntimeService getRuntimeService()

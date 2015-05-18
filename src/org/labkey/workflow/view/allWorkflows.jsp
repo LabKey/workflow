@@ -19,14 +19,44 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
+<%@ page import="org.labkey.workflow.WorkflowManager" %>
+<%@ page import="java.io.File" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("workflow/workflow.js"));
+
+        return resources;
+    }
+%>
 <%
     HttpView me = HttpView.currentView();
 
     WorkflowController.AllWorkflowsBean bean = (WorkflowController.AllWorkflowsBean) me.getModelBean();
     Map<String, String> processDefinitions = bean.getWorkflowDefinitions();
+    List<File> models = WorkflowManager.get().getWorkflowModels(getViewContext().getContainer());
 
+%>
+The models currently available in this container are:
+<ul>
+<%
+    for (File model : models)
+    {
+%>
+    <li><%= model.getAbsolutePath() %> <%= PageFlowUtil.textLink("Deploy",
+            new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("file", model.getAbsolutePath())) %></li>
+<%
+    }
+%>
+</ul>
+<%
     if (processDefinitions.isEmpty())
     {
 %>
@@ -50,4 +80,5 @@ The following workflows are currently deployed in this container:
 <%
         }
     }
+
 %>

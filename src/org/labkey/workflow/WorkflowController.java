@@ -52,6 +52,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -589,6 +590,19 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ModelListAction extends ApiAction
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("models", WorkflowManager.get().getWorkflowModels(getContainer()));
+            return success(response);
+        }
+    }
+
     /**
      * Creates a new deployment of a process definition
      */
@@ -602,6 +616,16 @@ public class WorkflowController extends SpringActionController
             if (form.getProcessDefinitionKey() != null)
             {
                 response.put("deploymentId", WorkflowManager.get().deployWorkflow(form.getProcessDefinitionKey(), getContainer()));
+                return success(response);
+            }
+            else if (form.getFile() != null)
+            {
+                File modelFile = new File(form.getFile());
+                response.put("deploymentId", WorkflowManager.get().deployWorkflow(modelFile, getContainer()));
+            }
+            else
+            {
+                throw new Exception("No process specified for deployment");
             }
             return success(response);
         }
@@ -609,6 +633,7 @@ public class WorkflowController extends SpringActionController
 
     public static class DeploymentForm
     {
+        private String _file;
         private String _processDefinitionKey;
 
         public String getProcessDefinitionKey()
@@ -619,6 +644,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionKey(String processDefinitionKey)
         {
             _processDefinitionKey = processDefinitionKey;
+        }
+
+        public String getFile()
+        {
+            return _file;
+        }
+
+        public void setFile(String file)
+        {
+            _file = file;
         }
     }
 

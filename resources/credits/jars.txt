@@ -1,0 +1,10 @@
+{table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
+activiti-bpmn-converter-5.17.0.jar|Workflow|5.17|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 parser
+activiti-bpmn-model-5.17.0.jar|Workflow|5.17|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 modeling library
+activiti-engine-5.17.0.jar|Workflow|5.17|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN Engine
+activiti-image-generator-5.17.0.jar|Workflow|5.17|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 model image library
+activiti-process-validation-5.17.0.jar|Workflow|5.17|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 model validation 
+joda-time-2.6.jar|Workflow|2.6|{link:Joda.org|http://www.joda.org/joda-time/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|Dependency of Activiti workflow engine
+mybatis-3.2.5.jar|Workflow|3.2.5|{link:Mybatis|https://mybatis.github.io/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|Dependency of Activiti for database interaction
+{table}
