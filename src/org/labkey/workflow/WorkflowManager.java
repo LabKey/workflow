@@ -35,15 +35,24 @@ import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.NativeTaskQuery;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.SimpleFolderType;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.util.Path;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowTask;
 
@@ -73,6 +82,8 @@ public class WorkflowManager
     private final Set<Module> _workflowModules = new CopyOnWriteArraySet<>();
     // map between module name and the list of workflow model files defined in that module
     private Map<String, List<File>> _workflowModelFiles = new HashMap<>();
+
+    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(new Path(WORKFLOW_MODEL_DIR), "Workflow model definitions", new WorkflowModelFileCacheHandler());
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -106,6 +117,7 @@ public class WorkflowManager
                 continue;
 
             modelsList.addAll(getWorkflowModels(module));
+            getWorkflowModelFiles(module);
 
         }
         // now add the models defined in the workflow module itself
@@ -118,6 +130,7 @@ public class WorkflowManager
     {
         return getWorkflowModels(module, WORKFLOW_MODEL_DIR);
     }
+
 
     private List<File> getWorkflowModels(@NotNull Module module, String directory)
     {
@@ -146,6 +159,12 @@ public class WorkflowManager
             models = _workflowModelFiles.get(module.getName());
         }
         return models;
+    }
+
+
+    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
+    {
+        return CACHE.getResources(module);
     }
 
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
@@ -685,6 +704,55 @@ public class WorkflowManager
             _processEngine = processConfig.buildProcessEngine();
         }
         return _processEngine;
+    }
+
+
+    private static class WorkflowModelFileCacheHandler implements ModuleResourceCacheHandler<String, File>
+    {
+        @Override
+        public boolean isResourceFile(String filename)
+        {
+            return StringUtils.endsWithIgnoreCase(filename, WORKFLOW_FILE_NAME_EXTENSION);
+        }
+
+        @Override
+        public String getResourceName(Module module, String filename)
+        {
+            return filename;
+        }
+
+        @Override
+        public String createCacheKey(Module module, String resourceName)
+        {
+            return ModuleResourceCache.createCacheKey(module, resourceName);
+        }
+
+        @Override
+        public CacheLoader<String, File> getResourceLoader()
+        {
+            return new CacheLoader<String, File>()
+            {
+                @Override
+                public File load(String key, @Nullable Object argument)
+                {
+                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                    Module module = id.getModule();
+                    String filename = id.getName();
+                    Path path = new Path(WORKFLOW_MODEL_DIR, filename);
+                    Resource resource  = module.getModuleResolver().lookup(path);
+
+                    return new File(resource.getPath().toString());
+                }
+            };
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return null;
+        }
+
     }
 
 }
