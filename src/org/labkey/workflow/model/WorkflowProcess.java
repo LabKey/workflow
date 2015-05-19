@@ -20,7 +20,8 @@ public class WorkflowProcess implements HasViewContext
     private ProcessInstance _engineProcessInstance;
 
     public static final String INITIATOR_ID = "initiatorId";
-    public static final String CONTAINTER_ID = "container";
+    public static final String CONTAINER_ID = "container";
+    public static final String CREATED_DATE = "created";
 
     private String _processDefinitionKey;
     private String _id;

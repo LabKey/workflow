@@ -18,6 +18,7 @@ package org.labkey.workflow;
 
 import org.activiti.engine.task.Task;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -42,10 +43,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowSummary;
 import org.labkey.workflow.model.WorkflowTask;
+import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -97,12 +98,14 @@ public class WorkflowController extends SpringActionController
     public class AllWorkflowsBean
     {
         private Map<String, String> _workflowDefinitions = new HashMap<>();
+        private List<File> _models;
 
         public AllWorkflowsBean() {}
 
-        public AllWorkflowsBean(Container container)
+        public AllWorkflowsBean(@Nullable Container container)
         {
             setWorkflowDefinitions(WorkflowManager.get().getProcessDefinitionNames(container));
+            setModels(WorkflowManager.get().getWorkflowModels(null));
         }
 
         public Map<String, String> getWorkflowDefinitions()
@@ -113,6 +116,16 @@ public class WorkflowController extends SpringActionController
         public void setWorkflowDefinitions(Map<String, String> workflowDefinitions)
         {
             _workflowDefinitions = workflowDefinitions;
+        }
+
+        public List<File> getModels()
+        {
+            return _models;
+        }
+
+        public void setModels(List<File> models)
+        {
+            _models = models;
         }
     }
 
@@ -470,19 +483,77 @@ public class WorkflowController extends SpringActionController
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
     @RequiresPermissionClass(UpdatePermission.class)
-    public class StartProcessAction extends ApiAction<WorkflowProcess>
+    public class StartProcessAction extends ApiAction<StartWorkflowProcessForm>
     {
         @Override
-        public Object execute(WorkflowProcess form, BindException errors) throws Exception
+        public Object execute(StartWorkflowProcessForm form, BindException errors) throws Exception
         {
             if (form.getProcessDefinitionKey() == null)
                 throw new Exception("No process key provided");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            String instanceId = WorkflowManager.get().startWorkflow(form, getContainer());
+            form.setInitiatorId(getUser().getUserId());
+            form.setContainerId(getContainer().getId());
+
+            String instanceId = WorkflowManager.get().startWorkflow(form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
             response.put("processInstanceId", instanceId);
             return success(response);
+        }
+    }
+
+    public static class StartWorkflowProcessForm
+    {
+        private String _processDefinitionKey;
+        private String _name;
+        private Map<String, Object> _processVariables;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getProcessDefinitionKey()
+        {
+            return _processDefinitionKey;
+        }
+
+        public void setProcessDefinitionKey(String processDefinitionKey)
+        {
+            _processDefinitionKey = processDefinitionKey;
+        }
+
+        public void setInitiatorId(int userId)
+        {
+            if (_processVariables == null)
+            {
+                _processVariables = new HashMap<>();
+            }
+            _processVariables.put(WorkflowProcess.INITIATOR_ID, String.valueOf(userId));
+        }
+
+        public void setContainerId(String containerId)
+        {
+            if (_processVariables == null)
+            {
+                _processVariables = new HashMap<>();
+            }
+            _processVariables.put(WorkflowProcess.CONTAINER_ID, containerId);
+        }
+
+        public Map<String, Object> getProcessVariables()
+        {
+            return _processVariables;
+        }
+
+        public void setProcessVariables(Map<String, Object> processVariables)
+        {
+            _processVariables = processVariables;
         }
     }
 

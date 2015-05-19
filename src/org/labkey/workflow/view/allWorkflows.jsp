@@ -41,13 +41,12 @@
 
     WorkflowController.AllWorkflowsBean bean = (WorkflowController.AllWorkflowsBean) me.getModelBean();
     Map<String, String> processDefinitions = bean.getWorkflowDefinitions();
-    List<File> models = WorkflowManager.get().getWorkflowModels(getViewContext().getContainer());
 
 %>
 The models currently available in this container are:
 <ul>
 <%
-    for (File model : models)
+    for (File model : bean.getModels())
     {
 %>
     <li><%= model.getAbsolutePath() %> <%= PageFlowUtil.textLink("Deploy",

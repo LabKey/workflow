@@ -29,7 +29,7 @@ public class WorkflowTenantTable extends SimpleUserSchema.SimpleTable<WorkflowQu
     public void wrapAllColumns()
     {
         super.wrapAllColumns();
-        ColumnInfo containerColumn = getColumn("Tenant_id_");
+        ColumnInfo containerColumn = getColumn("tenant_id_");
         containerColumn.setFk(new ContainerForeignKey(getUserSchema()));
         containerColumn.setUserEditable(false);
         containerColumn.setShownInInsertView(false);
