@@ -6,6 +6,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.workflow.WorkflowManager;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -53,6 +54,16 @@ public class WorkflowSummary
     public boolean hasDiagram()
     {
         return _engineProcessDefinition != null && _engineProcessDefinition.getResourceName() != null;
+    }
+
+    public File getModelFile()
+    {
+        File file = null;
+        if (_engineProcessDefinition != null)
+        {
+            file = new File(_engineProcessDefinition.getResourceName());
+        }
+        return file;
     }
 
 

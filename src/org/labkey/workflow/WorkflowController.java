@@ -562,16 +562,31 @@ public class WorkflowController extends SpringActionController
      * process and for administrators.
      */
     @RequiresPermissionClass(ReadPermission.class)
-    public class RemoveProcessAction extends ApiAction<WorkflowProcess>
+    public class RemoveProcessAction extends ApiAction<RemoveWorkflowProcessForm>
     {
         @Override
-        public Object execute(WorkflowProcess form, BindException errors) throws Exception
+        public Object execute(RemoveWorkflowProcessForm form, BindException errors) throws Exception
         {
-            if (form.getId() == null)
-                throw new Exception("No process id provided");
+            if (form.getProcessInstanceId() == null)
+                throw new Exception("No process instance id provided");
 
             WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), null);
             return success();
+        }
+    }
+
+    public static class RemoveWorkflowProcessForm
+    {
+        private String _processInstanceId;
+
+        public String getProcessInstanceId()
+        {
+            return _processInstanceId;
+        }
+
+        public void setProcessInstanceId(String processInstanceId)
+        {
+            _processInstanceId = processInstanceId;
         }
     }
 
@@ -684,12 +699,7 @@ public class WorkflowController extends SpringActionController
         public Object execute(DeploymentForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            if (form.getProcessDefinitionKey() != null)
-            {
-                response.put("deploymentId", WorkflowManager.get().deployWorkflow(form.getProcessDefinitionKey(), getContainer()));
-                return success(response);
-            }
-            else if (form.getFile() != null)
+            if (form.getFile() != null)
             {
                 File modelFile = new File(form.getFile());
                 response.put("deploymentId", WorkflowManager.get().deployWorkflow(modelFile, getContainer()));

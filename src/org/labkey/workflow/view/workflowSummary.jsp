@@ -123,6 +123,7 @@
             {
         %>
         <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getViewContext().getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>--%>
         <%
             }
         %>
@@ -130,8 +131,9 @@
 </ul>
 
 <br>
-<strong>Current Process Diagram</strong> <%= PageFlowUtil.button("Deploy New Version").href(new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+<strong>Current Process Diagram</strong>
 <br>
+<%= bean.getModelFile() %>
 <br>
 <%
     if (bean.hasDiagram())

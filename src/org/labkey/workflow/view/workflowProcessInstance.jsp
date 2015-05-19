@@ -27,7 +27,7 @@
     HttpView me = HttpView.currentView();
     WorkflowProcess bean = (WorkflowProcess) me.getModelBean();
 %>
-<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefintionKey", bean.getProcessDefinitionKey()))%>
+<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <br>
 <br>
 <%

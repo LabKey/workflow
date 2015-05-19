@@ -603,6 +603,7 @@ public class WorkflowManager
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
+
         return getRepositoryService().getProcessDiagram(instance.getProcessDefinitionId());
     }
 
@@ -635,15 +636,6 @@ public class WorkflowManager
     {
         FileInputStream stream = new FileInputStream(modelFile);
         DeploymentBuilder builder = getRepositoryService().createDeployment().addInputStream(modelFile.getAbsolutePath(), stream);
-        if (container != null)
-            builder.tenantId(container.getId());
-        Deployment deployment = builder.deploy();
-        return deployment.getId();
-    }
-
-    public String deployWorkflow(@NotNull String workflowName, @NotNull Container container)
-    {
-        DeploymentBuilder builder = getRepositoryService().createDeployment().addClasspathResource(getWorkflowFileName(workflowName));
         if (container != null)
             builder.tenantId(container.getId());
         Deployment deployment = builder.deploy();
