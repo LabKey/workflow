@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -46,7 +48,7 @@
 %>
 
 <br>
-<strong>Process Instance Details</strong>
+<br>
 <table class="labkey-proj">
     <tr>
         <td>Initiator</td>
@@ -65,10 +67,9 @@
                     !"userId".equalsIgnoreCase(variable.getKey()) &&
                     !"container".equalsIgnoreCase(variable.getKey()))
                 {
-
     %>
     <tr>
-        <td><%= variable.getKey() %></td>
+        <td><%= StringUtilsLabKey.splitCamelCase(StringUtils.capitalize(variable.getKey())) %></td>
         <td><%= variable.getValue() %></td>
     </tr>
         <%
@@ -94,5 +95,5 @@
 
 <br>
 <strong>Process Diagram</strong>
-<br>
+<br><br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">

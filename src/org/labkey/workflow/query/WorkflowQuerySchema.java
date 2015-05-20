@@ -1,17 +1,22 @@
 package org.labkey.workflow.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
@@ -20,7 +25,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowController;
@@ -29,6 +33,8 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -113,25 +119,32 @@ public class WorkflowQuerySchema extends UserSchema
                 @Override
                 protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
                 {
-                    SimpleDisplayColumn actionColumn = new SimpleDisplayColumn()
-                    {
-                        @Override
-                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-                        {
-                            Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("tenant_id_")).toString());
-                            Integer group  = (Integer) ctx.get("group_");
-                            if (((group != null) && getUser().isInGroup(group)) || getContainer().hasPermission(getUser(), AdminPermission.class))
-                            {
-                                ActionURL claimUrl = new ActionURL(WorkflowController.ClaimTaskAction.class, c)
-                                        .addParameter("ownerId", getUser().getUserId())
-                                        .addParameter("assigneeId", getUser().getUserId())
-                                        .addParameter("taskId", (String) ctx.get("id_"));
-                                out.write(PageFlowUtil.textLink("Claim", claimUrl));
-                            }
-                            // TODO add the details link here
-                        }
-                    };
-                    ret.add(actionColumn);
+                    ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
+                    DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
+                    setDetailsURL(detailsURL.toString());
+                    ret.add(getReassignmentColumn(table, "Claim", null));
+                    ret.add(getReassignmentColumn(table, "Delegate", null));
+                    ret.add(getReassignmentColumn(table, "Assign", null));
+//                    SimpleDisplayColumn actionColumn = new SimpleDisplayColumn()
+//                    {
+//                        @Override
+//                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+//                        {
+//                            Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("tenant_id_")).toString());
+//                            Integer group  = (Integer) ctx.get("group_");
+//                            if (((group != null) && getUser().isInGroup(group)) || getContainer().hasPermission(getUser(), AdminPermission.class))
+//                            {
+//                                ActionURL claimUrl = new ActionURL(WorkflowController.ClaimTaskAction.class, c)
+//                                        .addParameter("ownerId", getUser().getUserId())
+//                                        .addParameter("assigneeId", getUser().getUserId())
+//                                        .addParameter("taskId", (String) ctx.get("id_"));
+//                                out.write(PageFlowUtil.textLink("Claim", claimUrl));
+//                            }
+//
+//                        }
+//                    };
+//                    ret.add(actionColumn);
+
                 }
             };
         }
@@ -140,5 +153,68 @@ public class WorkflowQuerySchema extends UserSchema
         queryView.setShowInsertNewButton(false);
         queryView.setShowImportDataButton(false);
         return queryView;
+    }
+
+    private DisplayColumn getReassignmentColumn(@NotNull TableInfo table, @NotNull String linkText, @Nullable String title)
+    {
+        AliasedColumn reassignmentColumn = new AliasedColumn(linkText, table.getColumn("id_"));
+        reassignmentColumn.setDisplayColumnFactory(new ReassignmentDisplayColumnFactory(linkText));
+        return reassignmentColumn.getRenderer();
+    }
+
+    private class ReassignmentDisplayColumnFactory implements DisplayColumnFactory
+    {
+        private String _assignmentType;
+
+        public ReassignmentDisplayColumnFactory(String assignmentType)
+        {
+            _assignmentType = assignmentType;
+        }
+
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            Collection<String> dependencies = Collections.singletonList("workflow/view/reassignTask.js");
+            String javaScriptEvent = "onclick=\"createReassignTaskWindow(${id_:jsString}, '" + _assignmentType + "');\"";
+            return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
+            {
+                @NotNull
+                @Override
+                public String getFormattedValue(RenderContext ctx)
+                {
+                    return _assignmentType;
+                }
+
+                @Override
+                public void renderTitle(RenderContext ctx, Writer out) throws IOException
+                {
+                    // no title for these columns
+                }
+
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilterable()
+                {
+                    return false;
+                }
+
+                @Override
+                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                {
+                    Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("tenant_id_")).toString());
+                    // TODO add in the proper permissions check here, passed in as part of the constructor
+                    Integer group = (Integer) ctx.get("group_");
+                    if (((group != null) && getUser().isInGroup(group)) || getContainer().hasPermission(getUser(), AdminPermission.class))
+                    {
+                        super.renderGridCellContents(ctx, out);
+                    }
+                }
+            };
+        }
     }
 }

@@ -123,7 +123,7 @@ public class WorkflowProcess implements HasViewContext
     public String getName()
     {
         if (_engineProcessInstance != null)
-            _engineProcessInstance.getName();
+            return _engineProcessInstance.getName();
         return _name;
     }
 

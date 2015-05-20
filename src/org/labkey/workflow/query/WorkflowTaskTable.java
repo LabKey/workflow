@@ -8,22 +8,26 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.workflow.WorkflowController;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -50,7 +54,46 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
-
+//        AliasedColumn delegateColumn = new AliasedColumn("Delegate", getColumn("id_"));
+//        delegateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+//        {
+//               @Override
+//               public DisplayColumn createRenderer(ColumnInfo colInfo)
+//               {
+//                   Collection<String> dependencies = Collections.singletonList("workflow/view/reassignTask.js");
+//                   String javaScriptEvent = "onclick=\"createReassignTaskWindow(${taskId:jsString}, true);\"";
+//                   return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
+//                   {
+//                       @NotNull
+//                       @Override
+//                       public String getFormattedValue(RenderContext ctx)
+//                       {
+//                           return "delegate";
+//                       }
+//
+//                       @Override
+//                       public void renderTitle(RenderContext ctx, Writer out) throws IOException
+//                       {
+//                           // no title
+//                       }
+//
+//                       @Override
+//                       public boolean isSortable()
+//                       {
+//                           return false;
+//                       }
+//
+//                       @Override
+//                       public boolean isFilterable()
+//                       {
+//                           return false;
+//                       }
+//                   };
+//               }
+//
+//        }
+//        );
+//        this.addColumn(delegateColumn);
         addCandidateGroupColumn();
     }
 
