@@ -27,7 +27,7 @@
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
 %>
-<%= PageFlowUtil.textLink("Return to overview", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <br>
 <br>
 <strong><%= bean.getName() %></strong>
@@ -123,10 +123,11 @@
             {
         %>
         <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getViewContext().getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
-        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>--%>
-        <%
+       <%
             }
         %>
+        &nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>
+
     </li>
 </ul>
 
@@ -152,4 +153,4 @@ No process diagram available.
 %>
 <br>
 <br>
-<%= PageFlowUtil.textLink("Return to overview", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>

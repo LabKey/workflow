@@ -12,25 +12,21 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         this.callParent([config]);
         this.addEvents([this.reassignEvent]);
         this.taskId = config['taskId'];
-        this.reassignmentType = config['reassignmentType'];
-        this.title = this.reassignmentType + ' task';
     },
 
     initComponent : function()
     {
         this.border = false;
 
-        RT = this;
-        var store =  this.getUserStore();
         this.userCombo = Ext4.create('Ext.form.field.ComboBox', {
-            store: store,
+            store: this.getUserStore(),
             name: 'reassign',
             itemId: 'reassign',
-            allowBlank: false,
+            allowBlank: true,
             valueField: 'userId',
             displayField: 'displayName',
             padding: '15px 15px',
-            fieldLabel: this.reassignmentType == 'Delegate' ? 'Delegate to' : 'Assign to',
+            fieldLabel: 'User',
             triggerAction: 'all',
             labelWidth: 75,
             typeAhead: true,
@@ -40,7 +36,6 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
                     '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
                     '</tpl>')
         });
-        console.log(store);
 
         this.items = [
             {
@@ -50,12 +45,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
                 padding: '15px 15px',
                 tpl: new Ext4.XTemplate (
                     'You can reassign a task to any user within this project.  ',
-                    '<tpl if = "reassignmentType == &quot;Delegate&quot;">',
-                    'When delegating, you will retain ownership of the task for further review after the task is completed.',
-                    '</tpl>',
-                    '<br><br>',
-
-                    '{reassignmentType:htmlEncode} task {taskId:htmlEncode} to: '
+                    'When delegating, you will retain ownership of the task for further review after the task is completed.'
                 ),
                 data: {
                     reassignmentType: this.reassignmentType,
@@ -74,30 +64,49 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
                 this.close();
             }
         },{
-            text: this.reassignmentType,
-            itemId: 'ReassignButton',
+            text: 'Claim',
+            itemId: 'ClaimButton',
             disabled: false,
             scope: this,
             handler : function() {
-                this.fireEvent(this.reassignEvent, this.taskId, this.reassignmentType);
+                this.fireEvent(this.reassignEvent, this.taskId, "Claim");
                 this.close();
             }
-        }]
+        },{
+            text: 'Delegate',
+            itemId: 'DelegateButton',
+            disabled: false,
+            scope: this,
+            handler : function() {
+                this.fireEvent(this.reassignEvent, this.taskId, "Delegate");
+                this.close();
+            }
+        },{
+            text: 'Assign',
+            itemId: 'AssignButton',
+            disabled: false,
+            scope: this,
+            handler : function() {
+                this.fireEvent(this.reassignEvent, this.taskId, 'Assign');
+                this.close();
+            }
+        }
+        ]
 
         this.callParent();
 
         this.on(this.reassignEvent, this.makeReassignmentRequest, this);
     },
 
-    makeReassignmentRequest: function()
+    makeReassignmentRequest: function(taskId, reassignmentType)
     {
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('workflow', this.reassignmentType + 'Task'),
+            url: LABKEY.ActionURL.buildURL('workflow', reassignmentType + 'Task'),
             method: 'POST',
             params: {
-                taskId: this.taskId,
+                taskId: taskId,
                 ownerId: LABKEY.user.id,
-                assigneeId: this.userCombo.getValue(),
+                assigneeId: reassignmentType == 'Claim' ? LABKEY.user.id : this.userCombo.getValue(),
                 returnUrl: window.location
             },
             scope: this,
@@ -145,9 +154,8 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
 );
 
 // helper used in display column
-function createReassignTaskWindow(taskId, reassignmentType) {
+function createReassignTaskWindow(taskId) {
     Ext4.create("Workflow.view.dialog.ReassignTask", {
-        reassignmentType: reassignmentType,
         taskId: taskId
     }).show();
 }

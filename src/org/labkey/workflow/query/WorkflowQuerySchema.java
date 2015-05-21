@@ -122,29 +122,7 @@ public class WorkflowQuerySchema extends UserSchema
                     ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
                     DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
                     setDetailsURL(detailsURL.toString());
-                    ret.add(getReassignmentColumn(table, "Claim", null));
-                    ret.add(getReassignmentColumn(table, "Delegate", null));
-                    ret.add(getReassignmentColumn(table, "Assign", null));
-//                    SimpleDisplayColumn actionColumn = new SimpleDisplayColumn()
-//                    {
-//                        @Override
-//                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-//                        {
-//                            Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("tenant_id_")).toString());
-//                            Integer group  = (Integer) ctx.get("group_");
-//                            if (((group != null) && getUser().isInGroup(group)) || getContainer().hasPermission(getUser(), AdminPermission.class))
-//                            {
-//                                ActionURL claimUrl = new ActionURL(WorkflowController.ClaimTaskAction.class, c)
-//                                        .addParameter("ownerId", getUser().getUserId())
-//                                        .addParameter("assigneeId", getUser().getUserId())
-//                                        .addParameter("taskId", (String) ctx.get("id_"));
-//                                out.write(PageFlowUtil.textLink("Claim", claimUrl));
-//                            }
-//
-//                        }
-//                    };
-//                    ret.add(actionColumn);
-
+                    ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
         }

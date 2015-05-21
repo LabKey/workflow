@@ -21,10 +21,36 @@
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("workflow/view/reassignTask.js"));
+        resources.add(ClientDependency.fromPath("workflow/view/completeTask.js"));
+
+        return resources;
+    }
+%>
 <%
     HttpView me = HttpView.currentView();
     WorkflowTask bean = (WorkflowTask) me.getModelBean();
+    if (!bean.isActive())
+    {
+%>
+There is no active task with id <%= bean.getId() %>
+<%
+    }
+    else
+    {
 %>
 <%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 
@@ -75,7 +101,6 @@
     <%
         }
         if (bean.isDelegated())
-
         {
     %>
     <tr>
@@ -83,6 +108,16 @@
         <td><%= bean.getAssignee() %></td>
     </tr>
     <%
+            if (bean.canDelegate(getUser(), getContainer()))
+            {
+                %>
+    <tr>
+        <td colspan="2">
+            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
+        </td>
+    </tr>
+    <%
+            }
         }
         else if (bean.getAssignee() != null)
         {
@@ -95,55 +130,60 @@
     </tr>
     <tr>
         <td colspan="2">
-            <%
-                if (bean.canClaim(getUser(), getViewContext().getContainer()))
-            %>
-            <%= PageFlowUtil.textLink("Claim", new ActionURL(WorkflowController.ClaimTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("assigneeId", getUser().getUserId()) )%>
-            <%
-                if (bean.canAssign(getUser(), getViewContext().getContainer()))
-            %>
-            <%= PageFlowUtil.textLink("Assign", new ActionURL(WorkflowController.AssignTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("assigneeId", getUser().getUserId()) )%>
-            <%
-                if (bean.canDelegate(getUser(), getViewContext().getContainer()))
-            %>
-            <%= PageFlowUtil.textLink("Delegate", new ActionURL(WorkflowController.DelegateTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("assigneeId", getUser().getUserId()) )%>
+            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
         </td>
     </tr>
     <%
         }
         else
         {
-
+            %>
+    <tr>
+        <td colspan="2">
+        <%= button("Assign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
+        </td>
+    </tr>
+    <%
         }
     %>
-
     <%
         if (bean.getVariables() != null)
         {
+            Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(bean.getVariables());
     %>
     </table>
     <strong>Task Details</strong>
+<br><br>
     <table class="labkey-proj">
      <%
-            for (Map.Entry<String, Object> variable : bean.getVariables().entrySet())
-            {
-                if (!"initiatorId".equalsIgnoreCase(variable.getKey())  &&
-                        !"userId".equalsIgnoreCase(variable.getKey()) &&
-                        !"container".equalsIgnoreCase(variable.getKey())) {
-
+             for (Map.Entry<String, Object> variable : displayVariables.entrySet())
+             {
+                 if (variable.getKey().equalsIgnoreCase("Get Data"))
+                     continue;
     %>
     <tr>
-        <td><%= variable.getKey() %></td>
-        <td><%= variable.getValue() %></td>
+        <td><%= h(variable.getKey()) %></td>
+        <td><%= h(variable.getValue()) %></td>
     </tr>
     <%
-                }
+            }
+            if (displayVariables.containsKey("Get Data"))
+            {
+                HashMap dataAccess = (HashMap) displayVariables.get("Get Data");
+    %>
+        <tr>
+            <td><%= PageFlowUtil.button("Get Data").onClick(" getData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(dataAccess.get("parameters")).toString() + "); return false;") %></td>
+        </tr>
+    <%
+
             }
         }
     %>
 </table>
-<br><br>
+<br>
+<%
 
+%>
 <%
     if ("handleExportRequest".equals(bean.getTaskDefinitionKey()))
     {
@@ -156,9 +196,15 @@
     else
     {
 %>
-<%= PageFlowUtil.textLink(bean.getName(), new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
+<%= PageFlowUtil.textLink(h(bean.getName()), new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
 <%
     }
 %>
 <br><br>
 <%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+<%
+    }
+%>
+<br>
+<br>
+<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>

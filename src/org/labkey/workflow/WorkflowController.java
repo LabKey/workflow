@@ -81,7 +81,7 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        private String _navLabel = "Workflow Summary";
+        private String _navLabel = "Workflow Process List";
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -217,7 +217,7 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(WorkflowTaskForm form, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(WorkflowManager.get().getTask(form.getTaskId())), errors);
+            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId()), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -738,7 +738,7 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    // TODO the methods and classes below here are specific to the data export example.
+    // TODO the methods and classes below here are specific to the data export proof of concept example.
     private static final String ARGOS_PROCESS_KEY = "argosDataExportSimple";
 
     @RequiresPermissionClass(ReadPermission.class)

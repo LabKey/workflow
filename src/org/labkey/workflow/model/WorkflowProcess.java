@@ -1,10 +1,13 @@
 package org.labkey.workflow.model;
 
 import org.activiti.engine.runtime.ProcessInstance;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowManager;
 
@@ -24,7 +27,7 @@ public class WorkflowProcess implements HasViewContext
     public static final String CREATED_DATE = "created";
 
     private String _processDefinitionKey;
-    private String _id;
+    private String _id = null;
     private Map<String, Object> _processVariables = new HashMap<>();
     private Integer _initiatorId;
     private String _processInstanceId;
@@ -39,15 +42,20 @@ public class WorkflowProcess implements HasViewContext
     public WorkflowProcess(String id, User user, Container container) throws Exception
     {
         this(WorkflowManager.get().getProcessInstance(id), user, container);
+        this._id = id;
     }
 
     public WorkflowProcess(ProcessInstance engineProcessInstance, User user, Container container) throws Exception
     {
+
         _engineProcessInstance = engineProcessInstance;
-        _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
-        if (_processVariables.get(INITIATOR_ID) != null)
-            this.setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
-        this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), user, container));
+        if (_engineProcessInstance != null)
+        {
+            _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
+            if (_processVariables.get(INITIATOR_ID) != null)
+                this.setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
+            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), user, container));
+        }
     }
 
     public String getId()
@@ -149,5 +157,47 @@ public class WorkflowProcess implements HasViewContext
     public void setCurrentTasks(List<WorkflowTask> currentTasks)
     {
         _currentTasks = currentTasks;
+    }
+
+    @Nullable
+    public static Map<String, Object> getDisplayVariables(Map<String, Object> variables)
+    {
+        String displayKey = null;
+        Object displayValue = null;
+        Map<String, Object> _displayVariables = new HashMap<String, Object>();
+        for (String key : variables.keySet())
+        {
+            if (WorkflowProcess.CONTAINER_ID.equalsIgnoreCase(key) || WorkflowProcess.INITIATOR_ID.equalsIgnoreCase(key))
+                continue;
+            else if (key.endsWith("GroupId"))
+            {
+                displayKey = key.substring(0, key.length() - 2);
+                displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
+            }
+            else if (key.equalsIgnoreCase("DataAccess"))
+            {
+                displayKey = "GetData";
+                displayValue = variables.get(key);
+            }
+            else
+            {
+                displayKey = key;
+                displayValue = variables.get(key);
+            }
+            displayKey = StringUtilsLabKey.splitCamelCase(StringUtils.capitalize(displayKey));
+
+            _displayVariables.put(displayKey, displayValue);
+        }
+
+        return _displayVariables;
+
+    }
+
+    @Nullable
+    public static HashMap getDataAccessParameters(@Nullable Map<String, Object> variables)
+    {
+        if ((variables == null) || (!variables.containsKey("dataAccess")))
+            return null;
+        return (HashMap) variables.get("dataAccess");
     }
 }

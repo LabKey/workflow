@@ -15,19 +15,30 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.model.WorkflowTask" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     WorkflowProcess bean = (WorkflowProcess) me.getModelBean();
+%>
+<%
+    if (bean.getProcessInstanceId() == null)
+    {
+%>
+
+There is no active process with id <%= h(bean.getId()) %>
+<%
+}
+else
+{
 %>
 <%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <br>
@@ -36,13 +47,13 @@
     if (bean.getName() == null)
     {
 %>
-<strong>Process <%= bean.getId() %></strong>
+<strong>Process <%= h(bean.getId()) %></strong>
 <%
     }
     else
     {
 %>
-<strong><%= bean.getName() %></strong>
+<strong><%= h(bean.getName()) %></strong>
 <%
     }
 %>
@@ -52,30 +63,37 @@
 <table class="labkey-proj">
     <tr>
         <td>Initiator</td>
-        <td><%= bean.getInitiator() %></td>
+        <td><%= h(bean.getInitiator()) %></td>
     </tr>
 
 
 <%
     if (!bean.getProcessVariables().isEmpty())
     {
+        Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(bean.getProcessVariables());
+
+        for (Map.Entry<String, Object> variable : displayVariables.entrySet())
+        {
+            if (variable.getKey().equalsIgnoreCase("Get Data"))
+                continue;
 %>
-        <%
-            for (Map.Entry<String, Object> variable : bean.getProcessVariables().entrySet())
-            {
-                if (!"initiatorId".equalsIgnoreCase(variable.getKey())  &&
-                    !"userId".equalsIgnoreCase(variable.getKey()) &&
-                    !"container".equalsIgnoreCase(variable.getKey()))
-                {
-    %>
     <tr>
-        <td><%= StringUtilsLabKey.splitCamelCase(StringUtils.capitalize(variable.getKey())) %></td>
-        <td><%= variable.getValue() %></td>
+        <td><%= h(variable.getKey()) %></td>
+        <td><%= h(variable.getValue()) %></td>
     </tr>
-        <%
-                }
-            }
+<%
         }
+        if (displayVariables.containsKey("Get Data"))
+        {
+            HashMap dataAccess = (HashMap) displayVariables.get("Get Data");
+%>
+    <tr>
+        <td><%= PageFlowUtil.button("Get Data").onClick(" getData(" + PageFlowUtil.qh((String) dataAccess.get("url")) + ", '" + (new JSONObject(dataAccess.get("parameters")).toString()) + "'); return false;") %></td>
+    </tr>
+    <%
+
+        }
+    }
     %>
     <tr>
         <td>Current Task(s)</td>
@@ -97,3 +115,9 @@
 <strong>Process Diagram</strong>
 <br><br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
+<%
+    }
+%>
+<br>
+<br>
+<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>

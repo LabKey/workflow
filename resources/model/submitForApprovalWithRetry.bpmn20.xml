@@ -12,10 +12,21 @@
   <process id="submitForApprovalWithRetry" name="Submit request for approval and possibly retry if not approved" isExecutable="true">
     <startEvent id="theStart" name="Request" activiti:initiator="userId">
       <documentation>User makes a request to an approver, with the ability to resubmit or abort a request after denial.</documentation>
+      <extensionElements>
+        <activiti:formProperty id="dataAccess" name="Data access parameters" type="string"/>
+        <activiti:formProperty id="reason" name="Reason for request" type="string" required="true" />
+      </extensionElements>
     </startEvent>
     <sequenceFlow id="startRequestFlow" sourceRef="theStart" targetRef="handleRequest"></sequenceFlow>
     <userTask id="handleRequest" name="Handle user request">
       <documentation>User makes a request that requires approval</documentation>
+      <extensionElements>
+         <activiti:formProperty id="requestApproved" name="Do you approve this request?" type="enum" required="true">
+          <activiti:value id="true" name="Approve" />
+          <activiti:value id="false" name="Deny" />
+        </activiti:formProperty>
+        <activiti:formProperty id="comment" name="Comment" type="string" />
+      </extensionElements>
       <potentialOwner>
         <resourceAssignmentExpression>
           <formalExpression>Administrator</formalExpression>

@@ -18,12 +18,15 @@ package org.labkey.workflow;
 
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.FormService;
 import org.activiti.engine.ManagementService;
 import org.activiti.engine.ProcessEngine;
 import org.activiti.engine.ProcessEngineConfiguration;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+import org.activiti.engine.form.FormProperty;
+import org.activiti.engine.form.TaskFormData;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
@@ -31,6 +34,7 @@ import org.activiti.engine.repository.ProcessDefinitionQuery;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
+import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.NativeTaskQuery;
 import org.activiti.engine.task.Task;
@@ -45,8 +49,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.SimpleFolderType;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -79,11 +81,12 @@ public class WorkflowManager
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     public static final String WORKFLOW_MODEL_DIR = "workflow/model";
+    private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
     private final Set<Module> _workflowModules = new CopyOnWriteArraySet<>();
     // map between module name and the list of workflow model files defined in that module
     private Map<String, List<File>> _workflowModelFiles = new HashMap<>();
 
-    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(new Path(WORKFLOW_MODEL_DIR), "Workflow model definitions", new WorkflowModelFileCacheHandler());
+//    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowModelFileCacheHandler());
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -117,7 +120,7 @@ public class WorkflowManager
                 continue;
 
             modelsList.addAll(getWorkflowModels(module));
-            getWorkflowModelFiles(module);
+//            getWorkflowModelFiles(module);
 
         }
         // now add the models defined in the workflow module itself
@@ -162,10 +165,10 @@ public class WorkflowManager
     }
 
 
-    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
-    {
-        return CACHE.getResources(module);
-    }
+//    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
+//    {
+//        return CACHE.getResources(module);
+//    }
 
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
@@ -406,7 +409,11 @@ public class WorkflowManager
      */
     public void completeTask(@NotNull String taskId)
     {
-        WorkflowManager.get().getTaskService().complete(taskId);
+        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        if (task.getDelegationState() == DelegationState.PENDING)
+            getTaskService().resolveTask(taskId);
+        else
+            getTaskService().complete(taskId);
     }
 
     /**
@@ -619,6 +626,12 @@ public class WorkflowManager
         return keyToNameMap;
     }
 
+    public List<FormProperty> getFormFields(String taskId)
+    {
+        TaskFormData form =  getFormService().getTaskFormData(taskId);
+        return form.getFormProperties();
+    }
+
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
@@ -691,6 +704,10 @@ public class WorkflowManager
         return getProcessEngine().getRepositoryService();
     }
 
+    protected FormService getFormService()
+    {
+        return getProcessEngine().getFormService();
+    }
 
     private ProcessEngine getProcessEngine()
     {
@@ -738,7 +755,7 @@ public class WorkflowManager
                     ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
                     Module module = id.getModule();
                     String filename = id.getName();
-                    Path path = new Path(WORKFLOW_MODEL_DIR, filename);
+                    Path path = WORKFLOW_MODEL_PATH.append(filename);
                     Resource resource  = module.getModuleResolver().lookup(path);
 
                     return new File(resource.getPath().toString());

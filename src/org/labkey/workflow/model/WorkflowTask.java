@@ -3,18 +3,23 @@ package org.labkey.workflow.model;
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.workflow.WorkflowManager;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,12 +30,13 @@ import java.util.Map;
 public class WorkflowTask
 {
     private Task _engineTask;
+    private String _id;
     private List<Integer> _groupIds = null;
-    private String _processDefinitionKey;
 
     public WorkflowTask(String taskId)
     {
         _engineTask = WorkflowManager.get().getTask(taskId);
+        _id = taskId;
     }
 
     public WorkflowTask(Task engineTask)
@@ -40,41 +46,28 @@ public class WorkflowTask
 
     public String getId()
     {
-        return _engineTask.getId();
+        return _engineTask == null ? _id : _engineTask.getId();
     }
 
     public String getName()
     {
-        return _engineTask.getName();
+        return _engineTask == null ? null : _engineTask.getName();
     }
 
     public String getDescription()
     {
-        return _engineTask.getDescription();
+        return _engineTask == null ? null : _engineTask.getDescription();
     }
 
     public String getProcessDefinitionKey()
     {
-        if (_processDefinitionKey == null)
-        {
-            _processDefinitionKey = WorkflowManager.get().getProcessInstance(_engineTask.getProcessInstanceId()).getProcessDefinitionKey();
-        }
-        return _processDefinitionKey;
-    }
-
-    @Nullable
-    public User getProcessInitiator()
-    {
-        if ((getVariables() == null) || (getVariables().get(WorkflowProcess.INITIATOR_ID) != null))
-            return UserManager.getUser(Integer.valueOf((String) getVariables().get(WorkflowProcess.INITIATOR_ID)));
-        else
-            return null;
+        return _engineTask == null ? null : WorkflowManager.get().getProcessInstance(_engineTask.getProcessInstanceId()).getProcessDefinitionKey();
     }
 
     @Nullable
     public User getOwner()
     {
-        if (_engineTask.getOwner() == null)
+        if (_engineTask == null || _engineTask.getOwner() == null)
             return null;
         else
             return UserManager.getUser(Integer.valueOf(_engineTask.getOwner()));
@@ -83,7 +76,7 @@ public class WorkflowTask
     @Nullable
     public User getAssignee()
     {
-        if (_engineTask.getAssignee() == null)
+        if (_engineTask == null || _engineTask.getAssignee() == null)
             return null;
         else
             return UserManager.getUser(Integer.valueOf(_engineTask.getAssignee()));
@@ -143,6 +136,7 @@ public class WorkflowTask
         }
         return variables;
     }
+
 
     @NotNull
     public String getContainer()
@@ -240,5 +234,7 @@ public class WorkflowTask
     {
         return _engineTask.isSuspended();
     }
+
+    public boolean isActive() { return _engineTask != null; }
 
 }
