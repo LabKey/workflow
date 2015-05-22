@@ -137,59 +137,80 @@ There is no active task with id <%= bean.getId() %>
         }
         else
         {
-            %>
+    %>
     <tr>
         <td colspan="2">
         <%= button("Assign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
         </td>
     </tr>
+    </table>
     <%
         }
     %>
     <%
-        if (bean.getVariables() != null)
+        if (bean.getVariables() != null && !bean.getVariables().isEmpty())
         {
-            Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(bean.getVariables());
+
+            Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(getContainer(), bean.getVariables());
     %>
-    </table>
+
     <strong>Task Details</strong>
-<br><br>
+    <br><br>
     <table class="labkey-proj">
      <%
+
              for (Map.Entry<String, Object> variable : displayVariables.entrySet())
              {
                  if (variable.getKey().equalsIgnoreCase("Get Data"))
                      continue;
     %>
-    <tr>
-        <td><%= h(variable.getKey()) %></td>
-        <td><%= h(variable.getValue()) %></td>
-    </tr>
+        <tr>
+            <td><%= h(variable.getKey()) %></td>
+            <td><%= h(variable.getValue()) %></td>
+        </tr>
     <%
             }
+    %>
+    </table>
+
+    <%
             if (displayVariables.containsKey("Get Data"))
             {
-                HashMap dataAccess = (HashMap) displayVariables.get("Get Data");
+    %>
+    <strong>Data Parameters</strong><br><br>
+    <table class="labkey-proj">
+    <%
+                HashMap<String, Object> dataAccess = (HashMap<String, Object>) displayVariables.get("Get Data");
+                HashMap<String, Object> parameters = (HashMap<String, Object>) dataAccess.get("parameters");
+
+                for (Map.Entry<String, Object> parameter : parameters.entrySet())
+                {
     %>
         <tr>
-            <td><%= PageFlowUtil.button("Get Data").onClick(" getData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(dataAccess.get("parameters")).toString() + "); return false;") %></td>
+            <td><%= h(parameter.getKey()) %></td>
+            <td><%= h(parameter.getValue()) %></td>
         </tr>
+    <%
+                }
+    %>
+        <tr colspan="2">
+            <td><br><%= PageFlowUtil.button("Download Data").onClick(" getData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %></td>
+        </tr>
+
+    </table>
     <%
 
             }
         }
     %>
-</table>
-<br>
-<%
 
-%>
+<br>
 <%
     if ("handleExportRequest".equals(bean.getTaskDefinitionKey()))
     {
 %>
-<%= PageFlowUtil.textLink("Approve", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("approved", "true"))%>
-<%= PageFlowUtil.textLink("Deny", new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()).addParameter("approved", "false"))%>
+<%= PageFlowUtil.button("Approve").onClick(" createCompleteTaskWindow(" + q(bean.getId()) + ", " + q(bean.getName()) + ", " + "{\"approved\": \"true\"}); return false;") %>
+<%= PageFlowUtil.button("Deny").onClick(" createCompleteTaskWindow(" + q(bean.getId()) + ", " + q(bean.getName()) + ", " + "{\"approved\": \"false\"}); return false;") %>
 
 <%
     }

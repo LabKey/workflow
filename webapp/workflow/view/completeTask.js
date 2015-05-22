@@ -57,7 +57,7 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
             disabled: false,
             scope: this,
             handler : function() {
-                this.fireEvent(this.completeTaskEvent, this.taskId);
+                this.fireEvent(this.completeTaskEvent, this.taskId, this.parameters);
                 this.close();
             }
         }
@@ -68,16 +68,15 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
         this.on(this.completeTaskEvent, this.makeTaskCompletionRequest, this);
     },
 
-    makeTaskCompletionRequest: function(taskId)
+    makeTaskCompletionRequest: function(taskId, parameters)
     {
+        parameters.comment = this.down('textfield#TaskComment').getValue();
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
             method: 'POST',
             params: {
                 taskId: taskId,
-                processVariables: {
-                    comment: this.down('textfield#TaskComment').getValue()
-                },
+                processVariables: parameters,
                 returnUrl: window.location
             },
             scope: this,
@@ -97,29 +96,12 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
         }
     }
 
-    //getData : function(url, parameters) {
-    //    var newForm = document.createElement('form');
-    //    document.body.appendChild(newForm);
-    //    Ext4.Ajax.request({
-    //        url: url,
-    //        method: 'POST',
-    //        form: newForm,
-    //        isUpload: true,
-    //        params: parameters,
-    //        success: function (response)
-    //        {
-    //            console.log('Success');
-    //        },
-    //        failure: this.taskActionFailure,
-    //        scope: this
-    //    });
-    //}
 });
 
 function getData(url, parameters) {
     var newForm = document.createElement('form');
     document.body.appendChild(newForm);
-    LABKEY.Ajax.request({
+    Ext4.Ajax.request({
         url: url,
         method: 'POST',
         form: newForm,
@@ -142,9 +124,10 @@ function getData(url, parameters) {
     });
 }
 
-function createCompleteTaskWindow(taskId, name) {
+function createCompleteTaskWindow(taskId, name, parameters) {
     Ext4.create("Workflow.view.dialog.CompleteTask", {
         taskId: taskId,
-        name: name
+        name: name,
+        parameters: parameters
     }).show();
 }

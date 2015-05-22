@@ -491,12 +491,11 @@ public class WorkflowController extends SpringActionController
             if (form.getProcessDefinitionKey() == null)
                 throw new Exception("No process key provided");
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
             form.setInitiatorId(getUser().getUserId());
             form.setContainerId(getContainer().getId());
 
             String instanceId = WorkflowManager.get().startWorkflow(form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
+            ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("processInstanceId", instanceId);
             return success(response);
         }

@@ -7,10 +7,12 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowManager;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +162,7 @@ public class WorkflowProcess implements HasViewContext
     }
 
     @Nullable
-    public static Map<String, Object> getDisplayVariables(Map<String, Object> variables)
+    public static Map<String, Object> getDisplayVariables(Container container, Map<String, Object> variables)
     {
         String displayKey = null;
         Object displayValue = null;
@@ -178,6 +180,11 @@ public class WorkflowProcess implements HasViewContext
             {
                 displayKey = "GetData";
                 displayValue = variables.get(key);
+            }
+            else if (variables.get(key) instanceof Date)
+            {
+                displayKey = key;
+                displayValue = DateUtil.formatDate(container, (Date) variables.get(key));
             }
             else
             {
