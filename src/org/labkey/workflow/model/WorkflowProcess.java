@@ -1,7 +1,6 @@
 package org.labkey.workflow.model;
 
 import org.activiti.engine.runtime.ProcessInstance;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
@@ -11,6 +10,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowManager;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -184,7 +184,7 @@ public class WorkflowProcess implements HasViewContext
             else if (variables.get(key) instanceof Date)
             {
                 displayKey = key;
-                displayValue = DateUtil.formatDate(container, (Date) variables.get(key));
+                displayValue = DateUtil.formatDateTime(container, (Date) variables.get(key));
             }
             else
             {

@@ -15,19 +15,17 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.workflow.model.WorkflowTask" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
+<%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -53,7 +51,8 @@ There is no active task with id <%= bean.getId() %>
     {
 %>
 <%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-
+<br>
+<%= PageFlowUtil.textLink("Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId()))%>
 <br>
 <br>
 <table class="labkey-proj">
@@ -61,9 +60,6 @@ There is no active task with id <%= bean.getId() %>
     <tr>
         <td>
             <strong><%= bean.getName() %></strong>
-        </td>
-        <td>
-            <%= PageFlowUtil.textLink("Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId()))%>
         </td>
     </tr>
     <%
@@ -205,13 +201,29 @@ There is no active task with id <%= bean.getId() %>
     %>
 
 <br>
+<strong><%= h(bean.getName()) %></strong>
 <%
+    // TODO remove this hack and get the form elements here
     if ("handleExportRequest".equals(bean.getTaskDefinitionKey()))
     {
 %>
-<%= PageFlowUtil.button("Approve").onClick(" createCompleteTaskWindow(" + q(bean.getId()) + ", " + q(bean.getName()) + ", " + "{\"approved\": \"true\"}); return false;") %>
-<%= PageFlowUtil.button("Deny").onClick(" createCompleteTaskWindow(" + q(bean.getId()) + ", " + q(bean.getName()) + ", " + "{\"approved\": \"false\"}); return false;") %>
+<br>
+<br>
+<form name="completeTask" action="javascript:completeWorkflowTask('<%= bean.getId() %>', 'completeTask', ['comment', 'decision'])">
+    Your decision
+    <select name="decision" title="Decision">
+        <option value="approved">Approve</option>
+        <option value="denied" selected>Deny</option>
+    </select>
+    <br>
+    <span> Comment </span>
+    <br>
+    <textarea title="Comment about task" name="comment" rows="10" cols="100"></textarea>
 
+    <br><br>
+    <%= PageFlowUtil.button("Submit").submit(true) %>
+</form>
+<br>
 <%
     }
     else

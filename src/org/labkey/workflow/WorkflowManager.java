@@ -39,7 +39,6 @@ import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.NativeTaskQuery;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
@@ -57,6 +56,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.Path;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowTask;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -547,7 +547,7 @@ public class WorkflowManager
      */
     public void updateProcessVariables(@NotNull String taskId, @NotNull Map<String, Object> variables)
     {
-        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        Task task = getTaskService().createTaskQuery().includeProcessVariables().taskId(taskId).singleResult();
         Map<String, Object> currentVariables = task.getProcessVariables();
         if (currentVariables == null)
             currentVariables = variables;

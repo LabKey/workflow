@@ -603,26 +603,13 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getTaskId() == null) // TODO convert to "validate" method
                 throw new Exception("Task id cannot be null.");
-            else if (form.getProcessVariables() != null)
+            else
             {
                 WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
                 WorkflowManager.get().completeTask(form.getTaskId());
                 response.put("status", "success");
             }
-            else // TODO remove this hack and use variables from the form
-            {
-                Map<String, Object> variables = null;
-                if (form.getApproved() != null)
-                {
-                    variables = form.getProcessVariables();
-                    if (variables == null)
-                        variables = new HashMap<String, Object>();
-                    variables.put("approved", form.getApproved());
-                }
-                WorkflowManager.get().updateProcessVariables(form.getTaskId(), variables);
-                WorkflowManager.get().completeTask(form.getTaskId());
-                response.put("status", "success");
-            }
+
             return response;
         }
     }
