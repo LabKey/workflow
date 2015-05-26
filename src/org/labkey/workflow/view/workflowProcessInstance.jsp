@@ -142,7 +142,7 @@ else
         }
     %>
     <tr colspan="2">
-        <td><br><%= PageFlowUtil.button("Download Data").onClick(" getData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %><br><br></td>
+        <td><br><%= PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %><br><br></td>
     </tr>
 <%
 

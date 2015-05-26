@@ -15,12 +15,14 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
+<%@ page import="org.labkey.workflow.model.TaskFormField" %>
 <%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.HashMap" %>
@@ -190,7 +192,7 @@ There is no active task with id <%= bean.getId() %>
                 }
     %>
         <tr colspan="2">
-            <td><br><%= PageFlowUtil.button("Download Data").onClick(" getData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %></td>
+            <td><br><%= PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %></td>
         </tr>
 
     </table>
@@ -201,43 +203,67 @@ There is no active task with id <%= bean.getId() %>
     %>
 
 <br>
-<strong><%= h(bean.getName()) %></strong>
 <%
-    // TODO remove this hack and get the form elements here
-    if ("handleExportRequest".equals(bean.getTaskDefinitionKey()))
-    {
+        Map<String, TaskFormField> fields = bean.getFormFields();
+        if (fields.isEmpty())
+        {
 %>
+<%= PageFlowUtil.button(h(bean.getName())).href(new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
+<%
+        }
+        else
+        {
+%>
+<strong><%= h(bean.getName()) %></strong>
 <br>
 <br>
-<form name="completeTask" action="javascript:completeWorkflowTask('<%= bean.getId() %>', 'completeTask', ['comment', 'decision'])">
-    Your decision
-    <select name="decision" title="Decision">
-        <option value="approved">Approve</option>
-        <option value="denied" selected>Deny</option>
+<form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask('<%= bean.getId() %>', '<%= bean.getTaskDefinitionKey() %>', ['<%=StringUtils.join(fields.keySet(), "', '") %>'])">
+<%
+            for (Map.Entry<String, TaskFormField> field : fields.entrySet())
+            {
+                // TODO add a type that is text area that has "information" for the rows and columns
+                // TODO handle other input field types as well: Date, long, boolean
+                // TODO investigate what thee rendered form object is
+                if (field.getValue().getType().getName().equals("string"))
+                {
+    %>
+    <%= field.getValue().getName() %>
+    <br>
+    <textarea title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId()%>" rows="10" cols="100"></textarea>
+    <%
+                }
+                else if (field.getValue().getType().getName().equals("enum"))
+                {
+                    Map<String, String> choices = (Map<String, String>) field.getValue().getType().getInformation("values");
+                    if (choices != null && !choices.isEmpty())
+                    {
+    %>
+    <%= field.getValue().getName() %>
+    <select title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId() %>">
+        <%
+                        for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getType().getInformation("values")).entrySet())
+                        {
+                        %>
+        <option value="<%= choice.getKey()%>"><%= choice.getValue()%></option>
+        <%
+                        }
+        %>
     </select>
     <br>
-    <span> Comment </span>
-    <br>
-    <textarea title="Comment about task" name="comment" rows="10" cols="100"></textarea>
+    <%
+                    }
 
+                }
+            }
+%>
     <br><br>
     <%= PageFlowUtil.button("Submit").submit(true) %>
 </form>
 <br>
 <%
-    }
-    else
-    {
-%>
-<%= PageFlowUtil.textLink(h(bean.getName()), new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
-<%
+        }
     }
 %>
-<br><br>
-<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-<%
-    }
-%>
-<br>
-<br>
+    <br>
+    <br>
 <%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>

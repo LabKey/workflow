@@ -39,6 +39,7 @@ import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.NativeTaskQuery;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
@@ -54,9 +55,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.Path;
+import org.labkey.workflow.model.TaskFormField;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowTask;
-import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -626,10 +627,16 @@ public class WorkflowManager
         return keyToNameMap;
     }
 
-    public List<FormProperty> getFormFields(String taskId)
+    public Map<String, TaskFormField> getFormFields(String taskId)
     {
         TaskFormData form =  getFormService().getTaskFormData(taskId);
-        return form.getFormProperties();
+        List<FormProperty> properties =  form.getFormProperties();
+        Map<String, TaskFormField> fields = new HashMap<String, TaskFormField>();
+        for (FormProperty property : properties)
+        {
+            fields.put(property.getId(), new TaskFormField(property));
+        }
+        return fields;
     }
 
     public InputStream getProcessDiagram(@NotNull String processInstanceId)

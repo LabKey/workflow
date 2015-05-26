@@ -10,7 +10,7 @@
              expressionLanguage="http://www.w3.org/1999/XPath"
              targetNamespace="http://www.activiti.org/processdef">
   <process id="submitForApprovalWithRetry" name="Submit request for approval and possibly retry if not approved" isExecutable="true">
-    <startEvent id="theStart" name="Request" activiti:initiator="userId">
+    <startEvent id="theStart" name="Request" activiti:initiator="initiatorId">
       <documentation>User makes a request to an approver, with the ability to resubmit or abort a request after denial.</documentation>
       <extensionElements>
         <activiti:formProperty id="dataAccess" name="Data access parameters" type="string"/>
@@ -21,15 +21,15 @@
     <userTask id="handleRequest" name="Handle user request">
       <documentation>User makes a request that requires approval</documentation>
       <extensionElements>
-         <activiti:formProperty id="requestApproved" name="Do you approve this request?" type="enum" required="true">
-          <activiti:value id="true" name="Approve" />
-          <activiti:value id="false" name="Deny" />
+         <activiti:formProperty id="decision" name="Do you approve this request?" type="enum" required="true">
+          <activiti:value id="approve" name="Approve" />
+          <activiti:value id="deny" name="Deny" />
         </activiti:formProperty>
-        <activiti:formProperty id="comment" name="Comment" type="string" />
+        <activiti:formProperty id="responseComment" name="Comment" type="string" />
       </extensionElements>
       <potentialOwner>
         <resourceAssignmentExpression>
-          <formalExpression>Administrator</formalExpression>
+          <formalExpression>${approverGroupId}</formalExpression>
         </resourceAssignmentExpression>
       </potentialOwner>
     </userTask>
@@ -38,18 +38,18 @@
       <documentation>Review user request and approve or deny</documentation>
     </exclusiveGateway>
     <sequenceFlow id="deniedRequest" name="denied" sourceRef="reviewRequest" targetRef="reviseRequest">
-      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${!approved}]]></conditionExpression>
+      <conditionExpression xsi:type="tFormalExpression">${decision == 'approve'}</conditionExpression>
     </sequenceFlow>
     <sequenceFlow id="approvedRequest" name="approved" sourceRef="reviewRequest" targetRef="fulfillRequest">
-      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved}]]></conditionExpression>
+      <conditionExpression xsi:type="tFormalExpression">${decision != 'approve'}</conditionExpression>
     </sequenceFlow>
-    <userTask id="reviseRequest" name="Revise request" activiti:candidateGroups="Users">
+    <userTask id="reviseRequest" name="Revise request">
       <documentation>Request revised</documentation>
-      <potentialOwner>
+      <humanPerformer>
         <resourceAssignmentExpression>
-          <formalExpression>${userId}</formalExpression>
+          <formalExpression>${initiatorId}</formalExpression>
         </resourceAssignmentExpression>
-      </potentialOwner>
+      </humanPerformer>
     </userTask>
     <sequenceFlow id="abortedRequest" name="!resent" sourceRef="reviseRequest" targetRef="abort"></sequenceFlow>
     <sequenceFlow id="revisedRequest" name="resent" sourceRef="reviseRequest" targetRef="handleRequest"></sequenceFlow>

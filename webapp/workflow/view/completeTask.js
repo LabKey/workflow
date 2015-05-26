@@ -163,7 +163,7 @@ function downloadDataGrid(url, parameters) {
 // TODO remove from global scope
 function completeWorkflowTask(taskId, formName, fields)
 {
-    var form = document.forms['completeTask'];
+    var form = document.forms[formName];
     var parameters = {};
     for (i = 0, len = fields.length; i < len; i++)
     {

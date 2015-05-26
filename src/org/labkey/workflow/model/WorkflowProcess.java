@@ -1,6 +1,7 @@
 package org.labkey.workflow.model;
 
 import org.activiti.engine.runtime.ProcessInstance;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
@@ -10,7 +11,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowManager;
-import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -176,7 +176,7 @@ public class WorkflowProcess implements HasViewContext
                 displayKey = key.substring(0, key.length() - 2);
                 displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
             }
-            else if (key.equalsIgnoreCase("DataAccess"))
+            else if (key.equalsIgnoreCase("DataAccess")) // TODO this seems unnecessary.  just start with "GetData" as the key
             {
                 displayKey = "GetData";
                 displayValue = variables.get(key);

@@ -3,23 +3,18 @@ package org.labkey.workflow.model;
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
 import org.apache.commons.collections15.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.workflow.WorkflowManager;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +27,7 @@ public class WorkflowTask
     private Task _engineTask;
     private String _id;
     private List<Integer> _groupIds = null;
+    private Map<String, TaskFormField> _formFields = null;
 
     public WorkflowTask(String taskId)
     {
@@ -236,5 +232,15 @@ public class WorkflowTask
     }
 
     public boolean isActive() { return _engineTask != null; }
+
+    @NotNull
+    public Map<String, TaskFormField> getFormFields()
+    {
+        if (_formFields == null)
+        {
+            _formFields = WorkflowManager.get().getFormFields(getId());
+        }
+        return _formFields;
+    }
 
 }
