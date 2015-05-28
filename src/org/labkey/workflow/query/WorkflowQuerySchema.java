@@ -93,7 +93,7 @@ public class WorkflowQuerySchema extends UserSchema
         else if (name.equals(TABLE_PROCESS_DEFINITION))
             return new WorkflowProcessDefinitionTable(this);
         else if (name.equals(TABLE_PROCESS_INSTANCE))
-            return new WorkflowProcessInstanceTable(this);
+            return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
         else if (name.equals(TABLE_DEPLOYMENT))
             return new WorkflowTenantTable(this, name);
 

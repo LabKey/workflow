@@ -1,13 +1,16 @@
 package org.labkey.workflow.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.workflow.WorkflowController;
 
@@ -35,7 +38,7 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
         _columnsToIgnore.add("lock_time_");
     }
 
-    public WorkflowProcessInstanceTable(WorkflowQuerySchema userSchema)
+    public WorkflowProcessInstanceTable(WorkflowQuerySchema userSchema, User user, Container container)
     {
         super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
 
@@ -45,12 +48,24 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
 
-        addInitiatorColumn();
+
+        if (!container.hasPermission(user, AdminPermission.class))
+        {
+            SQLFragment sql = new SQLFragment("act_ru_execution.id_ IN (SELECT V.execution_id_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.text_ = ?)");
+            sql.add(String.valueOf(user.getUserId()));
+            addCondition(sql,new FieldKey(null,"id_"));
+        }
+        else
+        {
+            addInitiatorColumn(user, container);
+        }
     }
 
-    private ColumnInfo addInitiatorColumn()
+   private ColumnInfo addInitiatorColumn(User user, Container container)
     {
-        SQLFragment sql = new SQLFragment("(SELECT V.text_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' and V.execution_id_ = act_ru_execution.id_)");
+        SQLFragment sql = new SQLFragment("(SELECT V.text_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.execution_id_ = act_ru_execution.id_");
+        sql.append(new SQLFragment(" AND V.text_ = ?", String.valueOf(user.getUserId())));
+        sql.append(")");
         ExprColumn ret = new ExprColumn(this, "Initiator", sql, JdbcType.VARCHAR);
         ret.setFk(new UserIdForeignKey(this.getUserSchema()));
 
@@ -58,6 +73,7 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
 
         return ret;
     }
+
 
     @Override
     public boolean acceptColumn(ColumnInfo columnInfo)

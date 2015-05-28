@@ -86,8 +86,6 @@ public class WorkflowTaskTable extends WorkflowTenantTable
             sql.append(")");
         }
         sql.append(")");
-//        SQLFragment frag = clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect());
-//        SQLFragment sql = new SQLFragment("(SELECT I.group_id_ FROM workflow.act_ru_identitylink I WHERE I.task_id_ = act_ru_task.id_ AND (I.group_id_ IS NULL OR ").append(frag).append("))");
         ExprColumn ret = new ExprColumn(this, "Group", sql, JdbcType.VARCHAR);
 
         ret.setFk(new GroupForeignKey(this.getUserSchema()));
