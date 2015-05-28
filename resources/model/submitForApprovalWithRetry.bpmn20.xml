@@ -8,7 +8,7 @@
              xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
              typeLanguage="http://www.w3.org/2001/XMLSchema"
              expressionLanguage="http://www.w3.org/1999/XPath"
-             targetNamespace="http://www.activiti.org/processdef">
+             targetNamespace="urn:lsid:labkey.com:workflow:Workflow">
   <process id="submitForApprovalWithRetry" name="Submit request for approval and possibly retry if not approved" isExecutable="true">
     <startEvent id="theStart" name="Request" activiti:initiator="initiatorId">
       <documentation>User makes a request to an approver, with the ability to resubmit or abort a request after denial.</documentation>
