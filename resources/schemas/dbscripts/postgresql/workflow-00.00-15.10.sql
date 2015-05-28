@@ -482,10 +482,3 @@ create index ACT_IDX_HI_ACT_INST_EXEC on workflow.ACT_HI_ACTINST(EXECUTION_ID_, 
 create index ACT_IDX_HI_IDENT_LNK_USER on workflow.ACT_HI_IDENTITYLINK(USER_ID_);
 create index ACT_IDX_HI_IDENT_LNK_TASK on workflow.ACT_HI_IDENTITYLINK(TASK_ID_);
 create index ACT_IDX_HI_IDENT_LNK_PROCINST on workflow.ACT_HI_IDENTITYLINK(PROC_INST_ID_);
-/*
-SET SEARCH_PATH TO workflow;
-\i activiti.postgres.create.engine.sql
-
-\i activiti.postgres.create.history.sql
-SET SEARCH_PATH TO "$user",public;
-*/
