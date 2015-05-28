@@ -28,6 +28,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -43,7 +44,13 @@
 <%
     HttpView me = HttpView.currentView();
     WorkflowTask bean = (WorkflowTask) me.getModelBean();
-    if (!bean.isActive())
+    if (!bean.canView(getUser(), getContainer()))
+    {
+%>
+<%= getUser() %> does not have permission to view this task.
+<%
+    }
+    else if (!bean.isActive())
     {
 %>
 There is no active task with id <%= bean.getId() %>
@@ -52,9 +59,15 @@ There is no active task with id <%= bean.getId() %>
     else
     {
 %>
-<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-<br>
-<%= PageFlowUtil.textLink("Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId()))%>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(getContainer()), new ActionURL(WorkflowController.SummaryAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey(getContainer())))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey(getContainer())))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("This Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey(getContainer())).addParameter("query.assignee_~eq", getUser().getUserId()))%>
 <br>
 <br>
 <table class="labkey-proj">
@@ -126,14 +139,19 @@ There is no active task with id <%= bean.getId() %>
             <%= bean.getAssignee() %>
         </td>
     </tr>
+    <%
+            if (bean.canAssign(getUser(), getContainer()))
+            {
+    %>
     <tr>
         <td colspan="2">
             <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
         </td>
     </tr>
     <%
+            }
         }
-        else
+        else if (bean.canAssign(getUser(), getContainer()))
         {
     %>
     <tr>
@@ -159,7 +177,7 @@ There is no active task with id <%= bean.getId() %>
 
              for (Map.Entry<String, Object> variable : displayVariables.entrySet())
              {
-                 if (variable.getKey().equalsIgnoreCase("Get Data"))
+                 if (variable.getKey().equalsIgnoreCase("Data Access"))
                      continue;
     %>
         <tr>
@@ -172,13 +190,13 @@ There is no active task with id <%= bean.getId() %>
     </table>
 
     <%
-            if (displayVariables.containsKey("Get Data"))
+            if (displayVariables.containsKey("Data Access"))
             {
     %>
     <strong>Data Parameters</strong><br><br>
     <table class="labkey-proj">
     <%
-                HashMap<String, Object> dataAccess = (HashMap<String, Object>) displayVariables.get("Get Data");
+                HashMap<String, Object> dataAccess = (HashMap<String, Object>) displayVariables.get("Data Access");
                 HashMap<String, Object> parameters = (HashMap<String, Object>) dataAccess.get("parameters");
 
                 for (Map.Entry<String, Object> parameter : parameters.entrySet())
@@ -190,80 +208,96 @@ There is no active task with id <%= bean.getId() %>
         </tr>
     <%
                 }
+                if (bean.canAccessData(getUser(), getContainer()))
+                {
     %>
         <tr colspan="2">
-            <td><br><%= PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %></td>
+            <td><br><%= PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %><br><br></td>
         </tr>
+    <%
+                }
+    %>
 
     </table>
     <%
-
             }
         }
     %>
 
 <br>
 <%
-        Map<String, TaskFormField> fields = bean.getFormFields();
-        if (fields.isEmpty())
+        if (bean.canComplete(getUser(), getContainer()))
         {
+            Map<String, TaskFormField> fields = bean.getFormFields();
+            if (!bean.getTaskDefinitionKey().equals("downloadDataSet"))
+            {
+                if (fields.isEmpty())
+                {
 %>
 <%= PageFlowUtil.button(h(bean.getName())).href(new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
 <%
-        }
-        else
-        {
+                }
+                else
+                {
 %>
 <strong><%= h(bean.getName()) %></strong>
 <br>
 <br>
 <form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask('<%= bean.getId() %>', '<%= bean.getTaskDefinitionKey() %>', ['<%=StringUtils.join(fields.keySet(), "', '") %>'])">
 <%
-            for (Map.Entry<String, TaskFormField> field : fields.entrySet())
-            {
-                // TODO add a type that is text area that has "information" for the rows and columns
-                // TODO handle other input field types as well: Date, long, boolean
-                // TODO investigate what thee rendered form object is
-                if (field.getValue().getType().getName().equals("string"))
-                {
-    %>
-    <%= field.getValue().getName() %>
-    <br>
-    <textarea title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId()%>" rows="10" cols="100"></textarea>
-    <%
-                }
-                else if (field.getValue().getType().getName().equals("enum"))
-                {
-                    Map<String, String> choices = (Map<String, String>) field.getValue().getType().getInformation("values");
-                    if (choices != null && !choices.isEmpty())
+                    for (Map.Entry<String, TaskFormField> field : fields.entrySet())
                     {
-    %>
-    <%= field.getValue().getName() %>
-    <select title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId() %>">
-        <%
-                        for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getType().getInformation("values")).entrySet())
+                        // TODO add a type that is text area that has "information" for the rows and columns
+                        // TODO handle other input field types as well: Date, long, boolean
+                        // TODO investigate what thee rendered form object is
+                        if (field.getValue().getType().getName().equals("string"))
                         {
-                        %>
-        <option value="<%= choice.getKey()%>"><%= choice.getValue()%></option>
+            %>
+        <%= field.getValue().getName() %>
+        <br>
+        <textarea title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId()%>" rows="10" cols="100"></textarea>
         <%
                         }
+                        else if (field.getValue().getType().getName().equals("enum"))
+                        {
+                            Map<String, String> choices = (Map<String, String>) field.getValue().getType().getInformation("values");
+                            if (choices != null && !choices.isEmpty())
+                            {
         %>
-    </select>
-    <br>
-    <%
+        <%= field.getValue().getName() %>
+        <select title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId() %>">
+                <%
+                                for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getType().getInformation("values")).entrySet())
+                                {
+                %>
+                <option value="<%= choice.getKey()%>"><%= choice.getValue()%></option>
+                    <%
+                                }
+                %>
+        </select>
+        <br>
+        <%
+                            }
+                        }
                     }
-
-                }
-            }
 %>
     <br><br>
     <%= PageFlowUtil.button("Submit").submit(true) %>
 </form>
 <br>
 <%
+                }
+            }
         }
     }
 %>
     <br>
     <br>
-<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    {
+%>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%
+    }
+%>

@@ -23,6 +23,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -126,7 +127,7 @@ public class WorkflowQuerySchema extends UserSchema
                 }
             };
         }
-        queryView.setShowDeleteButton(false);
+        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
         queryView.setShowUpdateColumn(false);
         queryView.setShowInsertNewButton(false);
         queryView.setShowImportDataButton(false);

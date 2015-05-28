@@ -1,8 +1,8 @@
 package org.labkey.workflow.model;
 
+import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
-import org.apache.commons.collections15.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Marshal;
@@ -10,10 +10,11 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.workflow.PermissionsHandler;
 import org.labkey.workflow.WorkflowManager;
+import org.labkey.workflow.WorkflowModule;
+import org.labkey.workflow.WorkflowRegistry;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class WorkflowTask
     private String _id;
     private List<Integer> _groupIds = null;
     private Map<String, TaskFormField> _formFields = null;
+    private ProcessInstance _processInstance = null;
 
     public WorkflowTask(String taskId)
     {
@@ -55,9 +57,23 @@ public class WorkflowTask
         return _engineTask == null ? null : _engineTask.getDescription();
     }
 
-    public String getProcessDefinitionKey()
+    private ProcessInstance getProcessInstance()
     {
-        return _engineTask == null ? null : WorkflowManager.get().getProcessInstance(_engineTask.getProcessInstanceId()).getProcessDefinitionKey();
+        if (_processInstance == null && _engineTask != null)
+        {
+            _processInstance = WorkflowManager.get().getProcessInstance(_engineTask.getProcessInstanceId());
+        }
+        return _processInstance;
+    }
+
+    public String getProcessDefinitionKey(Container container)
+    {
+        return _engineTask == null ? null : getProcessInstance().getProcessDefinitionKey();
+    }
+
+    public String getProcessDefinitionName(Container container)
+    {
+        return _engineTask == null ? null : WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getName();
     }
 
     @Nullable
@@ -147,19 +163,41 @@ public class WorkflowTask
         return _groupIds;
     }
 
+    private PermissionsHandler getPermissionsHandler()
+    {
+        // TODO get the "category" from the deployment model, which will be the module in which the workflow is defined
+        // and use that as the argument here.
+       return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
+    }
+
     public boolean canClaim(User user, Container container)
     {
-        return CollectionUtils.containsAny(getGroupIds(), Arrays.asList(user.getGroups()));
+        return getPermissionsHandler().canClaim(this, user, container);
     }
 
     public boolean canDelegate(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return getPermissionsHandler().canDelegate(this, user, container);
     }
 
     public boolean canAssign(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return getPermissionsHandler().canAssign(this, user, container);
+    }
+
+    public boolean canView(User user, Container container)
+    {
+        return getPermissionsHandler().canView(this, user, container);
+    }
+
+    public boolean canAccessData(User user, Container container)
+    {
+        return getPermissionsHandler().canAccessData(this, user, container);
+    }
+
+    public boolean canComplete(User user, Container container)
+    {
+        return getPermissionsHandler().canComplete(this, user, container);
     }
 
     public void setName(String name)

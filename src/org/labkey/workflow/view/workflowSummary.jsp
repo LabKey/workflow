@@ -22,15 +22,24 @@
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowSummary" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
 %>
-<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    {
+%>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer()))%>
 <br>
 <br>
-<strong><%= bean.getName() %></strong>
+<%
+    }
+%>
+
+<%--<strong><%= bean.getName() %></strong>--%>
 <br>
 <%= bean.getDescription() %>
 <ul>
@@ -46,7 +55,7 @@
         else
         {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumTotalTasks() + " tasks total", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+        <%= PageFlowUtil.textLink(bean.getNumTotalTasks() + " tasks total", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
         <%
             }
         %>
@@ -63,7 +72,7 @@
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumAssignedTasks() + " assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+        <%= PageFlowUtil.textLink(bean.getNumAssignedTasks() + " assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
         <%
             }
         %>
@@ -79,7 +88,7 @@
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumOwnedTasks() + " owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
+        <%= PageFlowUtil.textLink(bean.getNumOwnedTasks() + " owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
         <%
             }
         %>
@@ -89,7 +98,7 @@
             if (bean.getNumGroupTasks().isEmpty())
             {
         %>
-        No tasks associated with your groups
+        No unassigned tasks associated with your groups
         <%
             }
             else
@@ -101,7 +110,7 @@
                 for (Map.Entry<UserPrincipal, Long> entry : bean.getNumGroupTasks().entrySet())
                 {
         %>
-        <li><%= entry.getKey() %> <%= PageFlowUtil.textLink(entry.getValue() + " tasks", new ActionURL(WorkflowController.TaskListAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
+        <li><%= entry.getKey() %> <%= PageFlowUtil.textLink(entry.getValue() + " tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
         <%
                 }
         %>
@@ -122,11 +131,12 @@
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getViewContext().getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
        <%
             }
-        %>
-        &nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>
+       // TODO add the start form
+       %>
+        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
 
     </li>
 </ul>
@@ -140,7 +150,7 @@
     if (bean.hasDiagram())
     {
 %>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())%>">
+<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())%>">
 <%
     }
     else
@@ -153,4 +163,11 @@ No process diagram available.
 %>
 <br>
 <br>
-<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    {
+%>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer()))%>
+<%
+    }
+%>

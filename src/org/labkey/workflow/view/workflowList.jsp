@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -36,32 +37,41 @@
     HttpView me = HttpView.currentView();
     WorkflowController.WorkflowRequestForm bean = (WorkflowController.WorkflowRequestForm) me.getModelBean();
 %>
-
-
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <%
     if (bean.getProcessDefinitionKey() != null)
     {
 %>
-<div>
-    <%=PageFlowUtil.textLink("Return to summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-</div>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
 %>
-<br><br>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+<br>
+<br>
+
 
 <div>
     <% me.include(me.getView("workflowListQueryView"),out); %>
 </div>
 <br><br>
 
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <%
     if (bean.getProcessDefinitionKey() != null)
     {
 %>
-<div>
-    <%=PageFlowUtil.textLink("Return to summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-</div>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
 %>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+

@@ -26,6 +26,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -48,11 +49,23 @@
 
 There is no active process with id <%= h(bean.getId()) %>
 <%
-}
-else
-{
+    }
+    else if (!bean.canView(getUser(), getContainer()))
+    {
 %>
-<%= PageFlowUtil.textLink("Return to workflow summary", new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+<%= getUser() %> does not have permission to view this process instance.
+<%
+    }
+    else
+    {
+%>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
 <br>
 <br>
 <%
@@ -72,14 +85,6 @@ else
 
 <br>
 <br>
-<table class="labkey-proj">
-    <tr>
-        <td>Initiator</td>
-        <td><%= h(bean.getInitiator()) %></td>
-    </tr>
-
-</table>
-
 
 <%
     if (bean.getProcessVariables() != null && !bean.getProcessVariables().isEmpty())
@@ -88,14 +93,18 @@ else
         Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(getContainer(), bean.getProcessVariables());
 %>
 
-<strong>Task Details</strong>
+<strong>Process Instance Details</strong>
 <br><br>
 <table class="labkey-proj">
+    <tr>
+        <td>Initiator</td>
+        <td><%= h(bean.getInitiator()) %></td>
+    </tr>
     <%
 
         for (Map.Entry<String, Object> variable : displayVariables.entrySet())
         {
-            if (variable.getKey().equalsIgnoreCase("Get Data"))
+            if (variable.getKey().equalsIgnoreCase("Data Access"))
                 continue;
     %>
     <tr>
@@ -110,42 +119,71 @@ else
     <td></td>
 </tr>
 <%
-    for (WorkflowTask task: bean.getCurrentTasks())
-    {
+        for (WorkflowTask task: bean.getCurrentTasks())
+        {
 %>
 <tr>
     <td></td>
-    <td><%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.TaskAction.class, getViewContext().getContainer()).addParameter("taskId", task.getId())) %></td>
+    <td>
+    <%
+            if (task.canView(getUser(), getContainer()))
+            {
+    %>
+        <%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", task.getId())) %>
+    <%
+            }
+            else
+            {
+    %>
+        <%= task.getName() %>
+    <%
+            }
+            if (task.getAssignee() != null)
+            {
+    %>
+    (assigned to <%= task.getAssignee() %>)
+    <%
+            }
+            else
+            {
+    %>
+        (currently unassigned)
+        <%
+            }
+        %>
+    </td>
 </tr>
 </table>
 <%
-    }
+        }
 %>
 <%
-    if (displayVariables.containsKey("Get Data"))
-    {
+        if (displayVariables.containsKey("Data Access"))
+        {
 %>
 <strong>Data Parameters</strong><br><br>
 <table class="labkey-proj">
     <%
-        HashMap<String, Object> dataAccess = (HashMap<String, Object>) displayVariables.get("Get Data");
+        HashMap<String, Object> dataAccess = (HashMap<String, Object>) displayVariables.get("Data Access");
         HashMap<String, Object> parameters = (HashMap<String, Object>) dataAccess.get("parameters");
 
-        for (Map.Entry<String, Object> parameter : parameters.entrySet())
-        {
+            for (Map.Entry<String, Object> parameter : parameters.entrySet())
+            {
     %>
     <tr>
         <td><%= h(parameter.getKey()) %></td>
         <td><%= h(parameter.getValue()) %></td>
     </tr>
     <%
-        }
+            }
+            if (bean.canAccessData(getUser(),getContainer()))
+            {
     %>
     <tr colspan="2">
         <td><br><%= PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;") %><br><br></td>
     </tr>
 <%
-
+            }
         }
     }
 %>
@@ -158,8 +196,6 @@ else
 <br><br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
 <%
+
     }
 %>
-<br>
-<br>
-<%= PageFlowUtil.textLink("Return to process list", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>

@@ -34,7 +34,15 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
             tpl: Ext4.create('Ext.XTemplate',
                     '<tpl for=".">',
                     '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
-                    '</tpl>')
+                    '</tpl>'),
+            listeners : {
+                scope: this,
+                'select': function (field, value)
+                {
+                    this.down('button#DelegateButton').setDisabled(value.length == 0);
+                    this.down('button#AssignButton').setDisabled(value.length == 0);
+                }
+            }
         });
 
         this.items = [
@@ -75,7 +83,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         },{
             text: 'Delegate',
             itemId: 'DelegateButton',
-            disabled: false,
+            disabled: true,
             scope: this,
             handler : function() {
                 this.fireEvent(this.reassignEvent, this.taskId, "Delegate");
@@ -84,7 +92,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         },{
             text: 'Assign',
             itemId: 'AssignButton',
-            disabled: false,
+            disabled: true,
             scope: this,
             handler : function() {
                 this.fireEvent(this.reassignEvent, this.taskId, 'Assign');

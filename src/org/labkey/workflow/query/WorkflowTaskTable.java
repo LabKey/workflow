@@ -54,46 +54,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
-//        AliasedColumn delegateColumn = new AliasedColumn("Delegate", getColumn("id_"));
-//        delegateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-//        {
-//               @Override
-//               public DisplayColumn createRenderer(ColumnInfo colInfo)
-//               {
-//                   Collection<String> dependencies = Collections.singletonList("workflow/view/reassignTask.js");
-//                   String javaScriptEvent = "onclick=\"createReassignTaskWindow(${taskId:jsString}, true);\"";
-//                   return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
-//                   {
-//                       @NotNull
-//                       @Override
-//                       public String getFormattedValue(RenderContext ctx)
-//                       {
-//                           return "delegate";
-//                       }
-//
-//                       @Override
-//                       public void renderTitle(RenderContext ctx, Writer out) throws IOException
-//                       {
-//                           // no title
-//                       }
-//
-//                       @Override
-//                       public boolean isSortable()
-//                       {
-//                           return false;
-//                       }
-//
-//                       @Override
-//                       public boolean isFilterable()
-//                       {
-//                           return false;
-//                       }
-//                   };
-//               }
-//
-//        }
-//        );
-//        this.addColumn(delegateColumn);
+
         addCandidateGroupColumn();
     }
 

@@ -10,7 +10,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
+import org.labkey.workflow.PermissionsHandler;
 import org.labkey.workflow.WorkflowManager;
+import org.labkey.workflow.WorkflowModule;
+import org.labkey.workflow.WorkflowRegistry;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -56,7 +59,7 @@ public class WorkflowProcess implements HasViewContext
             _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
             if (_processVariables.get(INITIATOR_ID) != null)
                 this.setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
-            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), user, container));
+            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), container));
         }
     }
 
@@ -77,6 +80,11 @@ public class WorkflowProcess implements HasViewContext
         if (_engineProcessInstance != null)
             return _engineProcessInstance.getProcessDefinitionKey();
         return _processDefinitionKey;
+    }
+
+    public String getProcessDefinitionName()
+    {
+        return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null).getName();
     }
 
     public void setProcessDefintionKey(String processKey)
@@ -161,6 +169,28 @@ public class WorkflowProcess implements HasViewContext
         _currentTasks = currentTasks;
     }
 
+    private PermissionsHandler getPermissionsHandler()
+    {
+        // TODO get the "category" from the deployment model, which will be the module in which the workflow is defined
+        // and use that as the argument here.
+        return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
+    }
+
+    public boolean canAccessData(User user, Container container)
+    {
+        return getPermissionsHandler().canAccessData(this, user, container);
+    }
+
+    public boolean canView(User user, Container container)
+    {
+        return getPermissionsHandler().canView(this, user, container);
+    }
+
+    public boolean canDelete(User user, Container container)
+    {
+        return getPermissionsHandler().canDelete(this, user, container);
+    }
+
     @Nullable
     public static Map<String, Object> getDisplayVariables(Container container, Map<String, Object> variables)
     {
@@ -175,11 +205,6 @@ public class WorkflowProcess implements HasViewContext
             {
                 displayKey = key.substring(0, key.length() - 2);
                 displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
-            }
-            else if (key.equalsIgnoreCase("DataAccess")) // TODO this seems unnecessary.  just start with "GetData" as the key
-            {
-                displayKey = "GetData";
-                displayValue = variables.get(key);
             }
             else if (variables.get(key) instanceof Date)
             {
@@ -200,11 +225,5 @@ public class WorkflowProcess implements HasViewContext
 
     }
 
-    @Nullable
-    public static HashMap getDataAccessParameters(@Nullable Map<String, Object> variables)
-    {
-        if ((variables == null) || (!variables.containsKey("dataAccess")))
-            return null;
-        return (HashMap) variables.get("dataAccess");
-    }
+
 }

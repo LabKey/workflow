@@ -39,10 +39,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowSummary;
 import org.labkey.workflow.model.WorkflowTask;
@@ -67,13 +69,10 @@ public class WorkflowController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WorkflowController.class);
     public static final String NAME = "workflow";
 
-
-
     public WorkflowController()
     {
         setActionResolver(_actionResolver);
     }
-
 
     /**
      * Shows a summary of the workflows for the current container and user
@@ -95,7 +94,7 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    public class AllWorkflowsBean
+    public static class AllWorkflowsBean
     {
         private Map<String, String> _workflowDefinitions = new HashMap<>();
         private List<File> _models;
@@ -131,7 +130,7 @@ public class WorkflowController extends SpringActionController
 
     /**
      * Shows a summary of a given workfow for the current container and user, including the number of tasks
-     * and number of workflow instances currently active.
+     * and number of workflow instances currently active for this user.
      */
     @RequiresPermissionClass(ReadPermission.class)
     public class SummaryAction extends SimpleViewAction<WorkflowRequestForm>
@@ -141,7 +140,7 @@ public class WorkflowController extends SpringActionController
         public ModelAndView getView(WorkflowRequestForm form, BindException errors) throws Exception
         {
             WorkflowSummary bean = new WorkflowSummary(form.getProcessDefinitionKey(), getUser(), getContainer());
-
+            _navLabel = bean.getName();
             return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
         }
 
@@ -151,16 +150,18 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    /**
+     * Shows a list of tasks that are associated with a particular workflow.
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class TaskListAction extends SimpleViewAction<WorkflowRequestForm>
     {
-        private String _navLabel = "Tasks";
-
         @Override
         public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
         {
+            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
             JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean);
-            jsp.setTitle("Assigned Tasks");
+            jsp.setTitle("Task List for '" + bean.getProcessDefinitionName() + "' workflow instances ");
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
@@ -182,10 +183,10 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class InstanceListAction extends SimpleViewAction<WorkflowRequestForm>
     {
-
         @Override
         public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
         {
+            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
             JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean);
             jsp.setTitle("Active Processes");
@@ -237,6 +238,7 @@ public class WorkflowController extends SpringActionController
         public ModelAndView getView(ProcessInstanceDetailsForm form, BindException errors) throws Exception
         {
             WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+            _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
 
             return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -316,7 +318,7 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
-           WorkflowManager.get().claimTask(form.getTaskId(), form.getAssigneeId());
+            WorkflowManager.get().claimTask(form.getTaskId(), form.getAssigneeId(), getContainer());
             return success();
         }
     }
@@ -330,8 +332,35 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
-            WorkflowManager.get().delegateTask(form.getTaskId(), form.getOwnerId(), form.getAssigneeId());
+            WorkflowManager.get().delegateTask(form.getTaskId(), getUser(), form.getAssigneeId(), getContainer());
             return success();
+        }
+    }
+
+
+    public static class WorkflowRequestForm
+    {
+        private String _processDefinitionKey;
+        private String _processDefinitionName;
+
+        public String getProcessDefinitionKey()
+        {
+            return _processDefinitionKey;
+        }
+
+        public void setProcessDefinitionKey(String processDefinitionKey)
+        {
+            _processDefinitionKey = processDefinitionKey;
+        }
+
+        public String getProcessDefinitionName()
+        {
+            return _processDefinitionName;
+        }
+
+        public void setProcessDefinitionName(String processDefinitionName)
+        {
+            _processDefinitionName = processDefinitionName;
         }
     }
 
@@ -344,7 +373,7 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
-            WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId());
+            WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId(), getUser(), getContainer());
             return success();
         }
     }
@@ -417,21 +446,6 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    public static class WorkflowRequestForm
-    {
-        private String _processDefinitionKey;
-
-        public String getProcessDefinitionKey()
-        {
-            return _processDefinitionKey;
-        }
-
-        public void setProcessDefinitionKey(String processDefinitionKey)
-        {
-            _processDefinitionKey = processDefinitionKey;
-        }
-    }
-
     private static class TaskListRequestForm extends WorkflowRequestForm
     {
         private Integer _principalId;
@@ -482,12 +496,13 @@ public class WorkflowController extends SpringActionController
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class StartProcessAction extends ApiAction<StartWorkflowProcessForm>
     {
         @Override
         public Object execute(StartWorkflowProcessForm form, BindException errors) throws Exception
         {
+
             if (form.getProcessDefinitionKey() == null)
                 throw new Exception("No process key provided");
 
@@ -560,7 +575,7 @@ public class WorkflowController extends SpringActionController
      * Deletes a particular process instance.  This is allowed for the initiator of the
      * process and for administrators.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(DeletePermission.class)
     public class RemoveProcessAction extends ApiAction<RemoveWorkflowProcessForm>
     {
         @Override
@@ -568,7 +583,11 @@ public class WorkflowController extends SpringActionController
         {
             if (form.getProcessInstanceId() == null)
                 throw new Exception("No process instance id provided");
-
+            WorkflowProcess process = new WorkflowProcess(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()), getUser(), getContainer());
+            if (!process.canDelete(getUser(), getContainer()))
+            {
+                throw new UnauthorizedException("You do not have permission to delete this process instance");
+            }
             WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), null);
             return success();
         }
@@ -605,8 +624,13 @@ public class WorkflowController extends SpringActionController
                 throw new Exception("Task id cannot be null.");
             else
             {
+                WorkflowTask task = new WorkflowTask(WorkflowManager.get().getTask(form.getTaskId()));
+                if (!task.canComplete(getUser(), getContainer()))
+                {
+                    throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");
+                }
                 WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
-                WorkflowManager.get().completeTask(form.getTaskId());
+                WorkflowManager.get().completeTask(form.getTaskId(), getUser(), getContainer());
                 response.put("status", "success");
             }
 
@@ -619,17 +643,6 @@ public class WorkflowController extends SpringActionController
         private String _taskId;
         private String _processInstanceId;
         private Map<String, Object> _processVariables;
-        private Boolean _approved; // TODO remove this hack
-
-        public Boolean getApproved()
-        {
-            return _approved;
-        }
-
-        public void setApproved(Boolean approved)
-        {
-            _approved = approved;
-        }
 
         public String getTaskId()
         {
@@ -659,19 +672,6 @@ public class WorkflowController extends SpringActionController
         public void setProcessVariables(Map<String, Object> processVariables)
         {
             _processVariables = processVariables;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ModelListAction extends ApiAction
-    {
-
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("models", WorkflowManager.get().getWorkflowModels(getContainer()));
-            return success(response);
         }
     }
 
@@ -827,7 +827,7 @@ public class WorkflowController extends SpringActionController
             this.setReason((String) details.get("reason"));
             this.setUser((User) details.get("requester"));
             this.setProcessInstanceId(processInstanceId);
-            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(processInstanceId, user, container));
+            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(processInstanceId, container));
         }
 
         public String getTaskState()

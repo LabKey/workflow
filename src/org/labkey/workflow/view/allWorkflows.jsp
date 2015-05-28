@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -28,16 +29,20 @@
     WorkflowController.AllWorkflowsBean bean = (WorkflowController.AllWorkflowsBean) me.getModelBean();
     Map<String, String> processDefinitions = bean.getWorkflowDefinitions();
 
+    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    {
+
 %>
 The models currently available in this container are:
 <ul>
-<%
-    for (File model : bean.getModels())
-    {
-%>
+    <%
+        for (File model : bean.getModels())
+        {
+    %>
     <li><%= model.getAbsolutePath() %> <%= PageFlowUtil.textLink("Deploy",
             new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("file", model.getAbsolutePath())) %></li>
 <%
+        }
     }
 %>
 </ul>
