@@ -23,7 +23,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -90,7 +89,7 @@ public class WorkflowQuerySchema extends UserSchema
     protected TableInfo createTable(String name)
     {
         if (name.equals(TABLE_TASK))
-            return new WorkflowTaskTable(this);
+            return new WorkflowTaskTable(this, getUser(), getContainer());
         else if (name.equals(TABLE_PROCESS_DEFINITION))
             return new WorkflowProcessDefinitionTable(this);
         else if (name.equals(TABLE_PROCESS_INSTANCE))

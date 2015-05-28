@@ -55,7 +55,7 @@
         else
         {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumTotalTasks() + " tasks total", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+        <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
         <%
             }
         %>
@@ -72,7 +72,7 @@
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumAssignedTasks() + " assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+        <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
         <%
             }
         %>
@@ -88,7 +88,7 @@
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumOwnedTasks() + " owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
+        <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
         <%
             }
         %>
@@ -110,7 +110,7 @@
                 for (Map.Entry<UserPrincipal, Long> entry : bean.getNumGroupTasks().entrySet())
                 {
         %>
-        <li><%= entry.getKey() %> <%= PageFlowUtil.textLink(entry.getValue() + " tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
+        <li> <%= PageFlowUtil.textLink(entry.getKey().getName(), new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
         <%
                 }
         %>
@@ -125,13 +125,13 @@
             if (bean.getNumInstances() == 0)
             {
         %>
-        No currently active processes
+        No currently active processes associated with this user
         <%
             }
             else
             {
         %>
-        <%= PageFlowUtil.textLink(bean.getNumInstances() + " active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
        <%
             }
        // TODO add the start form
