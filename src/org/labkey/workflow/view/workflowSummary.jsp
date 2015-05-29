@@ -40,8 +40,15 @@
 %>
 
 <%--<strong><%= bean.getName() %></strong>--%>
+<%
+    if (bean.getDescription() != null)
+    {
+%>
 <br>
 <%= bean.getDescription() %>
+<%
+    }
+%>
 <ul>
 
     <li>
