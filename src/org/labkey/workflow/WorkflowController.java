@@ -57,6 +57,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -238,7 +239,10 @@ public class WorkflowController extends SpringActionController
         public ModelAndView getView(ProcessInstanceDetailsForm form, BindException errors) throws Exception
         {
             WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
-            _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
+            if (bean.getProcessInstanceId() != null)
+            {
+                _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
+            }
 
             return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -575,14 +579,18 @@ public class WorkflowController extends SpringActionController
      * Deletes a particular process instance.  This is allowed for the initiator of the
      * process and for administrators.
      */
-    @RequiresPermissionClass(DeletePermission.class)
-    public class RemoveProcessAction extends ApiAction<RemoveWorkflowProcessForm>
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RemoveProcessInstanceAction extends ApiAction<RemoveWorkflowProcessForm>
     {
         @Override
         public Object execute(RemoveWorkflowProcessForm form, BindException errors) throws Exception
         {
             if (form.getProcessInstanceId() == null)
                 throw new Exception("No process instance id provided");
+            String removalMsg = "Removed by user " + getUser() + " on " + (new Date()) + ".  ";
+            if (form.getComment() != null)
+                removalMsg += "Reason: " + form.getComment();
+            form.setComment(removalMsg);
             WorkflowProcess process = new WorkflowProcess(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()), getUser(), getContainer());
             if (!process.canDelete(getUser(), getContainer()))
             {
@@ -596,6 +604,7 @@ public class WorkflowController extends SpringActionController
     public static class RemoveWorkflowProcessForm
     {
         private String _processInstanceId;
+        private String _comment;
 
         public String getProcessInstanceId()
         {
@@ -605,6 +614,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessInstanceId(String processInstanceId)
         {
             _processInstanceId = processInstanceId;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
         }
     }
 

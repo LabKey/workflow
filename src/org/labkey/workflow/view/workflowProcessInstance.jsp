@@ -19,14 +19,13 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.model.WorkflowTask" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -34,6 +33,7 @@
         resources.add(ClientDependency.fromPath("Ext4"));
         resources.add(ClientDependency.fromPath("workflow/view/reassignTask.js"));
         resources.add(ClientDependency.fromPath("workflow/view/completeTask.js"));
+        resources.add(ClientDependency.fromPath("workflow/view/deleteProcessInstance.js"));
 
         return resources;
     }
@@ -46,8 +46,9 @@
     if (bean.getProcessInstanceId() == null)
     {
 %>
-
 There is no active process with id <%= h(bean.getId()) %>
+<br><br>
+<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <%
     }
     else if (!bean.canView(getUser(), getContainer()))
@@ -82,10 +83,16 @@ There is no active process with id <%= h(bean.getId()) %>
 <%
     }
 %>
-
+<%
+    if (bean.canDelete(getUser(), getContainer()))
+    {
+%>
+&nbsp;&nbsp;<%= PageFlowUtil.button("Delete").onClick(" createDeleteProcessInstanceConfirmationWindow(" + q(bean.getProcessInstanceId()) + ", " + q(bean.getProcessDefinitionKey()) + ", " + q(bean.getName()) + ")") %>
+<%
+    }
+%>
 <br>
 <br>
-
 <%
     if (bean.getProcessVariables() != null && !bean.getProcessVariables().isEmpty())
     {
