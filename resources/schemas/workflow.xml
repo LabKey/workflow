@@ -262,9 +262,10 @@
   <table tableName="act_hi_identitylink" tableDbType="TABLE">
     <columns>
       <column columnName="id_">
-         <columnName>RowId</columnName>
+         <columnTitle>RowId</columnTitle>
       </column>
       <column columnName="group_id_">
+        <columnTitle>Group</columnTitle>
         <fk>
           <fkColumnName>UserId</fkColumnName>
           <fkTable>principals</fkTable>
@@ -272,21 +273,13 @@
         </fk>
       </column>
       <column columnName="type_">
-         <columnName>Type</columnName>
+         <columnTitle>Type</columnTitle>
       </column>
       <column columnName="user_id_">
-         <columnName>User Id</columnName>
+         <columnTitle>User Id</columnTitle>
         <fk>
           <fkColumnName>UserId</fkColumnName>
           <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
-      </column>
-      <column columnName="group_id_">
-         <columnName>Group Id</columnName>
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Principals</fkTable>
           <fkDbSchema>core</fkDbSchema>
         </fk>
       </column>
@@ -523,14 +516,56 @@
   </table>
   <table tableName="act_ru_identitylink" tableDbType="TABLE">
     <columns>
-      <column columnName="id_"/>
-      <column columnName="rev_"/>
-      <column columnName="group_id_"/>
-      <column columnName="type_"/>
-      <column columnName="user_id_"/>
-      <column columnName="task_id_"/>
-      <column columnName="proc_inst_id_"/>
-      <column columnName="proc_def_id_"/>
+      <column columnName="id_">
+         <columnTitle>RowId</columnTitle>
+      </column>
+      <column columnName="rev_">
+         <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="group_id_">
+        <columnTitle>Group</columnTitle>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Principals</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="type_">
+         <columnTitle>Type</columnTitle>
+      </column>
+      <column columnName="user_id_">
+         <columnTitle>User</columnTitle>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="task_id_">
+        <columnTitle>Task Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>act_ru_task</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_inst_id_">
+        <columnTitle>Process Instance Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RU_EXECUTION</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="proc_def_id_">
+        <columnTitle>Process Definition Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RE_PROCDEF</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+          <fkDisplayColumnName>key_</fkDisplayColumnName>
+        </fk>
+      </column>
     </columns>
   </table>
   <table tableName="act_hi_detail" tableDbType="TABLE">

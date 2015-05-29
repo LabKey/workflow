@@ -94,6 +94,10 @@ public class WorkflowQuerySchema extends UserSchema
             return new WorkflowProcessDefinitionTable(this);
         else if (name.equals(TABLE_PROCESS_INSTANCE))
             return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
+        else if (name.equals(TABLE_IDENTITY_LINK))
+            return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
+        else if (name.equals(TABLE_VARIABLE))
+            return new WorkflowVariableTable(this, getUser(), getContainer());
         else if (name.equals(TABLE_DEPLOYMENT))
             return new WorkflowTenantTable(this, name);
 
@@ -126,7 +130,8 @@ public class WorkflowQuerySchema extends UserSchema
                 }
             };
         }
-        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
+//        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
+        queryView.setShowDeleteButton(false); // TODO can't do the cascaded delete from constraints within SQL Server, so we'll need to do something special to enable deletion
         queryView.setShowUpdateColumn(false);
         queryView.setShowInsertNewButton(false);
         queryView.setShowImportDataButton(false);

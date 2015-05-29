@@ -4,7 +4,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -63,9 +62,8 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
 
    private ColumnInfo addInitiatorColumn(User user, Container container)
     {
-        SQLFragment sql = new SQLFragment("(SELECT V.text_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.execution_id_ = act_ru_execution.id_");
-        sql.append(new SQLFragment(" AND V.text_ = ?", String.valueOf(user.getUserId())));
-        sql.append(")");
+        SQLFragment sql = new SQLFragment("(SELECT V.text_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.execution_id_ = act_ru_execution.id_)");
+
         ExprColumn ret = new ExprColumn(this, "Initiator", sql, JdbcType.VARCHAR);
         ret.setFk(new UserIdForeignKey(this.getUserSchema()));
 
