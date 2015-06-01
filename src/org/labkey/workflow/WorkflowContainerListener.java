@@ -35,6 +35,7 @@ public class WorkflowContainerListener implements ContainerListener
     @Override
     public void containerDeleted(Container c, User user)
     {
+        WorkflowManager.get().deleteDeployments(c);
     }
 
     @Override
