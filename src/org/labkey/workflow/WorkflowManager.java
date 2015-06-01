@@ -49,6 +49,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -80,17 +81,30 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class WorkflowManager
 {
-    private static final WorkflowManager _instance = new WorkflowManager();
-    private ProcessEngine _processEngine = null;
+    public static final String WORKFLOW_MODEL_DIR = "workflow/model";
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
-    public static final String WORKFLOW_MODEL_DIR = "workflow/model";
     private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
+    private static final WorkflowManager _instance = new WorkflowManager();
+
     private final Set<Module> _workflowModules = new CopyOnWriteArraySet<>();
     // map between module name and the list of workflow model files defined in that module
     private Map<String, List<File>> _workflowModelFiles = new HashMap<>();
 
-//    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowModelFileCacheHandler());
+    private ProcessEngine _processEngine = null;
+
+    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowModelFileCacheHandler());
+
+    // TODO Remove this when we convert to Java 8 in favor of IntStream construction
+    public static List<Integer> getGroupList(int[] groupIds)
+    {
+        List<Integer> groupList = new ArrayList<>(groupIds.length);
+        for (int i = 0; i < groupIds.length; i++)
+        {
+            groupList.add(groupIds[i]);
+        }
+        return groupList;
+    }
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -129,7 +143,7 @@ public class WorkflowManager
                 continue;
 
             modelsList.addAll(getWorkflowModels(module));
-//            getWorkflowModelFiles(module);
+            getWorkflowModelFiles(module);
 
         }
         // now add the models defined in the workflow module itself
@@ -173,10 +187,10 @@ public class WorkflowManager
     }
 
 
-//    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
-//    {
-//        return CACHE.getResources(module);
-//    }
+    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
+    {
+        return CACHE.getResources(module);
+    }
 
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
@@ -769,6 +783,19 @@ public class WorkflowManager
 //
 //        deployWorkflow(new File(definition.getResourceName()), container);
 //    }
+
+    private List<Deployment> getDeployments(@NotNull Container container)
+    {
+        return getRepositoryService().createDeploymentQuery().deploymentTenantId(container.getId()).list();
+    }
+
+    public void deleteDeployments(@NotNull Container container)
+    {
+        for (Deployment deployment : getDeployments(container))
+        {
+            getRepositoryService().deleteDeployment(deployment.getId(), true);
+        }
+    }
 
     public String deployWorkflow(@NotNull File modelFile, @Nullable Container container) throws FileNotFoundException
     {

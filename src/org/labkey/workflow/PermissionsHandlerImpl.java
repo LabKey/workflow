@@ -38,7 +38,7 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     @Override
     public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
     {
-        return CollectionUtils.containsAny(WorkflowManager.get().getCandidateGroupIds(task.getId()), Arrays.asList(user.getGroups()));
+        return CollectionUtils.containsAny(WorkflowManager.get().getCandidateGroupIds(task.getId()), WorkflowManager.getGroupList(user.getGroups()));
     }
 
     public boolean canDelegate(@Nullable WorkflowTask task, @NotNull User user, @NotNull Container container)

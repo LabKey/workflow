@@ -26,13 +26,12 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.workflow.WorkflowController;
+import org.labkey.workflow.WorkflowManager;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,24 +63,13 @@ public class WorkflowTaskTable extends WorkflowTenantTable
             addCondition(new SQLFragment("owner_ = ? OR assignee_ = ?", user.getUserId(), user.getUserId()));
     }
 
-    // TODO Remove this when we convert to Java 8 in favor of IntStream construction
-    private List<Integer> getGroupList(int[] groupIds)
-    {
-        List<Integer> groupList = new ArrayList<>(groupIds.length);
-        for (int i = 0; i < groupIds.length; i++)
-        {
-            groupList.add(groupIds[i]);
-        }
-        return groupList;
-    }
-
     private ColumnInfo addCandidateGroupColumn(User user, Container container)
     {
         SQLFragment sql = new SQLFragment("(SELECT I.group_id_ FROM workflow.act_ru_identitylink I WHERE I.task_id_ = act_ru_task.id_");
         if (!container.hasPermission(user, AdminPermission.class))
         {
             sql.append(" AND (I.group_id_ IS NULL OR ");
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), getGroupList(user.getGroups()));
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), WorkflowManager.getGroupList(user.getGroups()));
             sql.append(clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect()));
             sql.append(")");
         }
