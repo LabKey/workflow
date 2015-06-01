@@ -39,7 +39,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
@@ -744,7 +743,7 @@ public class WorkflowController extends SpringActionController
     }
 
     // TODO the methods and classes below here are specific to the data export proof of concept example.
-    private static final String ARGOS_PROCESS_KEY = "argosDataExportSimple";
+    private static final String PROCESS_KEY = "submitForApprovalWithoutRetry";
 
     @RequiresPermissionClass(ReadPermission.class)
     public class StartExportAction extends SimpleViewAction
@@ -794,7 +793,7 @@ public class WorkflowController extends SpringActionController
             if (form.getDataSetId() != null)
             {
                 WorkflowProcess process = new WorkflowProcess();
-                process.setProcessDefintionKey(ARGOS_PROCESS_KEY);
+                process.setProcessDefintionKey(PROCESS_KEY);
                 process.setInitiatorId(getUser().getUserId());
 
                 Map<String, Object> variables = new HashMap<String, Object>();
@@ -810,7 +809,7 @@ public class WorkflowController extends SpringActionController
 
                 form.setProcessInstanceId(instanceId);
 
-                WorkflowSummary bean = new WorkflowSummary(ARGOS_PROCESS_KEY, getUser(), getContainer());
+                WorkflowSummary bean = new WorkflowSummary(PROCESS_KEY, getUser(), getContainer());
 
                 return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
             }
