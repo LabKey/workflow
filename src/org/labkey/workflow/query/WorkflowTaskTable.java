@@ -20,13 +20,13 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.workflow.WorkflowController;
-import org.labkey.workflow.WorkflowManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -69,7 +69,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         if (!container.hasPermission(user, AdminPermission.class))
         {
             sql.append(" AND (I.group_id_ IS NULL OR ");
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), WorkflowManager.getGroupList(user.getGroups()));
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), SecurityManager.getGroups(container, user));
             sql.append(clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect()));
             sql.append(")");
         }

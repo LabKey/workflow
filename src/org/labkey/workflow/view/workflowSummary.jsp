@@ -15,14 +15,13 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.security.UserPrincipal" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowSummary" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -38,112 +37,46 @@
 <%
     }
 %>
-
-<%--<strong><%= bean.getName() %></strong>--%>
 <%
     if (bean.getDescription() != null)
     {
 %>
 <br>
-<%= bean.getDescription() %>
+<%= h(bean.getDescription()) %>
 <%
     }
 %>
 <ul>
 
     <li>
-        <%
-            if (bean.getNumTotalTasks() == 0)
-            {
-        %>
-        No current tasks
-        <%
-        }
-        else
-        {
-        %>
         <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-        <%
-            }
-        %>
     </li>
 
     <li>
-        <%
-            if (bean.getNumAssignedTasks() == 0)
-            {
-        %>
-        No currently assigned tasks
-        <%
-            }
-            else
-            {
-        %>
         <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
-        <%
-            }
-        %>
     </li>
     <li>
-        <%
-            if (bean.getNumOwnedTasks() == 0)
-            {
-        %>
-        No currently owned tasks
-        <%
-            }
-            else
-            {
-        %>
         <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
-        <%
-            }
-        %>
     </li>
     <li>
-        <%
-            if (bean.getNumGroupTasks().isEmpty())
-            {
-        %>
-        No unassigned tasks associated with your groups
-        <%
-            }
-            else
-            {
-        %>
         Unassigned tasks
         <ul>
         <%
-                for (Map.Entry<UserPrincipal, Long> entry : bean.getNumGroupTasks().entrySet())
+                for (Group group : org.labkey.api.security.SecurityManager.getGroups(getContainer(), getUser()))
                 {
         %>
-        <li> <%= PageFlowUtil.textLink(entry.getKey().getName(), new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", entry.getKey().getUserId())) %>
+        <li> <%= PageFlowUtil.textLink(group.getName(), new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true).addParameter("query.group~eq", group.getUserId())) %>
         <%
                 }
         %>
             </ul>
-        <%
-            }
-        %>
 
     </li>
     <li>
-        <%
-            if (bean.getNumInstances() == 0)
-            {
-        %>
-        No currently active processes associated with this user
-        <%
-            }
-            else
-            {
-        %>
         <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
-       <%
-            }
-       // TODO add the start form
-       %>
-        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
+
+       <%--// TODO add the start form--%>
+       <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
 
     </li>
 </ul>

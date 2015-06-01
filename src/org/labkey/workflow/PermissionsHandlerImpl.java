@@ -4,12 +4,11 @@ import org.apache.commons.collections15.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.workflow.model.WorkflowProcess;
 import org.labkey.workflow.model.WorkflowTask;
-
-import java.util.Arrays;
 
 /**
  * Created by susanh on 5/27/15.
@@ -38,7 +37,7 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     @Override
     public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
     {
-        return CollectionUtils.containsAny(WorkflowManager.get().getCandidateGroupIds(task.getId()), WorkflowManager.getGroupList(user.getGroups()));
+        return CollectionUtils.containsAny(WorkflowManager.get().getCandidateGroupIds(task.getId()), SecurityManager.getGroups(container, user));
     }
 
     public boolean canDelegate(@Nullable WorkflowTask task, @NotNull User user, @NotNull Container container)

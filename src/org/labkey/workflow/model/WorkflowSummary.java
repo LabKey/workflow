@@ -30,7 +30,7 @@ public class WorkflowSummary
     {
         _processDefinitionKey = processDefinitionKey;
         _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey, container);
-        setSummaryCounts(user, container);
+//        setSummaryCounts(user, container);
     }
 
     public String getName()

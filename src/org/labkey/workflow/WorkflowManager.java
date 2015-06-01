@@ -27,6 +27,7 @@ import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.form.FormProperty;
 import org.activiti.engine.form.TaskFormData;
+import org.activiti.engine.impl.pvm.ProcessDefinitionBuilder;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
@@ -82,6 +83,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class WorkflowManager
 {
     public static final String WORKFLOW_MODEL_DIR = "workflow/model";
+
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
@@ -94,17 +96,6 @@ public class WorkflowManager
     private ProcessEngine _processEngine = null;
 
     private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowModelFileCacheHandler());
-
-    // TODO Remove this when we convert to Java 8 in favor of IntStream construction
-    public static List<Integer> getGroupList(int[] groupIds)
-    {
-        List<Integer> groupList = new ArrayList<>(groupIds.length);
-        for (int i = 0; i < groupIds.length; i++)
-        {
-            groupList.add(groupIds[i]);
-        }
-        return groupList;
-    }
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -185,7 +176,6 @@ public class WorkflowManager
         }
         return models;
     }
-
 
     private Collection<File> getWorkflowModelFiles(@NotNull Module module)
     {
@@ -542,8 +532,10 @@ public class WorkflowManager
      * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
      * @param container the container in which this process is being created  @return the id of the new process instance for this workflow
      */
-    public String startWorkflow(@NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container)
+    public String startWorkflow(@NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException
     {
+
+//        makeContainerDeployment(processDefinitionKey, container);
 
         ProcessInstanceBuilder builder = getRuntimeService().createProcessInstanceBuilder().processDefinitionKey(processDefinitionKey);
         if (name != null) {
@@ -555,7 +547,7 @@ public class WorkflowManager
         {
             builder.addVariable(variable.getKey(), variable.getValue());
         }
-        builder.addVariable(WorkflowProcess.CREATED_DATE, new Date());
+        builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // TODO this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
         return instance.getId();
     }
@@ -705,10 +697,12 @@ public class WorkflowManager
     }
 
     /**
+     *
+     * @param processDefinitionKey
      * @param container the container for which this query is being made
      * @return the number of process definitions currently deployed in the container, or in the system if container is null
      */
-    protected long getProcessDefinitionCount(@Nullable Container container)
+    protected long getProcessDefinitionCount(@NotNull String processDefinitionKey, @Nullable Container container)
     {
         ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery();
         if (container != null)
@@ -773,16 +767,33 @@ public class WorkflowManager
             return null;
     }
 
-//    public void makeContainerDeployment(@NotNull String processDefinitionKey, @NotNull Container container) throws FileNotFoundException
-//    {
-//        Long count = getRepositoryService().createDeploymentQuery().processDefinitionKey(processDefinitionKey).deploymentTenantId(container.getId()).count();
-//        if (count > 0)
-//            return;
-//
-//        ProcessDefinition definition = getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).latestVersion().singleResult();
-//
-//        deployWorkflow(new File(definition.getResourceName()), container);
-//    }
+    public void makeContainerDeployment(@NotNull String processDefinitionKey, @NotNull Container container) throws FileNotFoundException
+    {
+        // find out if there are any deployments in the current container
+        Long count = getProcessDefinitionCount(processDefinitionKey, container);
+        // get the process definition from "global scope" (without a container id)
+        // TODO this is where the module resource cache comes into play
+        ProcessDefinition globalDefinition = getProcessDefinition(processDefinitionKey, null);
+        Deployment globalDeployment = getDeployment(globalDefinition.getDeploymentId());
+
+        if (count > 0)
+        {
+            // find the latest version for this container and compare deployment time to the time for the global version
+            ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
+            Deployment containerDeployment = getDeployment(containerDef.getDeploymentId());
+            // if the container version was deployed after the global version, there's nothing more to do
+            if (containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
+                return;
+        }
+
+        // deploy a (newer) version in this container
+        deployWorkflow(new File(globalDefinition.getResourceName()), container);
+    }
+
+    private Deployment getDeployment(@NotNull String deploymentId)
+    {
+        return getRepositoryService().createDeploymentQuery().deploymentId(deploymentId).singleResult();
+    }
 
     private List<Deployment> getDeployments(@NotNull Container container)
     {
