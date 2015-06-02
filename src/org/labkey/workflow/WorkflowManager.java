@@ -106,8 +106,7 @@ public class WorkflowManager
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
         List<Integer> groupIds = new ArrayList<>();
-        Task task = getTask(taskId);
-        List<IdentityLink> links = getRuntimeService().getIdentityLinksForProcessInstance(task.getProcessInstanceId());
+        List<IdentityLink> links = getTaskService().getIdentityLinksForTask(taskId);
         for (IdentityLink  link : links)
         {
             if (link.getGroupId() != null)
