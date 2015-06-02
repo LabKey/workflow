@@ -28,24 +28,7 @@
 
     WorkflowController.AllWorkflowsBean bean = (WorkflowController.AllWorkflowsBean) me.getModelBean();
     Map<String, String> processDefinitions = bean.getWorkflowDefinitions();
-
-    if (getContainer().hasPermission(getUser(), AdminPermission.class))
-    {
-
 %>
-The models currently available in this container are:
-<ul>
-    <%
-        for (File model : bean.getModels())
-        {
-    %>
-    <li><%= model.getAbsolutePath() %> <%= PageFlowUtil.textLink("Deploy",
-            new ActionURL(WorkflowController.DeployAction.class, getViewContext().getContainer()).addParameter("file", model.getAbsolutePath())) %></li>
-<%
-        }
-    }
-%>
-</ul>
 <%
     if (processDefinitions.isEmpty())
     {

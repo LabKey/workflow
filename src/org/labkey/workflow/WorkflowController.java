@@ -16,7 +16,6 @@
 
 package org.labkey.workflow;
 
-import org.activiti.engine.task.Task;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
@@ -31,13 +30,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -58,10 +52,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Marshal(Marshaller.Jackson)
 public class WorkflowController extends SpringActionController
@@ -97,14 +89,12 @@ public class WorkflowController extends SpringActionController
     public static class AllWorkflowsBean
     {
         private Map<String, String> _workflowDefinitions = new HashMap<>();
-        private List<File> _models;
 
         public AllWorkflowsBean() {}
 
         public AllWorkflowsBean(@Nullable Container container)
         {
             setWorkflowDefinitions(WorkflowManager.get().getProcessDefinitionNames(container));
-            setModels(WorkflowManager.get().getWorkflowModels(null));
         }
 
         public Map<String, String> getWorkflowDefinitions()
@@ -115,16 +105,6 @@ public class WorkflowController extends SpringActionController
         public void setWorkflowDefinitions(Map<String, String> workflowDefinitions)
         {
             _workflowDefinitions = workflowDefinitions;
-        }
-
-        public List<File> getModels()
-        {
-            return _models;
-        }
-
-        public void setModels(List<File> models)
-        {
-            _models = models;
         }
     }
 
@@ -180,6 +160,9 @@ public class WorkflowController extends SpringActionController
 
     }
 
+    /**
+     * Shows a list of the current workflow instances for a given workflow model key
+     */
     @RequiresPermissionClass(ReadPermission.class)
     public class InstanceListAction extends SimpleViewAction<WorkflowRequestForm>
     {
@@ -418,83 +401,83 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    /**
-     * Retrieves the tasks for a given PrincipalUser.  Depending on the taskInvolvement settings, retrieves only those
-     * tasks for the principal or includes tasks that have the principal's groups as candidate groups.
-     */
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GetTasksAction extends ApiAction<TaskListRequestForm>
-    {
-        @Override
-        public Object execute(TaskListRequestForm form, BindException errors) throws Exception
-        {
-            Map<UserPrincipal, List<Task>> tasks = new HashMap<>();
-            if (form.getPrincipalType() == PrincipalType.USER)
-            {
-                User user = UserManager.getUser(form.getPrincipalId());
-                if (user != null)
-                {
-                    tasks.put(user, WorkflowManager.get().getTaskList(user, getContainer(), form.getInvolvement()));
-                }
-            }
-            else if (form.getPrincipalType() == PrincipalType.GROUP)
-            {
-                Group group = SecurityManager.getGroup(form.getPrincipalId());
-                if (group != null)
-                {
-                    tasks.put(group, WorkflowManager.get().getTaskList(group));
-                }
-            }
-            return success(tasks);
-        }
-    }
-
-    private static class TaskListRequestForm extends WorkflowRequestForm
-    {
-        private Integer _principalId;
-        private PrincipalType _principalType;
-        private Set<WorkflowManager.TaskInvolvement> _involvement;
-
-        public void setPrincipalId(Integer principalId)
-        {
-            _principalId = principalId;
-        }
-
-        public PrincipalType getPrincipalType()
-        {
-            return _principalType;
-        }
-
-        public void setPrincipalType(PrincipalType principalType)
-        {
-            _principalType = principalType;
-        }
-
-        public Integer getPrincipalId()
-        {
-            return _principalId;
-        }
-
-        public void setPrincipalId(int principalId)
-        {
-            _principalId = principalId;
-        }
-
-        public Set<WorkflowManager.TaskInvolvement> getInvolvement()
-        {
-            return _involvement;
-        }
-
-        public void setInvolvement(Set<String> involvement)
-        {
-            _involvement = new HashSet<>();
-            for (String item : involvement)
-            {
-                _involvement.add(WorkflowManager.TaskInvolvement.valueOf(item.toUpperCase()));
-            }
-        }
-
-    }
+//    /**
+//     * Retrieves the tasks for a given PrincipalUser.  Depending on the taskInvolvement settings, retrieves only those
+//     * tasks for the principal or includes tasks that have the principal's groups as candidate groups.
+//     */
+//    @RequiresPermissionClass(ReadPermission.class)
+//    public class GetTasksAction extends ApiAction<TaskListRequestForm>
+//    {
+//        @Override
+//        public Object execute(TaskListRequestForm form, BindException errors) throws Exception
+//        {
+//            Map<UserPrincipal, List<Task>> tasks = new HashMap<>();
+//            if (form.getPrincipalType() == PrincipalType.USER)
+//            {
+//                User user = UserManager.getUser(form.getPrincipalId());
+//                if (user != null)
+//                {
+//                    tasks.put(user, WorkflowManager.get().getTaskList(user, getContainer(), form.getInvolvement()));
+//                }
+//            }
+//            else if (form.getPrincipalType() == PrincipalType.GROUP)
+//            {
+//                Group group = SecurityManager.getGroup(form.getPrincipalId());
+//                if (group != null)
+//                {
+//                    tasks.put(group, WorkflowManager.get().getTaskList(group));
+//                }
+//            }
+//            return success(tasks);
+//        }
+//    }
+//
+//    private static class TaskListRequestForm extends WorkflowRequestForm
+//    {
+//        private Integer _principalId;
+//        private PrincipalType _principalType;
+//        private Set<WorkflowManager.TaskInvolvement> _involvement;
+//
+//        public void setPrincipalId(Integer principalId)
+//        {
+//            _principalId = principalId;
+//        }
+//
+//        public PrincipalType getPrincipalType()
+//        {
+//            return _principalType;
+//        }
+//
+//        public void setPrincipalType(PrincipalType principalType)
+//        {
+//            _principalType = principalType;
+//        }
+//
+//        public Integer getPrincipalId()
+//        {
+//            return _principalId;
+//        }
+//
+//        public void setPrincipalId(int principalId)
+//        {
+//            _principalId = principalId;
+//        }
+//
+//        public Set<WorkflowManager.TaskInvolvement> getInvolvement()
+//        {
+//            return _involvement;
+//        }
+//
+//        public void setInvolvement(Set<String> involvement)
+//        {
+//            _involvement = new HashSet<>();
+//            for (String item : involvement)
+//            {
+//                _involvement.add(WorkflowManager.TaskInvolvement.valueOf(item.toUpperCase()));
+//            }
+//        }
+//
+//    }
 
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
@@ -512,7 +495,7 @@ public class WorkflowController extends SpringActionController
             form.setInitiatorId(getUser().getUserId());
             form.setContainerId(getContainer().getId());
 
-            String instanceId = WorkflowManager.get().startWorkflow(form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
+            String instanceId = WorkflowManager.get().startWorkflow(form.getWorkflowModelModule(), form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("processInstanceId", instanceId);
             return success(response);
@@ -521,6 +504,7 @@ public class WorkflowController extends SpringActionController
 
     public static class StartWorkflowProcessForm
     {
+        private String _workflowModelModule;
         private String _processDefinitionKey;
         private String _name;
         private Map<String, Object> _processVariables;
@@ -543,6 +527,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionKey(String processDefinitionKey)
         {
             _processDefinitionKey = processDefinitionKey;
+        }
+
+        public String getWorkflowModelModule()
+        {
+            return _workflowModelModule;
+        }
+
+        public void setWorkflowModelModule(String module)
+        {
+            _workflowModelModule = module;
         }
 
         public void setInitiatorId(int userId)
@@ -628,7 +622,7 @@ public class WorkflowController extends SpringActionController
 
     /**
      * Complete a task in a workflow.  This is allowed only if the task is currently assigned
-     * to the current user ???or one of the groups the user is in is a candidate???
+     * to the current user.
      */
     @RequiresPermissionClass(ReadPermission.class)
     public class CompleteTaskAction extends ApiAction<TaskCompletionForm>
@@ -805,7 +799,7 @@ public class WorkflowController extends SpringActionController
                 process.setProcessVariables(variables);
                 process.setName("Request from " + getUser() + " for export of data set " + form.getDataSetId());
 
-                String instanceId = WorkflowManager.get().startWorkflow(process, getContainer());
+                String instanceId =  WorkflowManager.get().startWorkflow(WorkflowModule.NAME, PROCESS_KEY, "Request for export from Proof of Concept", variables, getContainer());
 
                 form.setProcessInstanceId(instanceId);
 

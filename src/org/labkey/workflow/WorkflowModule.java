@@ -69,7 +69,7 @@ public class WorkflowModule extends DefaultModule
     @Override
     public Set<? extends ModuleResourceLoader> getResourceLoaders()
     {
-        return Collections.singleton(new WorkflowModuleResourceLoader());
+        return Collections.emptySet();
     }
 
     @Override

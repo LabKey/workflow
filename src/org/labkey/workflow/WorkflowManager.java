@@ -27,7 +27,6 @@ import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.form.FormProperty;
 import org.activiti.engine.form.TaskFormData;
-import org.activiti.engine.impl.pvm.ProcessDefinitionBuilder;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
@@ -47,11 +46,10 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.FileResource;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -68,34 +66,25 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public class WorkflowManager
 {
-    public static final String WORKFLOW_MODEL_DIR = "workflow/model";
-
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
     private static final WorkflowManager _instance = new WorkflowManager();
 
-    private final Set<Module> _workflowModules = new CopyOnWriteArraySet<>();
-    // map between module name and the list of workflow model files defined in that module
-    private Map<String, List<File>> _workflowModelFiles = new HashMap<>();
-
     private ProcessEngine _processEngine = null;
 
-    private final ModuleResourceCache<File> CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowModelFileCacheHandler());
+    // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
+    private final ModuleResourceCache<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
 
     public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
@@ -112,74 +101,6 @@ public class WorkflowManager
     public PermissionsHandler getPermissionsHandler()
     {
         return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
-    }
-
-    // At startup, we record all modules with "resources/workflow/model" directories and register a file listener to monitor for changes.
-    // Loading the list of models in each module and the descriptors themselves happens lazily.
-    public void registerModule(Module module)
-    {
-        _workflowModules.add(module);
-    }
-
-
-    @NotNull
-    public List<File> getWorkflowModels(@Nullable Container container)
-    {
-        Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
-        ArrayList<File> modelsList = new ArrayList<>();
-
-        for (Module module : activeModules)
-        {
-            if (!_workflowModules.contains(module))
-                continue;
-
-            modelsList.addAll(getWorkflowModels(module));
-            getWorkflowModelFiles(module);
-
-        }
-        // now add the models defined in the workflow module itself
-        modelsList.addAll(getWorkflowModels(ModuleLoader.getInstance().getModule(WorkflowModule.NAME), "model"));
-
-        return Collections.unmodifiableList(modelsList);
-    }
-
-    private List<File> getWorkflowModels(@NotNull Module module)
-    {
-        return getWorkflowModels(module, WORKFLOW_MODEL_DIR);
-    }
-
-    private List<File> getWorkflowModels(@NotNull Module module, String directory)
-    {
-        List<File> models = new ArrayList<>();
-        if (_workflowModelFiles.get(module.getName()) == null)
-        {
-            File modelDir = new File(module.getExplodedPath(), directory);
-            if (modelDir.isDirectory())
-            {
-                String[] modelFiles = modelDir.list(new FilenameFilter()
-                {
-                    public boolean accept(File dir, String name)
-                    {
-                        return name.endsWith(WORKFLOW_FILE_NAME_EXTENSION);
-                    }
-                });
-                for (String modelFile : modelFiles)
-                {
-                    models.add(new File(modelDir, modelFile));
-                }
-                _workflowModelFiles.put(module.getName(), models);
-            }
-        }
-        else
-        {
-            models = _workflowModelFiles.get(module.getName());
-        }
-        return models;
-    }
-
-    private Collection<File> getWorkflowModelFiles(@NotNull Module module)
-    {
-        return CACHE.getResources(module);
     }
 
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
@@ -481,6 +402,14 @@ public class WorkflowManager
 
     }
 
+    /**
+     * Assign a particular task to a user given the id of the user
+     * @param taskId id of the task to be assigned
+     * @param assigneeId id of the user to whom the task should be assigned
+     * @param user principal doing the assignment
+     * @param container container context for this assignment
+     * @throws Exception
+     */
     public void assignTask(@NotNull String taskId, @NotNull Integer assigneeId, User user, Container container) throws Exception
     {
         if (assigneeId == null)
@@ -505,6 +434,14 @@ public class WorkflowManager
         }
     }
 
+    /**
+     * Delegate a task to a particular task (retaining ownership of the task for later review of results)
+     * @param taskId id of the task to be delegated
+     * @param user principal doing the delegation
+     * @param designateeId id of the user to delegate to
+     * @param container context in which the delegation is being made
+     * @throws Exception
+     */
     public void delegateTask(@NotNull String taskId, @NotNull User user, @NotNull Integer designateeId, Container container) throws Exception
     {
         if (user == null)
@@ -527,15 +464,16 @@ public class WorkflowManager
 
     /**
      * Creates a new process instance for the given workflow and returns the id for this new instance.
+     * @param moduleName - the name of the module in which the process definition key is defined
      * @param processDefinitionKey - the unique key for this process definition
      * @param name - the human-readable name for the process
      * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
      * @param container the container in which this process is being created  @return the id of the new process instance for this workflow
      */
-    public String startWorkflow(@NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException
+    public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException
     {
 
-//        makeContainerDeployment(processDefinitionKey, container);
+        makeContainerDeployment(moduleName, processDefinitionKey, container);
 
         ProcessInstanceBuilder builder = getRuntimeService().createProcessInstanceBuilder().processDefinitionKey(processDefinitionKey);
         if (name != null) {
@@ -551,22 +489,6 @@ public class WorkflowManager
         ProcessInstance instance = builder.start();
         return instance.getId();
     }
-
-    // TODO remove this when the proof of concept actions go away in the controller
-    public String startWorkflow(@NotNull WorkflowProcess workflow, @NotNull Container container)
-    {
-        ProcessInstanceBuilder builder = getRuntimeService().createProcessInstanceBuilder().processDefinitionKey(workflow.getProcessDefinitionKey()).tenantId(container.getId());
-        if (workflow.getName() != null) {
-            builder.processInstanceName(workflow.getName());
-        }
-        for (Map.Entry<String, Object> variable : workflow.getProcessVariables().entrySet())
-        {
-            builder.addVariable(variable.getKey(), variable.getValue());
-        }
-        ProcessInstance instance = builder.start();
-        return instance.getId();
-    }
-
 
     /**
      * Gets the list of tasks that are currently active for the given processInstanceId in the given container,
@@ -693,6 +615,10 @@ public class WorkflowManager
         {
             query.processDefinitionTenantId(container.getId());
         }
+        else
+        {
+            query.processDefinitionWithoutTenantId();
+        }
         return query.latestVersion().singleResult();
     }
 
@@ -767,25 +693,27 @@ public class WorkflowManager
             return null;
     }
 
-    public void makeContainerDeployment(@NotNull String processDefinitionKey, @NotNull Container container) throws FileNotFoundException
+    public static String getWorkflowDeploymentResourceName(String moduleName, String workflowDefinitionKey)
     {
-        // find out if there are any deployments in the current container
-        Long count = getProcessDefinitionCount(processDefinitionKey, container);
-        // get the process definition from "global scope" (without a container id)
-        // TODO this is where the module resource cache comes into play
-        ProcessDefinition globalDefinition = getProcessDefinition(processDefinitionKey, null);
-        Deployment globalDeployment = getDeployment(globalDefinition.getDeploymentId());
+        return moduleName + "/" + workflowDefinitionKey + WORKFLOW_FILE_NAME_EXTENSION;
+    }
 
-        if (count > 0)
+    public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Container container) throws FileNotFoundException
+    {
+        // get the deployment in the global scope, referencing the cache
+        Deployment globalDeployment = DEPLOYMENT_CACHE.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
+        // find the latest version for this container and compare deployment time to the time for the global version
+        ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
+        if (containerDef != null)
         {
-            // find the latest version for this container and compare deployment time to the time for the global version
-            ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
             Deployment containerDeployment = getDeployment(containerDef.getDeploymentId());
             // if the container version was deployed after the global version, there's nothing more to do
             if (containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
                 return;
         }
 
+
+        ProcessDefinition globalDefinition = getProcessDefinition(processDefinitionKey, null);
         // deploy a (newer) version in this container
         deployWorkflow(new File(globalDefinition.getResourceName()), container);
     }
@@ -863,7 +791,7 @@ public class WorkflowManager
     }
 
 
-    private static class WorkflowModelFileCacheHandler implements ModuleResourceCacheHandler<String, File>
+    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<String, Deployment>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -884,22 +812,53 @@ public class WorkflowManager
         }
 
         @Override
-        public CacheLoader<String, File> getResourceLoader()
+        public CacheLoader<String, Deployment> getResourceLoader()
         {
-            return new CacheLoader<String, File>()
+            return new CacheLoader<String, Deployment>()
             {
                 @Override
-                public File load(String key, @Nullable Object argument)
+                public Deployment load(String key, @Nullable Object argument)
                 {
                     ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
                     Module module = id.getModule();
                     String filename = id.getName();
+                    String processDefinitionKey = filename.substring(0, filename.indexOf("."));
                     Path path = WORKFLOW_MODEL_PATH.append(filename);
-                    Resource resource  = module.getModuleResolver().lookup(path);
+                    FileResource resource  = (FileResource) module.getModuleResolver().lookup(path);
                     if (resource != null)
-                        return new File(resource.getPath().toString());
+                    {
+                        try
+                        {
+                            // find the latest process definition without a container
+                            ProcessDefinition processDef = WorkflowManager.get().getProcessDefinition(processDefinitionKey, null);
+                            String deploymentId;
+                            if (processDef == null) // no such defintion, we'll deploy one
+                            {
+                                deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
+                                return WorkflowManager.get().getDeployment(deploymentId);
+                            }
+                            else
+                            {
+                                deploymentId = processDef.getDeploymentId();
+                                Deployment deployment = WorkflowManager.get().getDeployment(deploymentId);
+                                // file is newer than deployment, so we'll deploy a new version
+                                if (deployment.getDeploymentTime().before(new Date(resource.getFile().lastModified())))
+                                {
+                                    deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
+                                    deployment = WorkflowManager.get().getDeployment(deploymentId);
+                                }
+                                return deployment;
+                            }
+                        }
+                        catch (FileNotFoundException e)
+                        {
+                            return null;
+                        }
+                    }
                     else
+                    {
                         return null;
+                    }
                 }
             };
         }
@@ -912,5 +871,6 @@ public class WorkflowManager
         }
 
     }
+
 
 }
