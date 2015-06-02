@@ -33,7 +33,7 @@ public class WorkflowTask
 
     public WorkflowTask(String taskId)
     {
-        _engineTask = WorkflowManager.get().getTask(taskId);
+        _engineTask = WorkflowManager.get().getEngineTask(taskId);
         _id = taskId;
     }
 

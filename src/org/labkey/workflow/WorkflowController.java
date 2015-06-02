@@ -636,7 +636,7 @@ public class WorkflowController extends SpringActionController
                 throw new Exception("Task id cannot be null.");
             else
             {
-                WorkflowTask task = new WorkflowTask(WorkflowManager.get().getTask(form.getTaskId()));
+                WorkflowTask task = WorkflowManager.get().getTask(form.getTaskId());
                 if (!task.canComplete(getUser(), getContainer()))
                 {
                     throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");

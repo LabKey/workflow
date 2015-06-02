@@ -103,6 +103,12 @@ public class WorkflowManager
         return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
     }
 
+    /**
+     * Gets the list of candidate group ids for a task given its id, or an empty list if there are no candidate groups
+     * @param taskId id of the task to get groups for
+     * @return list of candidate group ids.
+     */
+    @NotNull
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
         List<Integer> groupIds = new ArrayList<>();
@@ -343,10 +349,16 @@ public class WorkflowManager
      * @param taskId
      * @return a workflow task of the given Id.  If there is no such task, an exception is thrown.
      */
-    public Task getTask(@NotNull String taskId)
+    public WorkflowTask getTask(@NotNull String taskId)
+    {
+        return new WorkflowTask(getEngineTask(taskId));
+    }
+
+    public Task getEngineTask(@NotNull String taskId)
     {
         return getTaskService().createTaskQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables().singleResult();
     }
+
 
     /**
      * Completes a task in a workflow given the id of the task
@@ -392,7 +404,7 @@ public class WorkflowManager
             if (user == null)
                 throw new Exception("No such user: (id = " + userId + ")");
 
-            if (!getPermissionsHandler().canClaim(new WorkflowTask(getTask(taskId)), user, container))
+            if (!getPermissionsHandler().canClaim(getTask(taskId), user, container))
                 throw new UnauthorizedException("User " + user + " does not have permission to claim task " + taskId);
 
             getTaskService().setOwner(taskId, String.valueOf(userId));
@@ -425,7 +437,7 @@ public class WorkflowManager
             if (assignee == null)
                 throw new Exception("No such user: (id = " + assigneeId + ")");
 
-            if (!getPermissionsHandler().canAssign(new WorkflowTask(getTask(taskId)), user, container))
+            if (!getPermissionsHandler().canAssign(getTask(taskId), user, container))
                 throw new Exception("User " + user + " does not have permission to assign tasks");
 
             getTaskService().setOwner(taskId, String.valueOf(assigneeId));
@@ -454,7 +466,7 @@ public class WorkflowManager
             User designatee = UserManager.getUser(designateeId);
             if (designatee == null)
                 throw new Exception("No such user: (id = " + designateeId + ")");
-            if (!getPermissionsHandler().canDelegate(new WorkflowTask(getTask(taskId)), user, container))
+            if (!getPermissionsHandler().canDelegate(getTask(taskId), user, container))
                 throw new Exception("User " + user + " does not have permission to delegate tasks");
             getTaskService().delegateTask(taskId, String.valueOf(designateeId));
             getTaskService().setOwner(taskId, String.valueOf(user.getUserId()));
@@ -622,18 +634,18 @@ public class WorkflowManager
     }
 
     /**
-     *
-     * @param processDefinitionKey
      * @param container the container for which this query is being made
-     * @return the number of process definitions currently deployed in the container, or in the system if container is null
+     * @return the number of process definitions currently deployed in the container, or defined without a container if null
      */
-    protected long getProcessDefinitionCount(@NotNull String processDefinitionKey, @Nullable Container container)
+    protected long getProcessDefinitionCount(@Nullable Container container)
     {
         ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery();
         if (container != null)
         {
             query.processDefinitionTenantId(container.getId());
         }
+        else
+            query.processDefinitionWithoutTenantId();
         return query.count();
     }
 
