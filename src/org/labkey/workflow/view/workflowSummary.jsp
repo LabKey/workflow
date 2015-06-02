@@ -47,27 +47,30 @@
     }
 %>
 <ul>
-
-    <li>
-        <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-    </li>
-
-    <li>
-        <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
-    </li>
-    <li>
-        <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
-    </li>
-    <li>
-        <%= PageFlowUtil.textLink("Unassigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true)) %>
-    </li>
     <li>
         <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
 
-       <%--// TODO add the start form--%>
-       <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
-
+        <%--// TODO add the start form--%>
+        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
     </li>
+
+    <li>Tasks</li>
+    <ul>
+        <li>
+            <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+        </li>
+
+        <li>
+            <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+        </li>
+        <li>
+            <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
+        </li>
+        <li>
+            <%= PageFlowUtil.textLink("Unassigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true)) %>
+        </li>
+    </ul>
+
 </ul>
 
 <br>
