@@ -1,5 +1,6 @@
 package org.labkey.workflow.model;
 
+import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -189,6 +190,14 @@ public class WorkflowProcess implements HasViewContext
     public boolean canDelete(User user, Container container)
     {
         return getPermissionsHandler().canDelete(this, user, container);
+    }
+
+    public boolean hasDiagram(Container container)
+    {
+        if (_engineProcessInstance == null)
+            return false;
+        ProcessDefinition definition = WorkflowManager.get().getProcessDefinition(_engineProcessInstance.getProcessDefinitionId(), container);
+        return definition.getDiagramResourceName() != null;
     }
 
     @Nullable

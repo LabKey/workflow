@@ -43,7 +43,7 @@
     {
 %>
 &nbsp;&nbsp;
-<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+<%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
 %>
@@ -66,7 +66,7 @@
     {
 %>
 &nbsp;&nbsp;
-<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+<%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
 %>

@@ -50,7 +50,7 @@
     <li>
         <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
 
-        <%--// TODO add the start form--%>
+        <%-- TODO add the start form--%>
         <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
     </li>
 
@@ -76,7 +76,7 @@
 <br>
 <strong>Current Process Diagram</strong>
 <br>
-<%= bean.getModelFile() %>
+<%= h(bean.getModelFile()) %>
 <br>
 <%
     if (bean.hasDiagram())

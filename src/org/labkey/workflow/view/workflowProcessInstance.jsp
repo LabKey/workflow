@@ -54,7 +54,7 @@ There is no active process with id <%= h(bean.getId()) %>
     else if (!bean.canView(getUser(), getContainer()))
     {
 %>
-<%= getUser() %> does not have permission to view this process instance.
+<%= h(getUser()) %> does not have permission to view this process instance.
 <%
     }
     else
@@ -62,7 +62,7 @@ There is no active process with id <%= h(bean.getId()) %>
 %>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 &nbsp;&nbsp;
-<%= PageFlowUtil.textLink(bean.getProcessDefinitionName(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+<%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 &nbsp;&nbsp;
 <%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 &nbsp;&nbsp;
@@ -136,7 +136,7 @@ There is no active process with id <%= h(bean.getId()) %>
             if (task.canView(getUser(), getContainer()))
             {
     %>
-        <%= PageFlowUtil.textLink(task.getName(), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", task.getId())) %>
+        <%= PageFlowUtil.textLink(h(task.getName()), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", task.getId())) %>
     <%
             }
             else
@@ -148,7 +148,7 @@ There is no active process with id <%= h(bean.getId()) %>
             if (task.getAssignee() != null)
             {
     %>
-    (assigned to <%= task.getAssignee() %>)
+    (assigned to <%= h(task.getAssignee()) %>)
     <%
             }
             else
@@ -198,11 +198,16 @@ There is no active process with id <%= h(bean.getId()) %>
 
 </table>
 
+<%
+        if (bean.hasDiagram(getContainer()))
+        {
+%>
 <br>
 <strong>Process Diagram</strong>
 <br><br>
 <img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
 <%
 
+        }
     }
 %>

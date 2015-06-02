@@ -53,7 +53,7 @@ public class WorkflowSummary
 
     public boolean hasDiagram()
     {
-        return _engineProcessDefinition != null && _engineProcessDefinition.getResourceName() != null;
+        return _engineProcessDefinition != null && _engineProcessDefinition.getDiagramResourceName() != null;
     }
 
     public File getModelFile()

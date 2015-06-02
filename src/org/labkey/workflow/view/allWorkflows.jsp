@@ -47,7 +47,7 @@ The following workflows are currently deployed in this container:
 %>
 <ul>
     <li>
-        <%= PageFlowUtil.textLink(entry.getValue(), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", entry.getKey()))%>
+        <%= PageFlowUtil.textLink(h(entry.getValue()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", entry.getKey()))%>
     </li>
 </ul>
 <%
