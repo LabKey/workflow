@@ -34,7 +34,7 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     @Override
     public boolean canDelete(WorkflowProcess process, User user, Container container)
     {
-        return process.getInitiator().getUserId() == user.getUserId() || container.hasPermission(user, AdminPermission.class);
+        return process.getInitiatorId() == user.getUserId() || container.hasPermission(user, AdminPermission.class);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class PermissionsHandlerImpl implements PermissionsHandler
 
     public boolean isAssigned(@NotNull WorkflowTask task, @NotNull User user)
     {
-        return task.getAssignee() != null && task.getAssignee().equals(String.valueOf(user.getUserId()));
+        return task.getAssignee() != null && task.getAssignee().getUserId() == user.getUserId();
     }
 
     public boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
