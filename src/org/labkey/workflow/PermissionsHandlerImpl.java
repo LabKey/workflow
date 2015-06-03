@@ -40,8 +40,9 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     @Override
     public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
     {
-        List<Integer> candidateGroupIds = WorkflowManager.get().getCandidateGroupIds(task.getId());
-        return candidateGroupIds.isEmpty() || CollectionUtils.containsAny(candidateGroupIds, Arrays.asList(ArrayUtils.toObject(user.getGroups())));
+//        List<Integer> candidateGroupIds = WorkflowManager.get().getCandidateGroupIds(task.getId());
+//        return candidateGroupIds.isEmpty() || CollectionUtils.containsAny(candidateGroupIds, Arrays.asList(ArrayUtils.toObject(user.getGroups())));
+        return container.hasPermission(user, AdminPermission.class);
     }
 
     public boolean canDelegate(@Nullable WorkflowTask task, @NotNull User user, @NotNull Container container)

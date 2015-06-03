@@ -75,7 +75,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         },{
             text: 'Claim',
             itemId: 'ClaimButton',
-            disabled: this.assigneeId != null,
+            disabled: this.assigneeId != "",
             scope: this,
             handler : function() {
                 this.fireEvent(this.reassignEvent, this.taskId, "Claim");
