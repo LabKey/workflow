@@ -9,6 +9,7 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
     taskId: null,
     name: null,
     parameters: null,
+    processInstanceId: null,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -106,6 +107,7 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
     makeTaskCompletionRequest: function(taskId, parameters)
     {
         parameters.comment = this.down('textfield#TaskComment').getValue();
+        var returnURLParams = {processInstanceId: this.processInstanceId};
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
             method: 'POST',
@@ -113,10 +115,10 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
                 taskId: taskId,
                 processVariables: parameters
             },
-            returnUrl: window.location, // TODO this will produce a "this task does not exist" page.  Could return to the process instance, but if this is the last task, the process instance will also not exist.
+            returnUrl: LABKEY.ActionURL.buildURL('workflow', 'processInstance', null, returnURLParams),
             scope: this,
             success: function(response) {
-                window.location = window.location; // avoid form resubmit
+                window.location = LABKEY.ActionURL.buildURL('workflow', 'processInstance', null, returnURLParams)
             },
             failure: this.taskActionFailure
         });
@@ -161,7 +163,7 @@ function downloadDataGrid(url, parameters) {
 }
 
 // TODO remove from global scope
-function completeWorkflowTask(taskId, formName, fields)
+function completeWorkflowTask(taskId, formName, fields, processInstanceId)
 {
     var form = document.forms[formName];
     var parameters = {};
@@ -169,6 +171,7 @@ function completeWorkflowTask(taskId, formName, fields)
     {
         parameters[fields[i]] = form[fields[i]].value;
     }
+    var returnURLParams = {processInstanceId: processInstanceId};
     Ext4.Ajax.request({
         url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
         method: 'POST',
@@ -176,10 +179,10 @@ function completeWorkflowTask(taskId, formName, fields)
             taskId: taskId,
             processVariables: parameters
         },
-        returnUrl: window.location, // TODO this will produce a "this task does not exist" page.  Could return to the process instance, but if this is the last task, the process instance will also not exist.
+        returnUrl: LABKEY.ActionURL.buildURL('workflow', 'processInstance', null, returnURLParams),
         scope: this,
         success: function(response) {
-            window.location = window.location; // avoid form resubmit
+            window.location = LABKEY.ActionURL.buildURL('workflow', 'processInstance', null, returnURLParams);
         },
         failure: function(response)
         {
@@ -193,10 +196,11 @@ function completeWorkflowTask(taskId, formName, fields)
     });
 }
 
-function createCompleteTaskWindow(taskId, name, parameters) {
+function createCompleteTaskWindow(taskId, name, parameters, processInstanceId) {
     Ext4.create("Workflow.view.dialog.CompleteTask", {
         taskId: taskId,
         name: name,
-        parameters: parameters
+        parameters: parameters,
+        processInstanceId: processInstanceId
     }).show();
 }

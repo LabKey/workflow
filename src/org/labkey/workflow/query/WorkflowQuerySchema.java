@@ -130,8 +130,7 @@ public class WorkflowQuerySchema extends UserSchema
                 }
             };
         }
-//        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
-        queryView.setShowDeleteButton(false); // TODO can't do the cascaded delete from constraints within SQL Server, so we'll need to do something special to enable deletion
+        queryView.setShowDeleteButton(false);
         queryView.setShowUpdateColumn(false);
         queryView.setShowInsertNewButton(false);
         queryView.setShowImportDataButton(false);
@@ -158,7 +157,7 @@ public class WorkflowQuerySchema extends UserSchema
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             Collection<String> dependencies = Collections.singletonList("workflow/view/reassignTask.js");
-            String javaScriptEvent = "onclick=\"createReassignTaskWindow(${id_:jsString}, '" + _assignmentType + "');\"";
+            String javaScriptEvent = "onclick=\"createReassignTaskWindow(${id_:jsString}, ${assignee_:jsString});\"";
             return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
             {
                 @NotNull

@@ -44,16 +44,16 @@
 <%
     HttpView me = HttpView.currentView();
     WorkflowTask bean = (WorkflowTask) me.getModelBean();
-    if (!bean.canView(getUser(), getContainer()))
-    {
-%>
-<%= getUser() %> does not have permission to view this task.
-<%
-    }
-    else if (!bean.isActive())
+    if (!bean.isActive())
     {
 %>
 There is no active task with id <%= bean.getId() %>
+<%
+    }
+    else if (!bean.canView(getUser(), getContainer()))
+    {
+%>
+<%= getUser() %> does not have permission to view this task.
 <%
     }
     else
@@ -124,7 +124,7 @@ There is no active task with id <%= bean.getId() %>
                 %>
     <tr>
         <td colspan="2">
-            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
+            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
         </td>
     </tr>
     <%
@@ -145,7 +145,7 @@ There is no active task with id <%= bean.getId() %>
     %>
     <tr>
         <td colspan="2">
-            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
+            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
         </td>
     </tr>
     <%
@@ -156,7 +156,7 @@ There is no active task with id <%= bean.getId() %>
     %>
     <tr>
         <td colspan="2">
-        <%= button("Assign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "); return false;") %>
+        <%= button("Assign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
         </td>
     </tr>
     </table>
@@ -243,7 +243,7 @@ There is no active task with id <%= bean.getId() %>
 <strong><%= h(bean.getName()) %></strong>
 <br>
 <br>
-<form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask('<%= bean.getId() %>', '<%= bean.getTaskDefinitionKey() %>', ['<%=StringUtils.join(fields.keySet(), "', '") %>'])">
+<form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask('<%= bean.getId() %>', '<%= bean.getTaskDefinitionKey() %>', ['<%=StringUtils.join(fields.keySet(), "', '") %>'], '<%= bean.getProcessInstanceId() %>')">
 <%
                     for (Map.Entry<String, TaskFormField> field : fields.entrySet())
                     {

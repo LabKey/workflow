@@ -98,11 +98,6 @@ public class WorkflowManager
         return _instance;
     }
 
-    public PermissionsHandler getPermissionsHandler()
-    {
-        return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
-    }
-
     /**
      * Gets the list of candidate group ids for a task given its id, or an empty list if there are no candidate groups
      * @param taskId id of the task to get groups for
@@ -370,12 +365,14 @@ public class WorkflowManager
      */
     public void completeTask(@NotNull String taskId, User user, Container container) throws Exception
     {
-        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        WorkflowTask task = new WorkflowTask(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
-        if (!getPermissionsHandler().canComplete(new WorkflowTask(task), user, container)) // This check is probalby redundant here, or perhaps belongs in the controller???
+        if (task == null)
+            throw new Exception("No such task (id = " + taskId + ")");
+        if (!task.canComplete(user, container))
             throw new UnauthorizedException("User does not have permission to complete this task");
 
-        if (task.getDelegationState() == DelegationState.PENDING)
+        if (task.isDelegated())
             getTaskService().resolveTask(taskId);
         else
             getTaskService().complete(taskId);
@@ -404,8 +401,12 @@ public class WorkflowManager
             if (user == null)
                 throw new Exception("No such user: (id = " + userId + ")");
 
-            if (!getPermissionsHandler().canClaim(getTask(taskId), user, container))
-                throw new UnauthorizedException("User " + user + " does not have permission to claim task " + taskId);
+            WorkflowTask task = getTask(taskId);
+
+            if (task == null)
+                throw new Exception("No such task (id = " + taskId + ")");
+            if (!task.canClaim(user, container))
+                throw new UnauthorizedException("User " + user + " cannot claim task " + taskId);
 
             getTaskService().setOwner(taskId, String.valueOf(userId));
             getTaskService().claim(taskId, String.valueOf(userId));
@@ -437,7 +438,11 @@ public class WorkflowManager
             if (assignee == null)
                 throw new Exception("No such user: (id = " + assigneeId + ")");
 
-            if (!getPermissionsHandler().canAssign(getTask(taskId), user, container))
+            WorkflowTask task = getTask(taskId);
+
+            if (task == null)
+                throw new Exception("No such task (id = " + taskId + ")");
+            if (!task.canAssign(user, container))
                 throw new Exception("User " + user + " does not have permission to assign tasks");
 
             getTaskService().setOwner(taskId, String.valueOf(assigneeId));
@@ -466,7 +471,11 @@ public class WorkflowManager
             User designatee = UserManager.getUser(designateeId);
             if (designatee == null)
                 throw new Exception("No such user: (id = " + designateeId + ")");
-            if (!getPermissionsHandler().canDelegate(getTask(taskId), user, container))
+            WorkflowTask task = getTask(taskId);
+
+            if (task == null)
+                throw new Exception("No such task (id = " + taskId + ")");
+            if (!task.canDelegate(user, container))
                 throw new Exception("User " + user + " does not have permission to delegate tasks");
             getTaskService().delegateTask(taskId, String.valueOf(designateeId));
             getTaskService().setOwner(taskId, String.valueOf(user.getUserId()));

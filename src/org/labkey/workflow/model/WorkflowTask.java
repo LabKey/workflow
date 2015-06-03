@@ -88,10 +88,20 @@ public class WorkflowTask
     @Nullable
     public User getAssignee()
     {
+        Integer id = getAssigneeId();
+        if (id == null)
+            return null;
+        else
+            return UserManager.getUser(id);
+    }
+
+    @Nullable
+    public Integer getAssigneeId()
+    {
         if (_engineTask == null || _engineTask.getAssignee() == null)
             return null;
         else
-            return UserManager.getUser(Integer.valueOf(_engineTask.getAssignee()));
+            return Integer.valueOf(_engineTask.getAssignee());
     }
 
     public String getProcessInstanceId()
@@ -172,7 +182,7 @@ public class WorkflowTask
 
     public boolean canClaim(User user, Container container)
     {
-        return getPermissionsHandler().canClaim(this, user, container);
+        return getAssigneeId() == null && getPermissionsHandler().canClaim(this, user, container);
     }
 
     public boolean canDelegate(User user, Container container)
