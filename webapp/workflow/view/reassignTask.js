@@ -12,6 +12,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         this.callParent([config]);
         this.addEvents([this.reassignEvent]);
         this.taskId = config['taskId'];
+        this.assgineeId = config['assigneeId'];
     },
 
     initComponent : function()
@@ -74,7 +75,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         },{
             text: 'Claim',
             itemId: 'ClaimButton',
-            disabled: false,
+            disabled: this.assigneeId != null,
             scope: this,
             handler : function() {
                 this.fireEvent(this.reassignEvent, this.taskId, "Claim");
@@ -119,7 +120,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
             },
             scope: this,
             success: function(response) {
-                window.location = window.location; // avoid form resubmit
+                window.location.reload();
             },
             failure: function(response){
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
@@ -162,8 +163,9 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
 );
 
 // helper used in display column
-function createReassignTaskWindow(taskId) {
+function createReassignTaskWindow(taskId, assigneeId) {
     Ext4.create("Workflow.view.dialog.ReassignTask", {
-        taskId: taskId
+        taskId: taskId,
+        assigneeId: assigneeId
     }).show();
 }
