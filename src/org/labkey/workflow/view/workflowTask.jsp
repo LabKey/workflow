@@ -30,6 +30,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -41,6 +42,7 @@
         return resources;
     }
 %>
+<labkey:errors></labkey:errors>
 <%
     HttpView me = HttpView.currentView();
     WorkflowTask bean = (WorkflowTask) me.getModelBean();

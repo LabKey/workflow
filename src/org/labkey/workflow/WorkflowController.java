@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -46,6 +47,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -60,6 +62,11 @@ public class WorkflowController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WorkflowController.class);
     public static final String NAME = "workflow";
+
+    private static final String PROCESS_DEFINITION_KEY_MISSING = "Process definition key is required";
+    private static final String TASK_ID_MISSING = "Task id is required";
+    private static final String PROCESS_INSTANCE_ID_MISSING = "Process instance id is required";
+    private static final String ASSIGNEE_ID_MISSING = "Assignee id is required";
 
     private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
 
@@ -121,9 +128,19 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(WorkflowRequestForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
             WorkflowSummary bean = new WorkflowSummary(form.getProcessDefinitionKey(), getUser(), getContainer());
             _navLabel = bean.getName();
-            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
+
+            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean, errors);
+        }
+
+        @Override
+        public void validate(WorkflowRequestForm workflowRequestForm, BindException errors)
+        {
+            if (workflowRequestForm.getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -138,28 +155,44 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class TaskListAction extends SimpleViewAction<WorkflowRequestForm>
     {
+        private UserSchema _schema;
+
         @Override
         public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
         {
-            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
-            if (schema == null)
-            {
-                errors.reject("Schema not defined", SCHEMA_NOT_DEFINED_ERROR);
-            }
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
 
             JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
+
+            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
+
             jsp.setTitle("Task List for '" + bean.getProcessDefinitionName() + "' workflow instances ");
 
-            if (schema != null)
+            if (_schema != null)
             {
-                QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
-                QueryView queryView = schema.createView(getViewContext(), settings, errors);
+                QuerySettings settings = _schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
+                QueryView queryView = _schema.createView(getViewContext(), settings, errors);
 
                 jsp.setView("workflowListQueryView", queryView);
             }
 
             return jsp;
+        }
+
+        @Override
+        public void validate(WorkflowRequestForm workflowRequestForm, BindException errors)
+        {
+            if (workflowRequestForm.getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
+            else
+            {
+                _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
+                if (_schema == null)
+                {
+                    errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
+                }
+            }
         }
 
         @Override
@@ -176,27 +209,41 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class InstanceListAction extends SimpleViewAction<WorkflowRequestForm>
     {
+        private UserSchema _schema;
+
         @Override
-        public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
+        public ModelAndView getView(WorkflowRequestForm form, BindException errors) throws Exception
         {
-            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean);
+            if (errors.hasErrors())
+            {
+                return new SimpleErrorView(errors);
+            }
+
+            form.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer()).getName());
+            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", form);
             jsp.setTitle("Active Processes");
 
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
-            if (schema == null)
-            {
-                errors.reject("Schema not defined", SCHEMA_NOT_DEFINED_ERROR);
-            }
-            else
-            {
-                QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
-                QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            QuerySettings settings = _schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
+            QueryView queryView = _schema.createView(getViewContext(), settings, errors);
 
-                jsp.setView("workflowListQueryView", queryView);
-            }
+            jsp.setView("workflowListQueryView", queryView);
 
             return jsp;
+        }
+
+        @Override
+        public void validate(WorkflowRequestForm form, BindException errors)
+        {
+            if (form.getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
+            else
+            {
+                _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
+                if (_schema == null)
+                {
+                    errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
+                }
+            }
         }
 
         @Override
@@ -218,7 +265,17 @@ public class WorkflowController extends SpringActionController
 
         public ModelAndView getView(WorkflowTaskForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
             return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId()), errors);
+        }
+
+        @Override
+        public void validate(WorkflowTaskForm workflowTaskForm, BindException errors)
+        {
+            if (workflowTaskForm.getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -235,13 +292,21 @@ public class WorkflowController extends SpringActionController
     {
         private String _navLabel = "Workflow process instance details";
 
+        @Override
+        public void validate(ProcessInstanceDetailsForm form, BindException errors)
+        {
+            if (form.getProcessInstanceId() == null)
+                errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
+        }
+
         public ModelAndView getView(ProcessInstanceDetailsForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
             WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
-            if (bean.getProcessInstanceId() != null)
-            {
+            if (bean.getProcessDefinitionName() != null)
                 _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
-            }
 
             return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -308,7 +373,9 @@ public class WorkflowController extends SpringActionController
         @Override
         public void validate(Object o, Errors errors)
         {
-            return;
+            HttpServletRequest request = getViewContext().getRequest();
+            if (request.getParameter("processInstanceId") == null && request.getParameter("processDefinitionKey") == null)
+                errors.reject(ERROR_MSG, "Either a process instance id or a process definition key must be provided");
         }
     }
 
@@ -324,6 +391,12 @@ public class WorkflowController extends SpringActionController
             WorkflowManager.get().claimTask(form.getTaskId(), form.getAssigneeId(), getContainer());
             return success();
         }
+
+        @Override
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            form.validate(errors);
+        }
     }
 
     /**
@@ -337,6 +410,12 @@ public class WorkflowController extends SpringActionController
         {
             WorkflowManager.get().delegateTask(form.getTaskId(), getUser(), form.getAssigneeId(), getContainer());
             return success();
+        }
+
+        @Override
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            form.validate(errors);
         }
     }
 
@@ -379,13 +458,19 @@ public class WorkflowController extends SpringActionController
             WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId(), getUser(), getContainer());
             return success();
         }
+
+        @Override
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            form.validate(errors);
+        }
     }
 
     private static class WorkflowTaskForm
     {
         private String _taskId;
-        private int _ownerId;
-        private int _assigneeId;
+        private Integer _ownerId;
+        private Integer _assigneeId;
 
         public String getTaskId()
         {
@@ -397,7 +482,7 @@ public class WorkflowController extends SpringActionController
             _taskId = taskId;
         }
 
-        public int getAssigneeId()
+        public Integer getAssigneeId()
         {
             return _assigneeId;
         }
@@ -407,7 +492,7 @@ public class WorkflowController extends SpringActionController
             _assigneeId = assigneeId;
         }
 
-        public int getOwnerId()
+        public Integer getOwnerId()
         {
             return _ownerId;
         }
@@ -416,85 +501,16 @@ public class WorkflowController extends SpringActionController
         {
             _ownerId = ownerId;
         }
-    }
 
-//    /**
-//     * Retrieves the tasks for a given PrincipalUser.  Depending on the taskInvolvement settings, retrieves only those
-//     * tasks for the principal or includes tasks that have the principal's groups as candidate groups.
-//     */
-//    @RequiresPermissionClass(ReadPermission.class)
-//    public class GetTasksAction extends ApiAction<TaskListRequestForm>
-//    {
-//        @Override
-//        public Object execute(TaskListRequestForm form, BindException errors) throws Exception
-//        {
-//            Map<UserPrincipal, List<Task>> tasks = new HashMap<>();
-//            if (form.getPrincipalType() == PrincipalType.USER)
-//            {
-//                User user = UserManager.getUser(form.getPrincipalId());
-//                if (user != null)
-//                {
-//                    tasks.put(user, WorkflowManager.get().getTaskList(user, getContainer(), form.getInvolvement()));
-//                }
-//            }
-//            else if (form.getPrincipalType() == PrincipalType.GROUP)
-//            {
-//                Group group = SecurityManager.getGroup(form.getPrincipalId());
-//                if (group != null)
-//                {
-//                    tasks.put(group, WorkflowManager.get().getTaskList(group));
-//                }
-//            }
-//            return success(tasks);
-//        }
-//    }
-//
-//    private static class TaskListRequestForm extends WorkflowRequestForm
-//    {
-//        private Integer _principalId;
-//        private PrincipalType _principalType;
-//        private Set<WorkflowManager.TaskInvolvement> _involvement;
-//
-//        public void setPrincipalId(Integer principalId)
-//        {
-//            _principalId = principalId;
-//        }
-//
-//        public PrincipalType getPrincipalType()
-//        {
-//            return _principalType;
-//        }
-//
-//        public void setPrincipalType(PrincipalType principalType)
-//        {
-//            _principalType = principalType;
-//        }
-//
-//        public Integer getPrincipalId()
-//        {
-//            return _principalId;
-//        }
-//
-//        public void setPrincipalId(int principalId)
-//        {
-//            _principalId = principalId;
-//        }
-//
-//        public Set<WorkflowManager.TaskInvolvement> getInvolvement()
-//        {
-//            return _involvement;
-//        }
-//
-//        public void setInvolvement(Set<String> involvement)
-//        {
-//            _involvement = new HashSet<>();
-//            for (String item : involvement)
-//            {
-//                _involvement.add(WorkflowManager.TaskInvolvement.valueOf(item.toUpperCase()));
-//            }
-//        }
-//
-//    }
+        public void validate(Errors errors)
+        {
+            if (getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+            if (getAssigneeId() == null)
+                errors.rejectValue("assigneeId", ERROR_MSG, ASSIGNEE_ID_MISSING);
+
+        }
+    }
 
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
@@ -505,9 +521,8 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(StartWorkflowProcessForm form, BindException errors) throws Exception
         {
-
-            if (form.getProcessDefinitionKey() == null)
-                throw new Exception("No process key provided");
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
 
             form.setInitiatorId(getUser().getUserId());
             form.setContainerId(getContainer().getId());
@@ -516,6 +531,13 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("processInstanceId", instanceId);
             return success(response);
+        }
+
+        @Override
+        public void validateForm(StartWorkflowProcessForm form, Errors errors)
+        {
+            if (form.getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
         }
     }
 
@@ -595,8 +617,9 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(RemoveWorkflowProcessForm form, BindException errors) throws Exception
         {
-            if (form.getProcessInstanceId() == null)
-                throw new Exception("No process instance id provided");
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
             String removalMsg = "Removed by user " + getUser() + " on " + (new Date()) + ".  ";
             if (form.getComment() != null)
                 removalMsg += "Reason: " + form.getComment();
@@ -608,6 +631,12 @@ public class WorkflowController extends SpringActionController
             }
             WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), null);
             return success();
+        }
+
+        @Override
+        public void validateForm(RemoveWorkflowProcessForm form, Errors errors)
+        {
+            form.validate(errors);
         }
     }
 
@@ -635,6 +664,12 @@ public class WorkflowController extends SpringActionController
         {
             _comment = comment;
         }
+
+        public void validate(Errors errors)
+        {
+            if (getProcessInstanceId() == null)
+                errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
+        }
     }
 
     /**
@@ -647,23 +682,30 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(TaskCompletionForm form, BindException errors) throws Exception
         {
-            // TODO check if the task is assigned to the user or the user's group before allowing it to be completed
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
             ApiSimpleResponse response = new ApiSimpleResponse();
-            if (form.getTaskId() == null) // TODO convert to "validate" method
-                throw new Exception("Task id cannot be null.");
-            else
+
+            WorkflowTask task = WorkflowManager.get().getTask(form.getTaskId());
+            if (!task.isActive())
+                throw new Exception("No active task with id " + form.getTaskId());
+            if (!task.canComplete(getUser(), getContainer()))
             {
-                WorkflowTask task = WorkflowManager.get().getTask(form.getTaskId());
-                if (!task.canComplete(getUser(), getContainer()))
-                {
-                    throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");
-                }
-                WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
-                WorkflowManager.get().completeTask(form.getTaskId(), getUser(), getContainer());
-                response.put("status", "success");
+                throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");
             }
+            WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
+            WorkflowManager.get().completeTask(form.getTaskId(), getUser(), getContainer());
+            response.put("status", "success");
 
             return response;
+        }
+
+        @Override
+        public void validateForm(TaskCompletionForm form, Errors errors)
+        {
+            if (form.getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
         }
     }
 
@@ -713,6 +755,9 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(DeploymentForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors);
+
             ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getFile() != null)
             {
@@ -725,22 +770,18 @@ public class WorkflowController extends SpringActionController
             }
             return success(response);
         }
+
+        @Override
+        public void validateForm(DeploymentForm form, Errors errors)
+        {
+            if (form.getFile() == null)
+                errors.rejectValue("file", ERROR_MSG, "File name is required");
+        }
     }
 
     public static class DeploymentForm
     {
         private String _file;
-        private String _processDefinitionKey;
-
-        public String getProcessDefinitionKey()
-        {
-            return _processDefinitionKey;
-        }
-
-        public void setProcessDefinitionKey(String processDefinitionKey)
-        {
-            _processDefinitionKey = processDefinitionKey;
-        }
 
         public String getFile()
         {

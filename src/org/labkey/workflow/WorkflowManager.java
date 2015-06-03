@@ -367,7 +367,7 @@ public class WorkflowManager
     {
         WorkflowTask task = new WorkflowTask(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
-        if (task == null)
+        if (task == null || !task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
         if (!task.canComplete(user, container))
             throw new UnauthorizedException("User does not have permission to complete this task");
@@ -387,31 +387,19 @@ public class WorkflowManager
      */
     public void claimTask(@NotNull String taskId, @NotNull Integer userId, Container container) throws Exception
     {
-        if (userId == null)
-        {
-            throw new Exception("No user specified");
-        }
-        else if (taskId == null)
-        {
-            throw new Exception("No task specified");
-        }
-        else
-        {
-            User user = UserManager.getUser(userId);
-            if (user == null)
-                throw new Exception("No such user: (id = " + userId + ")");
+        User user = UserManager.getUser(userId);
+        if (user == null)
+            throw new Exception("No such user: (id = " + userId + ")");
 
-            WorkflowTask task = getTask(taskId);
+        WorkflowTask task = getTask(taskId);
 
-            if (task == null)
-                throw new Exception("No such task (id = " + taskId + ")");
-            if (!task.canClaim(user, container))
-                throw new UnauthorizedException("User " + user + " cannot claim task " + taskId);
+        if (task == null || !task.isActive())
+            throw new Exception("No such task (id = " + taskId + ")");
+        if (!task.canClaim(user, container))
+            throw new UnauthorizedException("User " + user + " cannot claim task " + taskId);
 
-            getTaskService().setOwner(taskId, String.valueOf(userId));
-            getTaskService().claim(taskId, String.valueOf(userId));
-        }
-
+        getTaskService().setOwner(taskId, String.valueOf(userId));
+        getTaskService().claim(taskId, String.valueOf(userId));
     }
 
     /**
@@ -460,26 +448,19 @@ public class WorkflowManager
      */
     public void delegateTask(@NotNull String taskId, @NotNull User user, @NotNull Integer designateeId, Container container) throws Exception
     {
-        if (user == null)
-            throw new Exception("Owner not specified");
-        else if (designateeId == null)
-            throw new Exception("Assignee not specified");
-        else if (taskId == null)
-            throw new Exception("No task specified");
-        else
-        {
-            User designatee = UserManager.getUser(designateeId);
-            if (designatee == null)
-                throw new Exception("No such user: (id = " + designateeId + ")");
-            WorkflowTask task = getTask(taskId);
 
-            if (task == null)
-                throw new Exception("No such task (id = " + taskId + ")");
-            if (!task.canDelegate(user, container))
-                throw new Exception("User " + user + " does not have permission to delegate tasks");
-            getTaskService().delegateTask(taskId, String.valueOf(designateeId));
-            getTaskService().setOwner(taskId, String.valueOf(user.getUserId()));
-        }
+        User designatee = UserManager.getUser(designateeId);
+        if (designatee == null)
+            throw new Exception("No such user: (id = " + designateeId + ")");
+        WorkflowTask task = getTask(taskId);
+
+        if (task == null || !task.isActive())
+            throw new Exception("No such task (id = " + taskId + ")");
+        if (!task.canDelegate(user, container))
+            throw new Exception("User " + user + " does not have permission to delegate tasks");
+        getTaskService().delegateTask(taskId, String.valueOf(designateeId));
+        getTaskService().setOwner(taskId, String.valueOf(user.getUserId()));
+
     }
 
     /**
@@ -650,9 +631,7 @@ public class WorkflowManager
     {
         ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery();
         if (container != null)
-        {
             query.processDefinitionTenantId(container.getId());
-        }
         else
             query.processDefinitionWithoutTenantId();
         return query.count();

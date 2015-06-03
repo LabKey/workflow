@@ -19,16 +19,16 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView me = HttpView.currentView();
 
     WorkflowController.AllWorkflowsBean bean = (WorkflowController.AllWorkflowsBean) me.getModelBean();
     Map<String, String> processDefinitions = bean.getWorkflowDefinitions();
 %>
+<labkey:errors></labkey:errors>
 <%
     if (processDefinitions.isEmpty())
     {

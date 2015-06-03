@@ -26,7 +26,9 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %><%!
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -38,10 +40,12 @@
         return resources;
     }
 %>
+
 <%
     HttpView me = HttpView.currentView();
     WorkflowProcess bean = (WorkflowProcess) me.getModelBean();
 %>
+<labkey:errors></labkey:errors>
 <%
     if (bean.getProcessInstanceId() == null)
     {

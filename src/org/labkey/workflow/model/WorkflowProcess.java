@@ -85,6 +85,8 @@ public class WorkflowProcess implements HasViewContext
 
     public String getProcessDefinitionName()
     {
+        if (_engineProcessInstance == null)
+            return null;
         return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null).getName();
     }
 

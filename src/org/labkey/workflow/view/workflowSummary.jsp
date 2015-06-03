@@ -23,10 +23,12 @@
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.workflow.model.WorkflowSummary" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
 %>
+<labkey:errors></labkey:errors>
 <%
     if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {

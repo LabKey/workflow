@@ -182,32 +182,32 @@ public class WorkflowTask
 
     public boolean canClaim(User user, Container container)
     {
-        return getAssigneeId() == null && getPermissionsHandler().canClaim(this, user, container);
+        return getAssigneeId() == null && isActive() && getPermissionsHandler().canClaim(this, user, container);
     }
 
     public boolean canDelegate(User user, Container container)
     {
-        return getPermissionsHandler().canDelegate(this, user, container);
+        return isActive() && getPermissionsHandler().canDelegate(this, user, container);
     }
 
     public boolean canAssign(User user, Container container)
     {
-        return getPermissionsHandler().canAssign(this, user, container);
+        return isActive() && getPermissionsHandler().canAssign(this, user, container);
     }
 
     public boolean canView(User user, Container container)
     {
-        return getPermissionsHandler().canView(this, user, container);
+        return isActive() && getPermissionsHandler().canView(this, user, container);
     }
 
     public boolean canAccessData(User user, Container container)
     {
-        return getPermissionsHandler().canAccessData(this, user, container);
+        return isActive() && getPermissionsHandler().canAccessData(this, user, container);
     }
 
     public boolean canComplete(User user, Container container)
     {
-        return getPermissionsHandler().canComplete(this, user, container);
+        return isActive() && getPermissionsHandler().canComplete(this, user, container);
     }
 
     public void setName(String name)
