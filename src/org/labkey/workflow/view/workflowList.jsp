@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -37,6 +37,8 @@
     HttpView me = HttpView.currentView();
     WorkflowController.WorkflowRequestForm bean = (WorkflowController.WorkflowRequestForm) me.getModelBean();
 %>
+
+<labkey:errors></labkey:errors>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <%
     if (bean.getProcessDefinitionKey() != null)
@@ -54,12 +56,17 @@
 <br>
 <br>
 
-
+<%
+    if (me.getView("workflowListQueryView") != null)
+    {
+%>
 <div>
     <% me.include(me.getView("workflowListQueryView"),out); %>
 </div>
 <br><br>
-
+<%
+    }
+%>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 <%
     if (bean.getProcessDefinitionKey() != null)

@@ -61,6 +61,8 @@ public class WorkflowController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WorkflowController.class);
     public static final String NAME = "workflow";
 
+    private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
+
     public WorkflowController()
     {
         setActionResolver(_actionResolver);
@@ -140,14 +142,22 @@ public class WorkflowController extends SpringActionController
         public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
         {
             bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
+            if (schema == null)
+            {
+                errors.reject("Schema not defined", SCHEMA_NOT_DEFINED_ERROR);
+            }
+
+            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
             jsp.setTitle("Task List for '" + bean.getProcessDefinitionName() + "' workflow instances ");
 
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
-            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            if (schema != null)
+            {
+                QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
+                QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
-            jsp.setView("workflowListQueryView", queryView);
+                jsp.setView("workflowListQueryView", queryView);
+            }
 
             return jsp;
         }
@@ -170,14 +180,21 @@ public class WorkflowController extends SpringActionController
         public ModelAndView getView(WorkflowRequestForm bean, BindException errors) throws Exception
         {
             bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
             JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean);
             jsp.setTitle("Active Processes");
 
-            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
+            if (schema == null)
+            {
+                errors.reject("Schema not defined", SCHEMA_NOT_DEFINED_ERROR);
+            }
+            else
+            {
+                QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
+                QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
-            jsp.setView("workflowListQueryView", queryView);
+                jsp.setView("workflowListQueryView", queryView);
+            }
 
             return jsp;
         }
