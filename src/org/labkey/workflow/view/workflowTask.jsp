@@ -229,16 +229,23 @@ There is no active task with id <%= bean.getId() %>
         if (bean.canComplete(getUser(), getContainer()))
         {
             Map<String, TaskFormField> fields = bean.getFormFields();
-            if (!bean.getTaskDefinitionKey().equals("downloadDataSet"))
+            if (fields.isEmpty())
             {
-                if (fields.isEmpty())
+                if (bean.getTaskDefinitionKey().equals("downloadDataSet"))
                 {
 %>
-<%= PageFlowUtil.button(h(bean.getName())).href(new ActionURL(WorkflowController.CompleteTaskAction.class, getViewContext().getContainer()).addParameter("taskId", bean.getId()))%>
+<%= PageFlowUtil.button("Complete Task").onClick("completeWorkflowTask(" + q(bean.getId()) + "," + q(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + ")")%>
 <%
                 }
                 else
                 {
+%>
+<%= PageFlowUtil.button(h(bean.getName())).onClick("completeWorkflowTask(" + q(bean.getId()) + "," + q(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + ")")%>
+<%
+                }
+            }
+            else
+            {
 %>
 <strong><%= h(bean.getName()) %></strong>
 <br>
@@ -249,7 +256,7 @@ There is no active task with id <%= bean.getId() %>
                     {
                         // TODO add a type that is text area that has "information" for the rows and columns
                         // TODO handle other input field types as well: Date, long, boolean
-                        // TODO investigate what thee rendered form object is
+                        // TODO investigate what the rendered form object is
                         if (field.getValue().getType().getName().equals("string"))
                         {
             %>
@@ -286,7 +293,6 @@ There is no active task with id <%= bean.getId() %>
 </form>
 <br>
 <%
-                }
             }
         }
     }
