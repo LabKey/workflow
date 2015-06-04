@@ -145,10 +145,6 @@ function downloadDataGrid(url, parameters) {
         form: newForm,
         isUpload: true,
         params: parameters,
-        success: function (response)
-        {
-            console.log('Successful retrieval of data');
-        },
         failure: function(response)
         {
             var jsonResp = LABKEY.Utils.decode(response.responseText);
