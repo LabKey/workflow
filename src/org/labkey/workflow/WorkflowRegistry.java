@@ -26,7 +26,7 @@ public class WorkflowRegistry
 
     public static WorkflowRegistry get() { return _instance; }
 
-    public void registerPermissionsHandler(Module module, PermissionsHandler handler)
+    public static void registerPermissionsHandler(Module module, PermissionsHandler handler)
     {
         _permissionsRegistry.put(module.getName(), handler);
     }
