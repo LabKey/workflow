@@ -61,7 +61,7 @@
   <table tableName="act_ru_task" tableDbType="TABLE">
     <columns>
       <column columnName="id_">
-        <columnTitle>Row Id</columnTitle>
+        <columnTitle>Task Details</columnTitle>
       </column>
       <column columnName="rev_">
         <columnTitle>Revision</columnTitle>
