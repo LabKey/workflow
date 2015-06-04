@@ -34,9 +34,7 @@ import org.activiti.engine.repository.ProcessDefinitionQuery;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
-import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.IdentityLink;
-import org.activiti.engine.task.NativeTaskQuery;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
@@ -50,11 +48,8 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.resource.FileResource;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
@@ -72,7 +67,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class WorkflowManager
 {
@@ -116,227 +110,6 @@ public class WorkflowManager
             }
         }
         return groupIds;
-    }
-
-    /**
-     * Gets all the tasks that are associated with the given user with a particular level of involvement
-     * @param user user whose task list is being retrieved
-     * @param container container in which the tasks are being retrieved
-     * @param involvements what level of involvment is being requested
-     * @return list of tasks for the indicated level of involvement
-     */
-    public List<Task> getTaskList(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Set<TaskInvolvement> involvements)
-    {
-        List<Task> tasks  = new ArrayList<>();
-        if (involvements.contains(TaskInvolvement.ASSIGNED))
-            tasks.addAll(getAssignedTaskList(user, container));
-        if (involvements.contains(TaskInvolvement.DELEGATION_OWNER))
-            tasks.addAll(getOwnedTaskList(user, container));
-        if (involvements.contains(TaskInvolvement.GROUP_TASK))
-        {
-            Map<UserPrincipal, List<Task>> groupTasks = getGroupTasks(user, container);
-            for (List<Task> groupList : groupTasks.values())
-            {
-                tasks.addAll(groupList);
-            }
-        }
-        return tasks;
-    }
-
-    /**
-     * Gets the total number of tasks currently active for the given processDefinition, user and container
-     * @param processDefinitionKey identifier for the process definition
-     * @param user user whose task count is being retrieved
-     * @param container container context for the request
-     * @return count of the number of tasks assigned or owned by the given user
-     */
-    public Long getTotalTaskCount(@NotNull String processDefinitionKey, @NotNull UserPrincipal user, @Nullable Container container)
-    {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
-                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_");
-
-        if (container != null && !container.hasPermission(user, AdminPermission.class))
-        {
-            sql.append(" WHERE (T.assignee_ = #{assigneeId} OR T.owner_ = #{ownerId} OR T.assignee_ IS NULL)"); // TODO and candidate group is one of your groups.
-            sql.append(" AND ");
-        }
-        else
-        {
-            sql.append(" WHERE ");
-        }
-        sql.append(" D.key_ = '" + processDefinitionKey + "'");
-
-        if (container != null)
-            sql.append(" AND T.tenant_id_ = #{containerId} ");
-        NativeTaskQuery query = getTaskService().createNativeTaskQuery()
-                .sql(sql.toString());
-        if (container != null)
-            query.parameter("containerId", String.valueOf(container.getId()));
-        if (container != null && !container.hasPermission(user, AdminPermission.class))
-        {
-            query.parameter("assigneeId", user.getUserId());
-            query.parameter("ownerId", user.getUserId());
-        }
-        return query.count();
-    }
-
-    /**
-     * Retrieve the list of tasks currently assigned to a given user in the given container
-     * @param user the user whose tasks should be retrieved
-     * @param container the container of the tasks
-     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
-     */
-    @NotNull
-    public List<Task> getAssignedTaskList(@NotNull UserPrincipal user, @Nullable Container container)
-    {
-        StringBuilder sql = new StringBuilder("SELECT * FROM " + getManagementService().getTableName(Task.class) + " T WHERE T.assignee_ = #{userId}");
-        if (container != null)
-        {
-            sql.append("AND T.tenant_id_ = #{containerId}");
-        }
-        NativeTaskQuery query = getTaskService().createNativeTaskQuery()
-                .sql(sql.toString())
-                .parameter("userId", String.valueOf(user.getUserId()));
-        if (container != null)
-            query.parameter("containerId", String.valueOf(container.getId()));
-        return query.list();
-    }
-
-    /**
-     * Retrieve the count of the list of tasks currently assigned to a given user in the given container
-     * @param user the user whose tasks should be retrieved
-     * @param container the container of the tasks
-     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
-     */
-    @NotNull
-    public Long getAssignedTaskCount(@NotNull String processDefinitionKey, @NotNull UserPrincipal user, @Nullable Container container)
-    {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
-                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_")
-                .append(" WHERE D.key_ = '" + processDefinitionKey + "'")
-                .append(" AND T.assignee_ = #{userId}");
-        if (container != null)
-                sql.append(" AND T.tenant_id_ = #{containerId} ");
-        NativeTaskQuery query = getTaskService().createNativeTaskQuery()
-                .sql(sql.toString())
-                .parameter("userId", String.valueOf(user.getUserId()));
-        if (container != null)
-            query.parameter("containerId", String.valueOf(container.getId()));
-        return query.count();
-    }
-
-    /**
-     * Retrieve the list of tasks currently owned by a given user in the given container
-     * @param principal the user whose tasks should be retrieved
-     * @param container the container of the tasks
-     * @return a list of tasks, which is empty if there are no tasks meeting the criteria
-     */
-    @NotNull
-    public List<Task> getOwnedTaskList(@NotNull UserPrincipal principal, @Nullable Container container)
-    {
-        StringBuilder sql = new StringBuilder("SELECT * FROM " + getManagementService().getTableName(Task.class) + " T WHERE T.owner_ = #{userId} ");
-        if (container != null)
-            sql.append("AND T.tenant_id_ = #{containerId}");
-        NativeTaskQuery query = getTaskService().createNativeTaskQuery().sql(sql.toString()).parameter("userId", String.valueOf(principal.getUserId()));
-        if (container != null)
-            query.parameter("containerId", String.valueOf(container.getId()));
-        return query.list();
-    }
-
-    /**
-     * Retrieve the count of the tasks currently owned by a given user in the given container for a given process definition
-     *
-     * @param processDefinitionKey identifier for the process definition
-     * @param principal the user whose tasks should be retrieved
-     * @param container the container of the tasks; if null returns tasks in all containers
-     * @return count of the number of tasks
-     */
-    @NotNull
-    public Long getOwnedTaskCount(@NotNull String processDefinitionKey, @NotNull UserPrincipal principal, @Nullable Container container)
-    {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM " + getManagementService().getTableName(Task.class) + " T ")
-                .append(" JOIN " + getManagementService().getTableName(ProcessDefinition.class) + " D on T.proc_def_id_ = D.id_")
-                .append(" WHERE D.key_ = '" + processDefinitionKey + "'")
-                .append(" AND T.owner_ = #{userId}");
-        if (container != null)
-                sql.append(" AND T.tenant_id_ = #{containerId} ");
-        NativeTaskQuery query = getTaskService().createNativeTaskQuery()
-                .sql(sql.toString())
-                .parameter("userId", String.valueOf(principal.getUserId()));
-        if (container != null)
-            query.parameter("containerId", String.valueOf(container.getId()));
-        return query.count();
-    }
-
-    /**
-     * Find the list of tasks for which the given group is a candidate assignee
-     * @param group the group in question
-     * @return a list of workflow tasks currently having this group as a candidate assignee
-     */
-    public List<Task> getTaskList(@NotNull Group group)
-    {
-        return getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(group.getUserId())).list();
-    }
-
-    /**
-     * Adds a group as a candidate for a particular task
-     * @param task the task that is to have its list of candidate groups expanded
-     * @param group the group to add as a candidate.  If the group is already a candidate ???it will be added again???
-     */
-    public void addGroupAssignment(@NotNull Task task, @NotNull Group group)
-    {
-        getTaskService().addCandidateGroup(task.getId(), String.valueOf(group.getUserId()));
-    }
-
-    /**
-     * @param principal the principal whose groups are being queried
-     * @param container the container context for the query
-     * @return a mapping between user principals and task lists for the groups the given principal is a member of
-     */
-    @NotNull
-    public Map<UserPrincipal, List<Task>> getGroupTasks(@NotNull UserPrincipal principal, @Nullable Container container)
-    {
-        Map<UserPrincipal, List<Task>> tasks = new HashMap<>();
-        for (int groupId : principal.getGroups())
-        {
-            TaskQuery query = getTaskService().createTaskQuery().taskCandidateGroup(String.valueOf(groupId));
-            if (container != null)
-                query.taskTenantId(container.getId());
-            List<Task> groupTasks = query.list();
-            Group group = SecurityManager.getGroup(groupId);
-            if (groupTasks.size() > 0 && group != null)
-            {
-                tasks.put(group, groupTasks);
-            }
-        }
-
-        return tasks;
-    }
-
-    /**
-     * @param processDefinitionKey identifier for the process definition in question
-     * @param principal the principal whose groups are being queried
-     * @param container the container context for the query
-     * @return a mapping between user principals and counts of tasks for the groups the given principal is a member of, excluding groups with 0 tasks
-     */
-    @NotNull
-    public Map<UserPrincipal, Long> getGroupTaskCounts(@NotNull String processDefinitionKey, @NotNull UserPrincipal principal, @Nullable Container container)
-    {
-        Map<UserPrincipal, Long> tasks = new HashMap<>();
-        for (int groupId : principal.getGroups())
-        {
-            TaskQuery query = getTaskService().createTaskQuery().processDefinitionKey(processDefinitionKey).taskCandidateGroup(String.valueOf(groupId));
-            if (container != null)
-                query.taskTenantId(container.getId());
-            Long count = query.count();
-            Group group = SecurityManager.getGroup(groupId);
-            if (group != null && count > 0)
-            {
-                tasks.put(group, count);
-            }
-        }
-
-        return tasks;
     }
 
     /**

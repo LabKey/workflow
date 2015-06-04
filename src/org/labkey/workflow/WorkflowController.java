@@ -801,6 +801,8 @@ public class WorkflowController extends SpringActionController
         {
             _processVariables = processVariables;
         }
+
+        // TODO add processDefinitionKey here as well for better linking when the process ends as a result of this completion
     }
 
     /**

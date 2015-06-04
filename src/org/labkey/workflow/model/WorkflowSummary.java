@@ -30,7 +30,6 @@ public class WorkflowSummary
     {
         _processDefinitionKey = processDefinitionKey;
         _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey, container);
-//        setSummaryCounts(user, container);
     }
 
     public String getName()
@@ -127,12 +126,4 @@ public class WorkflowSummary
         _numTotalTasks = numTotalTasks;
     }
 
-    public void setSummaryCounts(User user, Container container)
-    {
-        setNumAssignedTasks(WorkflowManager.get().getAssignedTaskCount(_processDefinitionKey, user, container));
-        setNumOwnedTasks(WorkflowManager.get().getOwnedTaskCount(_processDefinitionKey, user, container));
-        setNumGroupTasks(WorkflowManager.get().getGroupTaskCounts(_processDefinitionKey, user, container));
-        setNumInstances(WorkflowManager.get().getProcessInstanceCount(_processDefinitionKey, user, container));
-        setNumTotalTasks(WorkflowManager.get().getTotalTaskCount(_processDefinitionKey, user, container));
-    }
 }
