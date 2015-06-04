@@ -32,10 +32,10 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +68,8 @@ public class WorkflowController extends SpringActionController
     private static final String TASK_ID_MISSING = "Task id is required";
     private static final String PROCESS_INSTANCE_ID_MISSING = "Process instance id is required";
     private static final String ASSIGNEE_ID_MISSING = "Assignee id is required";
+    private static final String MODULE_NAME_MISSING = "Module name is required";
+    private static final String NO_SUCH_TASK_ERROR = "No active task with the given id";
 
     private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
 
@@ -379,10 +382,56 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CandidateUsersAction extends ApiAction<WorkflowTaskForm>
+    {
+        protected static final String PROP_USER_ID = "userId";
+        protected static final String PROP_USER_NAME = "displayName";
+
+        private WorkflowTask _task;
+
+        @Override
+        public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            User currentUser = getUser();
+            boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
+            List<User> users = SecurityManager.getUsersWithPermissions(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
+            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            for (User user : users)
+            {
+                Map<String,Object> userInfo = new HashMap<>();
+                userInfo.put(PROP_USER_ID, user.getUserId());
+
+                //force sanitize of the display name, even for logged-in users
+                userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
+                //include email address, if user is allowed to see them
+                if (includeEmail)
+                    userInfo.put("email", user.getEmail());
+                userResponseList.add(userInfo);
+
+            }
+            response.put("users", userResponseList);
+            return success(response);
+        }
+
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            if (form.getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+            else
+            {
+                _task = WorkflowManager.get().getTask(form.getTaskId());
+                if (!_task.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
+            }
+        }
+    }
+
     /**
      * Claims a task for a user, making that user the owner and the assignee.
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ClaimTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -402,7 +451,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Delegates a task to a particular user.  The owner of the task remains unchanged.
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DelegateTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -449,7 +498,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Assigns a task to a user
      */
-    @RequiresPermissionClass(UpdatePermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public class AssignTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -538,6 +587,14 @@ public class WorkflowController extends SpringActionController
         {
             if (form.getProcessDefinitionKey() == null)
                 errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
+            else if (form.getWorkflowModelModule() == null)
+                errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
+            else
+            {
+                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(form.getWorkflowModelModule());
+                if (!handler.canStartProcess(form.getProcessDefinitionKey()))
+                    throw new UnauthorizedException("User does not have permission to start a process with key " + form.getProcessDefinitionKey() + " from module " + form.getWorkflowModelModule());
+            }
         }
     }
 

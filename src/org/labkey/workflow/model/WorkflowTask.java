@@ -3,6 +3,8 @@ package org.labkey.workflow.model;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
+import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Marshal;
@@ -10,14 +12,17 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.workflow.PermissionsHandler;
 import org.labkey.workflow.WorkflowManager;
 import org.labkey.workflow.WorkflowModule;
 import org.labkey.workflow.WorkflowRegistry;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by susanh on 5/3/15.
@@ -173,6 +178,16 @@ public class WorkflowTask
         return _groupIds;
     }
 
+    public boolean isInCandidateGroups(User user)
+    {
+        return hasCandidateGroups() && CollectionUtils.containsAny(getGroupIds(), Arrays.asList(ArrayUtils.toObject(user.getGroups())));
+    }
+
+    public boolean hasCandidateGroups()
+    {
+        return getGroupIds() != null && !_groupIds.isEmpty();
+    }
+
     private PermissionsHandler getPermissionsHandler()
     {
         // TODO get the "category" from the deployment model, which will be the module in which the workflow is defined
@@ -277,6 +292,11 @@ public class WorkflowTask
     public boolean isSuspended()
     {
         return _engineTask.isSuspended();
+    }
+
+    public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
+    {
+        return getPermissionsHandler().getCandidateUserPermissions(this, user, container);
     }
 
     public boolean isActive() { return _engineTask != null; }

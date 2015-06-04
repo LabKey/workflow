@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
@@ -126,6 +127,7 @@ public class WorkflowQuerySchema extends UserSchema
                     ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
                     DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
                     setDetailsURL(detailsURL.toString());
+                    ret.add(new DetailsColumn(detailsURL, table));
                     ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
@@ -188,10 +190,12 @@ public class WorkflowQuerySchema extends UserSchema
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("tenant_id_")).toString());
                     // TODO add in the proper permissions check here, passed in as part of the constructor
-                    Integer group = (Integer) ctx.get("group_");
-                    if (((group != null) && getUser().isInGroup(group)) || getContainer().hasPermission(getUser(), AdminPermission.class))
+                    String group = (String) ctx.get("_Group");
+                    if (group == null)
+                        return;
+                    Integer groupId = Integer.valueOf(group);
+                    if (getUser().isInGroup(groupId) || getContainer().hasPermission(getUser(), AdminPermission.class))
                     {
                         super.renderGridCellContents(ctx, out);
                     }

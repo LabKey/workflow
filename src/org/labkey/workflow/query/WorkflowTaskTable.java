@@ -57,7 +57,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
 
-        ColumnInfo groupCol = addCandidateGroupColumn(user, container);
+        addCandidateGroupColumn(user, container);
 
         if (!container.hasPermission(user, AdminPermission.class))
             addCondition(new SQLFragment("owner_ = ? OR assignee_ = ?", user.getUserId(), user.getUserId()));

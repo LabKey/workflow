@@ -150,10 +150,10 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getUsers', LABKEY.container.path),
+                url: LABKEY.ActionURL.buildURL('workflow', 'candidateUsers', LABKEY.container.path, {taskId: this.taskId}),
                 reader: {
                     type: 'json',
-                    root: 'users'
+                    root: 'data.users'
                 }
             }
         });
@@ -166,6 +166,6 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
 function createReassignTaskWindow(taskId, assigneeId) {
     Ext4.create("Workflow.view.dialog.ReassignTask", {
         taskId: taskId,
-        assigneeId: assigneeId
+        assigneeId: assigneeId,
     }).show();
 }

@@ -60,6 +60,9 @@ There is no active task with id <%= bean.getId() %>
     }
     else
     {
+        String assigneeLabel = bean.isDelegated() ? "Delegated to" : "Assigned to";
+        String changeAssigneeLabel = bean.getAssigneeId() == null ? "Assign" : "Reassign";
+        Boolean canChangeAssignee = bean.canClaim(getUser(), getContainer()) || (bean.isDelegated() && bean.canDelegate(getUser(), getContainer())) || bean.canAssign(getUser(), getContainer());
 %>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
 &nbsp;&nbsp;
@@ -102,6 +105,9 @@ There is no active task with id <%= bean.getId() %>
     </tr>
 </table>
 
+
+<strong>Task Details</strong>
+<br><br>
 <table class="labkey-proj">
     <%
         if (bean.getOwner() != null)
@@ -113,58 +119,30 @@ There is no active task with id <%= bean.getId() %>
     </tr>
     <%
         }
-        if (bean.isDelegated())
+    %>
+    <%
+        if (bean.getAssignee() != null)
         {
     %>
     <tr>
-        <td>Delegated to</td>
+        <td><%= assigneeLabel %></td>
         <td><%= bean.getAssignee() %></td>
     </tr>
+    <tr></tr>
     <%
-            if (bean.canDelegate(getUser(), getContainer()))
-            {
-                %>
-    <tr>
-        <td colspan="2">
-            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
-        </td>
-    </tr>
-    <%
-            }
         }
-        else if (bean.getAssignee() != null)
+        if (canChangeAssignee)
         {
     %>
     <tr>
-        <td>Assigned to</td>
-        <td>
-            <%= bean.getAssignee() %>
+        <td colspan="2" height="40px">
+            <%= button(changeAssigneeLabel).onClick("createReassignTaskWindow(" + q(bean.getId()) + ", " + bean.getAssigneeId() + "); return false;") %>
         </td>
     </tr>
-    <%
-            if (bean.canAssign(getUser(), getContainer()))
-            {
-    %>
-    <tr>
-        <td colspan="2">
-            <%= button("Reassign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
-        </td>
-    </tr>
-    <%
-            }
-        }
-        else if (bean.canAssign(getUser(), getContainer()))
-        {
-    %>
-    <tr>
-        <td colspan="2">
-        <%= button("Assign").onClick("createReassignTaskWindow(" + q(bean.getId()) + "," + bean.getAssigneeId() + "); return false;") %>
-        </td>
-    </tr>
-    </table>
     <%
         }
     %>
+
     <%
         if (bean.getVariables() != null && !bean.getVariables().isEmpty())
         {
@@ -172,9 +150,6 @@ There is no active task with id <%= bean.getId() %>
             Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(getContainer(), bean.getVariables());
     %>
 
-    <strong>Task Details</strong>
-    <br><br>
-    <table class="labkey-proj">
      <%
 
              for (Map.Entry<String, Object> variable : displayVariables.entrySet())
