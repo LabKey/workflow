@@ -36,6 +36,7 @@ import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
+import org.activiti.engine.task.TaskInfoQuery;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -114,17 +115,21 @@ public class WorkflowManager
 
     /**
      * Retrieve a task given its id
-     * @param taskId
+     * @param taskId id of the task to retrieve
+     * @param container container in which the task is defined
      * @return a workflow task of the given Id.  If there is no such task, an exception is thrown.
      */
-    public WorkflowTask getTask(@NotNull String taskId)
+    public WorkflowTask getTask(@NotNull String taskId, @Nullable Container container)
     {
-        return new WorkflowTask(getEngineTask(taskId));
+        return new WorkflowTask(getEngineTask(taskId, container));
     }
 
-    public Task getEngineTask(@NotNull String taskId)
+    public Task getEngineTask(@NotNull String taskId, @Nullable Container container)
     {
-        return getTaskService().createTaskQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables().singleResult();
+        TaskQuery query = getTaskService().createTaskQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables();
+        if (container != null)
+            query.taskTenantId(container.getId());
+        return query.singleResult();
     }
 
 
@@ -164,7 +169,7 @@ public class WorkflowManager
         if (user == null)
             throw new Exception("No such user: (id = " + userId + ")");
 
-        WorkflowTask task = getTask(taskId);
+        WorkflowTask task = getTask(taskId, container);
 
         if (task == null || !task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
@@ -199,7 +204,7 @@ public class WorkflowManager
             if (assignee == null)
                 throw new Exception("No such user: (id = " + assigneeId + ")");
 
-            WorkflowTask task = getTask(taskId);
+            WorkflowTask task = getTask(taskId, container);
 
             if (task == null)
                 throw new Exception("No such task (id = " + taskId + ")");
@@ -225,7 +230,7 @@ public class WorkflowManager
         User designatee = UserManager.getUser(designateeId);
         if (designatee == null)
             throw new Exception("No such user: (id = " + designateeId + ")");
-        WorkflowTask task = getTask(taskId);
+        WorkflowTask task = getTask(taskId, container);
 
         if (task == null || !task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");

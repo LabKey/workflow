@@ -1,5 +1,6 @@
 package org.labkey.workflow.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.DelegationState;
 import org.activiti.engine.task.Task;
@@ -36,9 +37,9 @@ public class WorkflowTask
     private Map<String, TaskFormField> _formFields = null;
     private ProcessInstance _processInstance = null;
 
-    public WorkflowTask(String taskId)
+    public WorkflowTask(String taskId, Container container)
     {
-        _engineTask = WorkflowManager.get().getEngineTask(taskId);
+        _engineTask = WorkflowManager.get().getEngineTask(taskId, container);
         _id = taskId;
     }
 
@@ -62,6 +63,7 @@ public class WorkflowTask
         return _engineTask == null ? null : _engineTask.getDescription();
     }
 
+    @JsonIgnore
     private ProcessInstance getProcessInstance()
     {
         if (_processInstance == null && _engineTask != null)
@@ -82,15 +84,27 @@ public class WorkflowTask
     }
 
     @Nullable
+    @JsonIgnore
     public User getOwner()
+    {
+        Integer id = getOwnerId();
+        if (id == null)
+            return null;
+        else
+            return UserManager.getUser(id);
+    }
+
+    @Nullable
+    public Integer getOwnerId()
     {
         if (_engineTask == null || _engineTask.getOwner() == null)
             return null;
         else
-            return UserManager.getUser(Integer.valueOf(_engineTask.getOwner()));
+            return Integer.valueOf(_engineTask.getOwner());
     }
 
     @Nullable
+    @JsonIgnore
     public User getAssignee()
     {
         Integer id = getAssigneeId();
@@ -149,6 +163,7 @@ public class WorkflowTask
         return _engineTask.getProcessVariables();
     }
 
+    @JsonIgnore
     @Nullable
     public Map<String, Object> getVariables()
     {
@@ -164,7 +179,7 @@ public class WorkflowTask
         return variables;
     }
 
-
+    @JsonIgnore // for some reason this comes back as the empty string, but it is also available as one of the process variables
     @NotNull
     public String getContainer()
     {
@@ -301,6 +316,7 @@ public class WorkflowTask
 
     public boolean isActive() { return _engineTask != null; }
 
+    @JsonIgnore
     @NotNull
     public Map<String, TaskFormField> getFormFields()
     {

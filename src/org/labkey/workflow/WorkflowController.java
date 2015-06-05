@@ -70,6 +70,7 @@ public class WorkflowController extends SpringActionController
     private static final String ASSIGNEE_ID_MISSING = "Assignee id is required";
     private static final String MODULE_NAME_MISSING = "Module name is required";
     private static final String NO_SUCH_TASK_ERROR = "No active task with the given id";
+    private static final String NO_SUCH_INSTANCE_ERROR = "No active process instance with the given id";
 
     private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
 
@@ -271,7 +272,7 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId()), errors);
+            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId(), getContainer()), errors);
         }
 
         @Override
@@ -382,6 +383,70 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+
+    /**
+     * Shows the data about a process instance if the user has permissions to see this task
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ProcessInstanceDataAction extends ApiAction<ProcessInstanceDetailsForm>
+    {
+        private WorkflowProcess _processInstance;
+
+
+        @Override
+        public void validateForm(ProcessInstanceDetailsForm form, Errors errors)
+        {
+            if (form.getProcessInstanceId() == null)
+                errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
+            else
+            {
+                _processInstance = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+                if (!_processInstance.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_INSTANCE_ERROR);
+                else if (!_processInstance.canView(getUser(), getContainer()))
+                    errors.reject(ERROR_MSG, "User does not have permission to view process instance data for this process");
+
+            }
+        }
+
+        @Override
+        public Object execute(ProcessInstanceDetailsForm processInstanceDetailsForm, BindException errors) throws Exception
+        {
+            return success(_processInstance);
+        }
+
+    }
+
+    /**
+     * Shows the data about a task if the user has permissions to see this task
+     */
+    @RequiresPermissionClass(ReadPermission.class)
+    public class TaskDataAction extends ApiAction<WorkflowTaskForm>
+    {
+        private WorkflowTask _task;
+
+        @Override
+        public Object execute(WorkflowTaskForm workflowTaskForm, BindException errors) throws Exception
+        {
+            return success(_task);
+        }
+
+        @Override
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            if (form.getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+            else
+            {
+                _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+                if (!_task.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
+                else if (!_task.canView(getUser(), getContainer()))
+                    errors.reject(ERROR_MSG, "User does not have permission to view task data for this task");
+            }
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class CandidateUsersAction extends ApiAction<WorkflowTaskForm>
     {
@@ -415,13 +480,14 @@ public class WorkflowController extends SpringActionController
             return success(response);
         }
 
+        @Override
         public void validateForm(WorkflowTaskForm form, Errors errors)
         {
             if (form.getTaskId() == null)
                 errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
             else
             {
-                _task = WorkflowManager.get().getTask(form.getTaskId());
+                _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
                 if (!_task.isActive())
                     errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
             }
@@ -744,7 +810,7 @@ public class WorkflowController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            WorkflowTask task = WorkflowManager.get().getTask(form.getTaskId());
+            WorkflowTask task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
             if (!task.isActive())
                 throw new Exception("No active task with id " + form.getTaskId());
             if (!task.canComplete(getUser(), getContainer()))
