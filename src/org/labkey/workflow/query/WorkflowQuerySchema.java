@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DetailsColumn;
@@ -18,7 +17,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -89,18 +87,21 @@ public class WorkflowQuerySchema extends UserSchema
     @Override
     protected TableInfo createTable(String name)
     {
-        if (name.equals(TABLE_TASK))
-            return new WorkflowTaskTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_PROCESS_DEFINITION))
-            return new WorkflowProcessDefinitionTable(this);
-        else if (name.equals(TABLE_PROCESS_INSTANCE))
-            return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_IDENTITY_LINK))
-            return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_VARIABLE))
-            return new WorkflowVariableTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_DEPLOYMENT))
-            return new WorkflowTenantTable(this, name);
+        switch (name)
+        {
+            case TABLE_TASK:
+                return new WorkflowTaskTable(this, getUser(), getContainer());
+            case TABLE_PROCESS_DEFINITION:
+                return new WorkflowProcessDefinitionTable(this);
+            case TABLE_PROCESS_INSTANCE:
+                return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
+            case TABLE_IDENTITY_LINK:
+                return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
+            case TABLE_VARIABLE:
+                return new WorkflowVariableTable(this, getUser(), getContainer());
+            case TABLE_DEPLOYMENT:
+                return new WorkflowTenantTable(this, name);
+        }
 
         //just return a filtered table over the db table if it exists
         SchemaTableInfo tableInfo = getDbSchema().getTable(name);
@@ -113,7 +114,7 @@ public class WorkflowQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         QueryView queryView = new QueryView(this, settings, errors);
 
@@ -148,7 +149,7 @@ public class WorkflowQuerySchema extends UserSchema
 
     private class ReassignmentDisplayColumnFactory implements DisplayColumnFactory
     {
-        private String _assignmentType;
+        private final String _assignmentType;
 
         public ReassignmentDisplayColumnFactory(String assignmentType)
         {

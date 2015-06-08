@@ -1,5 +1,6 @@
 package org.labkey.workflow;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -15,28 +16,28 @@ public interface PermissionsHandler
 {
     // TODO perhaps better to have a method getPermissions(task, user, container) if we define own Permission classes for workflow
 
-    public boolean canStartProcess(String processDefinitionKey);
+    boolean canStartProcess(String processDefinitionKey);
 
-    public boolean canView(WorkflowProcess process, User user, Container container);
+    boolean canView(@NotNull WorkflowProcess process, User user, Container container);
 
-    public boolean canAccessData(WorkflowProcess process, User user, Container container);
+    boolean canAccessData(@NotNull WorkflowProcess process, User user, Container container);
 
-    public boolean canDelete(WorkflowProcess process, User user, Container container);
+    boolean canDelete(@NotNull WorkflowProcess process, User user, Container container);
 
-    public boolean canClaim(WorkflowTask task, User user, Container container);
+    boolean canClaim(@NotNull WorkflowTask task, User user, Container container);
 
-    public boolean canDelegate(WorkflowTask task, User user, Container container);
+    boolean canDelegate(@NotNull WorkflowTask task, User user, Container container);
 
-    public boolean canAssign(WorkflowTask task, User user, Container container);
+    boolean canAssign(@NotNull WorkflowTask task, User user, Container container);
 
-    public boolean canView(WorkflowTask task, User user, Container container);
+    boolean canView(@NotNull WorkflowTask task, User user, Container container);
 
-    public boolean canAccessData(WorkflowTask task, User user, Container container);
+    boolean canAccessData(@NotNull WorkflowTask task, User user, Container container);
 
-    public boolean isAssigned(WorkflowTask task, User user);
+    boolean isAssigned(@NotNull WorkflowTask task, User user);
 
-    public boolean canComplete(WorkflowTask task, User user, Container container);
+    boolean canComplete(@NotNull WorkflowTask task, User user, Container container);
 
-    public Set<Class<? extends Permission>> getCandidateUserPermissions(WorkflowTask task, User user, Container container);
+    Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, User user, Container container);
 
 }

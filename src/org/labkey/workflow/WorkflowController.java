@@ -85,17 +85,15 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        private String _navLabel = "Workflow Process List";
-
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             AllWorkflowsBean bean = new AllWorkflowsBean(getContainer());
-            return new JspView("/org/labkey/workflow/view/allWorkflows.jsp", bean);
+            return new JspView<>("/org/labkey/workflow/view/allWorkflows.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(_navLabel);
+            return root.addChild("Workflow Process List");
         }
     }
 
@@ -137,7 +135,7 @@ public class WorkflowController extends SpringActionController
             WorkflowSummary bean = new WorkflowSummary(form.getProcessDefinitionKey(), getUser(), getContainer());
             _navLabel = bean.getName();
 
-            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean, errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowSummary.jsp", bean, errors);
         }
 
         @Override
@@ -167,7 +165,7 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
 
             bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
 
@@ -224,7 +222,7 @@ public class WorkflowController extends SpringActionController
             }
 
             form.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer()).getName());
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", form);
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", form);
             jsp.setTitle("Active Processes");
 
             QuerySettings settings = _schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
@@ -271,8 +269,11 @@ public class WorkflowController extends SpringActionController
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
+            WorkflowTask task = new WorkflowTask(form.getTaskId(), getContainer());
+            if (task.getName() != null)
+                _navLabel = "'" + task.getName() + "' task details";
 
-            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId(), getContainer()), errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", task, errors);
         }
 
         @Override
@@ -312,7 +313,7 @@ public class WorkflowController extends SpringActionController
             if (bean.getProcessDefinitionName() != null)
                 _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
 
-            return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
 
 
@@ -871,6 +872,7 @@ public class WorkflowController extends SpringActionController
         // TODO add processDefinitionKey here as well for better linking when the process ends as a result of this completion
     }
 
+    // TODO remove? deployment happens by recognizing a new XML file in the resources directory.
     /**
      * Creates a new deployment of a process definition
      */

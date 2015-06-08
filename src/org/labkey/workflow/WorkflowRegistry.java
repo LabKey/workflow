@@ -4,6 +4,7 @@ import org.labkey.api.module.Module;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by susanh on 5/27/15.
@@ -11,8 +12,8 @@ import java.util.Map;
 public class WorkflowRegistry
 {
     private static final String DEFAULT_HANDLER = WorkflowModule.NAME;
-    private static WorkflowRegistry _instance = new WorkflowRegistry();
-    private static Map<String, PermissionsHandler> _permissionsRegistry = new HashMap<String, PermissionsHandler>();
+    private static final WorkflowRegistry _instance = new WorkflowRegistry();
+    private static final Map<String, PermissionsHandler> _permissionsRegistry = new ConcurrentHashMap<>();
 
     static
     {
@@ -28,7 +29,10 @@ public class WorkflowRegistry
 
     public static void registerPermissionsHandler(Module module, PermissionsHandler handler)
     {
-        _permissionsRegistry.put(module.getName(), handler);
+        synchronized(_permissionsRegistry)
+        {
+            _permissionsRegistry.put(module.getName(), handler);
+        }
     }
 
     public PermissionsHandler getPermissionsHandler(String moduleName)

@@ -52,7 +52,7 @@ public class WorkflowProcess implements HasViewContext
     public WorkflowProcess(String id, User user, Container container)
     {
         this(WorkflowManager.get().getProcessInstance(id), user, container);
-        this._id = id;
+        _id = id;
     }
 
     public WorkflowProcess(ProcessInstance engineProcessInstance, User user, Container container)
@@ -62,8 +62,8 @@ public class WorkflowProcess implements HasViewContext
         {
             _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
             if (_processVariables.get(INITIATOR_ID) != null)
-                this.setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
-            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), container));
+                setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
+            setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), container));
         }
     }
 

@@ -81,8 +81,6 @@ public class WorkflowManager
     // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
     private final ModuleResourceCache<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
 
-    public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
-
     private WorkflowManager()
     {
         // prevent external construction with a private default constructor
@@ -145,7 +143,7 @@ public class WorkflowManager
     {
         WorkflowTask task = new WorkflowTask(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
-        if (task == null || !task.isActive())
+        if (!task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
         if (!task.canComplete(user, container))
             throw new UnauthorizedException("User does not have permission to complete this task");

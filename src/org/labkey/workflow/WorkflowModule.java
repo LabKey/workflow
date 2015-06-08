@@ -65,25 +65,11 @@ public class WorkflowModule extends DefaultModule
         WorkflowQuerySchema.register(this);
     }
 
-    @NotNull
-    @Override
-    public Set<? extends ModuleResourceLoader> getResourceLoaders()
-    {
-        return Collections.emptySet();
-    }
-
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new WorkflowContainerListener());
-    }
-
-    @Override
-    @NotNull
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
     }
 
     @Override

@@ -17,15 +17,13 @@
 package org.labkey.workflow;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.dialect.SqlDialect;
 
 public class WorkflowSchema
 {
     private static final WorkflowSchema _instance = new WorkflowSchema();
     public static final String NAME = "workflow";
-    public static final String TABLE_TASK = "act_ru_task";
-    public static final String TABLE_PROCESS_DEFINITION = "act_re_procdef";
-    public static final String TABLE_PROCESS_EXECUTION = "act_ru_execution";
 
     public static WorkflowSchema getInstance()
     {
@@ -41,11 +39,7 @@ public class WorkflowSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(NAME);
+        return DbSchema.get(NAME, DbSchemaType.Module);
     }
 
-    public SqlDialect getSqlDialect()
-    {
-        return getSchema().getSqlDialect();
-    }
 }
