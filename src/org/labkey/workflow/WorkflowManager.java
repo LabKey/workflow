@@ -447,6 +447,12 @@ public class WorkflowManager
         return fields;
     }
 
+    public String getProcessDefinitionKey(@NotNull String processDefinitionId)
+    {
+        ProcessDefinition definition =  getRepositoryService().createProcessDefinitionQuery().processDefinitionId(processDefinitionId).singleResult();
+        return definition.getKey();
+    }
+
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();

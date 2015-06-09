@@ -9,6 +9,8 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
@@ -44,27 +46,36 @@ public class WorkflowProcess implements HasViewContext
     private ViewContext _viewContext;
     private String _name; // the name for this process instance
     private List<WorkflowTask> _currentTasks;
+    private Container _container;
 
     public WorkflowProcess()
     {
     }
 
-    public WorkflowProcess(String id, User user, Container container)
+    public WorkflowProcess(String id, Container container)
     {
-        this(WorkflowManager.get().getProcessInstance(id), user, container);
+        this(WorkflowManager.get().getProcessInstance(id));
         _id = id;
     }
 
-    public WorkflowProcess(ProcessInstance engineProcessInstance, User user, Container container)
+    public WorkflowProcess(ProcessInstance engineProcessInstance)
     {
+
         _engineProcessInstance = engineProcessInstance;
         if (_engineProcessInstance != null)
         {
             _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
+            if (_processVariables.get(CONTAINER_ID) != null)
+                _container = ContainerManager.getForId((String) _processVariables.get(CONTAINER_ID));
             if (_processVariables.get(INITIATOR_ID) != null)
                 setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
-            setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), container));
+            setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), _container));
         }
+    }
+
+    public Container getContainer()
+    {
+        return _container;
     }
 
     public String getId()
@@ -91,6 +102,14 @@ public class WorkflowProcess implements HasViewContext
         if (_engineProcessInstance == null)
             return null;
         return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null).getName();
+    }
+
+    public String getProcessDefinitionModule()
+    {
+        if (_engineProcessInstance == null)
+            return null;
+        Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), _container).getCategory());
+        return lsid.getObjectId();
     }
 
     public void setProcessDefintionKey(String processKey)

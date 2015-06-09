@@ -309,7 +309,7 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+            WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getContainer());
             if (bean.getProcessDefinitionName() != null)
                 _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
 
@@ -401,7 +401,7 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
             else
             {
-                _processInstance = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+                _processInstance = new WorkflowProcess(form.getProcessInstanceId(), getContainer());
                 if (!_processInstance.isActive())
                     errors.reject(ERROR_MSG, NO_SUCH_INSTANCE_ERROR);
                 else if (!_processInstance.canView(getUser(), getContainer()))
@@ -748,7 +748,7 @@ public class WorkflowController extends SpringActionController
             if (form.getComment() != null)
                 removalMsg += "Reason: " + form.getComment();
             form.setComment(removalMsg);
-            WorkflowProcess process = new WorkflowProcess(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()), getUser(), getContainer());
+            WorkflowProcess process = new WorkflowProcess(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()));
             if (!process.canDelete(getUser(), getContainer()))
             {
                 throw new UnauthorizedException("You do not have permission to delete this process instance");
