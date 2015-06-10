@@ -68,5 +68,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="Internal" />
+    <orderEntry type="module" module-name="Workflow-API" />
   </component>
 </module>

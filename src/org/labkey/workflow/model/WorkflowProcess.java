@@ -37,6 +37,7 @@ public class WorkflowProcess implements HasViewContext
     public static final String INITIATOR_ID = "initiatorId";
     public static final String CONTAINER_ID = "container";
     public static final String CREATED_DATE = "created";
+    public static final String PROCESS_INSTANCE_URL = "processInstanceUrl";
 
     private String _processDefinitionKey;
     private String _id = null;
@@ -245,7 +246,14 @@ public class WorkflowProcess implements HasViewContext
             else if (key.endsWith("GroupId"))
             {
                 displayKey = key.substring(0, key.length() - 2);
-                displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
+                try
+                {
+                    displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
+                }
+                catch (NumberFormatException e)
+                {
+                    displayValue = variables.get(key);
+                }
             }
             else if (variables.get(key) instanceof Date)
             {

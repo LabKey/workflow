@@ -53,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.workflow.model.TaskFormField;
 import org.labkey.workflow.model.WorkflowProcess;
@@ -262,6 +263,7 @@ public class WorkflowManager
         {
             builder.addVariable(variable.getKey(), variable.getValue());
         }
+        builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // TODO this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
         return instance.getId();

@@ -10,7 +10,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.workflow.model.WorkflowProcess;
+import org.labkey.api.workflow.NotificationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,43 +29,54 @@ import java.util.List;
  */
 public class EmailNotifier implements JavaDelegate
 {
-    private static final Logger LOG = LoggerFactory.getLogger(EmailNotifier.class);
-    private Expression _notificationClass;
+    private static final Logger _log = LoggerFactory.getLogger(EmailNotifier.class);
+    private Expression _notificationClassName;
+    private Expression _emailTemplateClassName;
 
-    public Expression getNotificationClass()
+    public Expression getNotificationClassName()
     {
-        return _notificationClass;
+        return _notificationClassName;
     }
 
-    public void setNotificationClass(Expression notificationClass)
+    public void setNotificationClassName(Expression notificationClassName)
     {
-        _notificationClass = notificationClass;
+        _notificationClassName = notificationClassName;
     }
 
-    private Class<Notification> getNotificationClass(DelegateExecution execution) throws ClassNotFoundException
+    private Class<NotificationConfig> getNotificationClass(DelegateExecution execution) throws ClassNotFoundException
     {
-        return (Class<Notification>) Class.forName((String) getNotificationClass().getValue(execution));
+        return (Class<NotificationConfig>) Class.forName((String) getNotificationClassName().getValue(execution));
     }
 
-    private Notification getNotifier(DelegateExecution execution) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+    public Expression getEmailTemplateClassName()
     {
-        // initialize the process that is associated with this execution
-        WorkflowProcess process = new WorkflowProcess(execution.getProcessInstanceId(), null);
+        return _emailTemplateClassName;
+    }
 
-        Notification notification = getNotificationClass(execution).newInstance();
-        notification.setWorkflowProcess(process);
-        return notification;
+    public void setEmailTemplateClassName(Expression emailTemplateClassName)
+    {
+        _emailTemplateClassName = emailTemplateClassName;
+    }
+
+    private Class<? extends EmailTemplate> getEmailTemplateClass(DelegateExecution execution) throws ClassNotFoundException
+    {
+        return (Class<? extends EmailTemplate>) Class.forName((String) getEmailTemplateClassName().getValue(execution));
+    }
+
+    private NotificationConfig getNotificationConfig(DelegateExecution execution) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+    {
+        NotificationConfig notificationConfig = getNotificationClass(execution).newInstance();
+        notificationConfig.setVariables(execution.getVariables());
+        return notificationConfig;
     }
 
     @Override
     public void execute(DelegateExecution execution) throws Exception
     {
-        Notification notification = getNotifier(execution);
-
-
-        Container container = notification.getWorkflowProcess().getContainer();
-        EmailTemplate template = notification.getEmailTemplate(container);
-        final List<User> allAddresses = notification.getUsers(container);
+        NotificationConfig notificationConfig = getNotificationConfig(execution);
+        Container container = notificationConfig.getContainer();
+        EmailTemplate template = notificationConfig.getEmailTemplate(execution.getProcessInstanceId(), execution.getVariables());
+        final List<User> allAddresses = notificationConfig.getUsers();
         for (User user : allAddresses)
         {
             String to = user.getEmail();
@@ -79,17 +90,16 @@ public class EmailNotifier implements JavaDelegate
                     String body = template.renderBody(container);
                     m.setText(body);
 
-                    // TODO should this always be the initiator?  Or should it be null?
-                    MailHelper.send(m, notification.getWorkflowProcess().getInitiator(), container);
+                    MailHelper.send(m, notificationConfig.getLogUser(), container);
                 }
             }
             catch (ConfigurationException | AddressException e)
             {
-                LOG.error("error sending service task notification email to " + to, e);
+                _log.error("error sending service task notification email to " + to, e);
             }
             catch (Exception e)
             {
-                LOG.error("error sending service task notification email to " + to, e);
+                _log.error("error sending service task notification email to " + to, e);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
