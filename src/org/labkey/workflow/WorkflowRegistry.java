@@ -28,18 +28,13 @@ public class WorkflowRegistry
 
     public static void registerPermissionsHandler(Module module, PermissionsHandler handler)
     {
-        synchronized(_permissionsRegistry)
-        {
-            _permissionsRegistry.put(module.getName(), handler);
-        }
+        _permissionsRegistry.put(module.getName(), handler);
     }
 
     public PermissionsHandler getPermissionsHandler(String moduleName)
     {
-        if (_permissionsRegistry.containsKey(moduleName))
-            return _permissionsRegistry.get(moduleName);
-        else
-            return _permissionsRegistry.get(DEFAULT_HANDLER);
+        PermissionsHandler handler = _permissionsRegistry.get(moduleName);
+        return null != handler ? handler : _permissionsRegistry.get(DEFAULT_HANDLER);
     }
 }
 
