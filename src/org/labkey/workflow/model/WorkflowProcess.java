@@ -74,6 +74,7 @@ public class WorkflowProcess implements HasViewContext
         }
     }
 
+    @JsonIgnore
     public Container getContainer()
     {
         return _container;
