@@ -10,6 +10,7 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
     name: null,
     parameters: null,
     processInstanceId: null,
+    processDefinitionKey: null,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -107,7 +108,10 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
     makeTaskCompletionRequest: function(taskId, parameters)
     {
         parameters.comment = this.down('textfield#TaskComment').getValue();
-        var returnURLParams = {processInstanceId: this.processInstanceId};
+        var returnURLParams = {
+            processInstanceId: this.processInstanceId,
+            processDefinitionKey: this.processDefinitionKey
+        };
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
             method: 'POST',
@@ -159,7 +163,7 @@ function downloadDataGrid(url, parameters) {
 }
 
 // TODO remove from global scope
-function completeWorkflowTask(taskId, formName, fields, processInstanceId)
+function completeWorkflowTask(taskId, formName, fields, processInstanceId, processDefinitionKey)
 {
     var form = document.forms[formName];
     var parameters = {};
@@ -167,7 +171,10 @@ function completeWorkflowTask(taskId, formName, fields, processInstanceId)
     {
         parameters[fields[i]] = form[fields[i]].value;
     }
-    var returnURLParams = {processInstanceId: processInstanceId};
+    var returnURLParams = {
+        processInstanceId: processInstanceId,
+        processDefinitionKey: processDefinitionKey
+    };
     Ext4.Ajax.request({
         url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
         method: 'POST',
@@ -192,11 +199,12 @@ function completeWorkflowTask(taskId, formName, fields, processInstanceId)
     });
 }
 
-function createCompleteTaskWindow(taskId, name, parameters, processInstanceId) {
+function createCompleteTaskWindow(taskId, name, parameters, processInstanceId, processDefinitionKey) {
     Ext4.create("Workflow.view.dialog.CompleteTask", {
         taskId: taskId,
         name: name,
         parameters: parameters,
-        processInstanceId: processInstanceId
+        processInstanceId: processInstanceId,
+        processDefinitionKey: processDefinitionKey
     }).show();
 }

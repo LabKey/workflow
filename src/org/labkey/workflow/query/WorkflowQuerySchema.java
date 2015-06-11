@@ -1,8 +1,10 @@
 package org.labkey.workflow.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -12,16 +14,19 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -116,7 +121,17 @@ public class WorkflowQuerySchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        QueryView queryView = new QueryView(this, settings, errors);
+        QueryView queryView = null;
+
+        String processDefinitionKey = context.getRequest().getParameter("processDefinitionKey");
+        if (StringUtils.isNotBlank(processDefinitionKey))
+        {
+            SimpleFilter filter = settings.getBaseFilter();
+            FieldKey definitionKeyField = new FieldKey(null, "proc_def_id_");
+            // These keys have the form <key string>:revision:id, so we add the ":" to distinguish keys with the same prefix.
+            SimpleFilter processFilter = new SimpleFilter(definitionKeyField, processDefinitionKey + ":", CompareType.CONTAINS);
+            filter.addAllClauses(processFilter);
+        }
 
         if (settings.getQueryName().equalsIgnoreCase(TABLE_TASK))
         {
@@ -132,6 +147,10 @@ public class WorkflowQuerySchema extends UserSchema
                     ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
+        }
+        else
+        {
+            queryView = new QueryView(this, settings, errors);
         }
         queryView.setShowDeleteButton(false);
         queryView.setShowUpdateColumn(false);

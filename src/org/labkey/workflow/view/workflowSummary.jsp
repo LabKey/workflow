@@ -15,7 +15,6 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -27,6 +26,8 @@
 <%
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
+
+    ActionURL taskListURL = new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey());
 %>
 <labkey:errors></labkey:errors>
 <%
@@ -50,7 +51,7 @@
 %>
 <ul>
     <li>
-        <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("query.proc_def_id_~contains", bean.getProcessDefinitionKey() + ":").addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
 
         <%-- TODO add the start form--%>
         <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
@@ -59,17 +60,17 @@
     <li>Tasks</li>
     <ul>
         <li>
-            <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+            <%= PageFlowUtil.textLink("All tasks", taskListURL)%>
         </li>
 
         <li>
-            <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_~eq", getUser().getUserId()))%>
+            <%= PageFlowUtil.textLink("Assigned tasks", taskListURL.addParameter("query.assignee_~eq", getUser().getUserId()))%>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.owner_~eq", getUser().getUserId())) %>
+            <%= PageFlowUtil.textLink("Owned tasks", taskListURL.addParameter("query.owner_~eq", getUser().getUserId())) %>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Unassigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("query.assignee_/DisplayName~isblank", true)) %>
+            <%= PageFlowUtil.textLink("Unassigned tasks", taskListURL.addParameter("query.assignee_/DisplayName~isblank", true)) %>
         </li>
     </ul>
 

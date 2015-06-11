@@ -100,7 +100,7 @@ public class WorkflowProcess implements HasViewContext
 
     public String getProcessDefinitionName()
     {
-        if (_engineProcessInstance == null)
+        if (getProcessDefinitionKey() == null)
             return null;
         return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null).getName();
     }
@@ -113,7 +113,7 @@ public class WorkflowProcess implements HasViewContext
         return lsid.getObjectId();
     }
 
-    public void setProcessDefintionKey(String processKey)
+    public void setProcessDefinitionKey(String processKey)
     {
         _processDefinitionKey = processKey;
     }

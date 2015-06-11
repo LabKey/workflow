@@ -310,6 +310,10 @@ public class WorkflowController extends SpringActionController
                 return new SimpleErrorView(errors);
 
             WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getContainer());
+            if (form.getProcessDefinitionKey() != null && bean.getProcessDefinitionKey() == null)
+            {
+                bean.setProcessDefinitionKey(form.getProcessDefinitionKey());
+            }
             if (bean.getProcessDefinitionName() != null)
                 _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
 
@@ -327,6 +331,7 @@ public class WorkflowController extends SpringActionController
     private static class ProcessInstanceDetailsForm
     {
         private String _processInstanceId;
+        private String _processDefinitionKey;
 
         public String getProcessInstanceId()
         {
@@ -336,6 +341,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessInstanceId(String processInstanceId)
         {
             _processInstanceId = processInstanceId;
+        }
+
+        public String getProcessDefinitionKey()
+        {
+            return _processDefinitionKey;
+        }
+
+        public void setProcessDefinitionKey(String processDefinitionKey)
+        {
+            _processDefinitionKey = processDefinitionKey;
         }
     }
 
@@ -837,6 +852,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _taskId;
         private String _processInstanceId;
+        private String _processDefintionKey;
         private Map<String, Object> _processVariables;
 
         public String getTaskId()
@@ -869,10 +885,17 @@ public class WorkflowController extends SpringActionController
             _processVariables = processVariables;
         }
 
-        // TODO add processDefinitionKey here as well for better linking when the process ends as a result of this completion
+        public String getProcessDefintionKey()
+        {
+            return _processDefintionKey;
+        }
+
+        public void setProcessDefintionKey(String processDefintionKey)
+        {
+            _processDefintionKey = processDefintionKey;
+        }
     }
 
-    // TODO remove? deployment happens by recognizing a new XML file in the resources directory.
     /**
      * Creates a new deployment of a process definition
      */
@@ -972,7 +995,7 @@ public class WorkflowController extends SpringActionController
             if (form.getDataSetId() != null)
             {
                 WorkflowProcess process = new WorkflowProcess();
-                process.setProcessDefintionKey(PROCESS_KEY);
+                process.setProcessDefinitionKey(PROCESS_KEY);
                 process.setInitiatorId(getUser().getUserId());
 
                 Map<String, Object> variables = new HashMap<String, Object>();

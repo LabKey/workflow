@@ -53,6 +53,8 @@
 There is no active process with id <%= h(bean.getId()) %>
 <br><br>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+&nbsp;&nbsp;
+<%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
     else if (!bean.canView(getUser(), getContainer()))

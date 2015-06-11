@@ -40,15 +40,8 @@
 
 <labkey:errors></labkey:errors>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
-<%
-    if (bean.getProcessDefinitionKey() != null)
-    {
-%>
 &nbsp;&nbsp;
 <%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-<%
-    }
-%>
 &nbsp;&nbsp;
 <%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 &nbsp;&nbsp;
@@ -68,15 +61,8 @@
     }
 %>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
-<%
-    if (bean.getProcessDefinitionKey() != null)
-    {
-%>
 &nbsp;&nbsp;
 <%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
-<%
-    }
-%>
 &nbsp;&nbsp;
 <%= PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 &nbsp;&nbsp;
