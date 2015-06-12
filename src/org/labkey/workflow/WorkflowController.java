@@ -428,6 +428,12 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(ProcessInstanceDetailsForm processInstanceDetailsForm, BindException errors) throws Exception
         {
+            // remove the data access parameters if the user does not have permission to data access the data
+            if (!_processInstance.canAccessData(getUser(), getContainer()))
+            {
+                Map<String, Object> variables = _processInstance.getProcessVariables();
+                variables.remove("dataAccess");
+            }
             return success(_processInstance);
         }
 
@@ -444,6 +450,12 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm workflowTaskForm, BindException errors) throws Exception
         {
+            // remove the data access parameters if the user does not have permission to data access the data
+            if (!_task.canAccessData(getUser(), getContainer()))
+            {
+                Map<String, Object> variables = _task.getProcessVariables();
+                variables.remove("dataAccess");
+            }
             return success(_task);
         }
 
