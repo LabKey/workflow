@@ -55,12 +55,12 @@ public class PermissionsHandlerImpl implements PermissionsHandler
 
     public boolean canDelegate(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
-        return task.hasCandidateGroups() && container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, AdminPermission.class);
     }
 
     public boolean canAssign(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
-        return task.hasCandidateGroups() && container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, AdminPermission.class);
     }
 
     public boolean canView(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
