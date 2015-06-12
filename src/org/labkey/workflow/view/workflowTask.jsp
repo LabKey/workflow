@@ -211,13 +211,13 @@ There is no active task with id <%= bean.getId() %>
                 if (bean.getTaskDefinitionKey().equals("downloadDataSet"))
                 {
 %>
-<%= PageFlowUtil.button("Complete Task").onClick("completeWorkflowTask(" + q(bean.getId()) + "," + q(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
+<%= PageFlowUtil.button("Complete Task").onClick("completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
 <%
                 }
                 else
                 {
 %>
-<%= PageFlowUtil.button(h(bean.getName())).onClick("completeWorkflowTask(" + q(bean.getId()) + "," + q(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
+<%= PageFlowUtil.button(h(bean.getName())).onClick("completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
 <%
                 }
             }
@@ -227,7 +227,7 @@ There is no active task with id <%= bean.getId() %>
 <strong><%= h(bean.getName()) %></strong>
 <br>
 <br>
-<form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask('<%= bean.getId() %>', '<%= bean.getTaskDefinitionKey() %>', ['<%=StringUtils.join(fields.keySet(), "', '") %>'], q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer()) + ")" %>
+<form name="<%= bean.getTaskDefinitionKey() %>" action="javascript:completeWorkflowTask(<%= q(bean.getId()) %>, <%= qh(bean.getTaskDefinitionKey()) %>, ['<%=StringUtils.join(fields.keySet(), "', '") %>'], <%= q(bean.getProcessInstanceId()) %>, <%= qh(bean.getProcessDefinitionKey(getContainer())) %>)"'>
 <%
                     for (Map.Entry<String, TaskFormField> field : fields.entrySet())
                     {
