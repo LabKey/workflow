@@ -200,9 +200,7 @@ public class WorkflowProcess implements HasViewContext
 
     private PermissionsHandler getPermissionsHandler()
     {
-        // TODO get the "category" from the deployment model, which will be the module in which the workflow is defined
-        // and use that as the argument here.
-        return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
+        return WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule());
     }
 
     public boolean canAccessData(User user, Container container)
