@@ -1,6 +1,7 @@
 package org.labkey.workflow;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.workflow.PermissionsHandler;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

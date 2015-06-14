@@ -1,11 +1,9 @@
-package org.labkey.workflow;
+package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.workflow.model.WorkflowProcess;
-import org.labkey.workflow.model.WorkflowTask;
 
 import java.util.Set;
 

@@ -17,18 +17,18 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.workflow.TaskFormField" %>
+<%@ page import="org.labkey.api.workflow.WorkflowTask" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.workflow.model.TaskFormField" %>
-<%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
-<%@ page import="org.labkey.workflow.model.WorkflowTask" %>
+<%@ page import="org.labkey.workflow.model.WorkflowProcessImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -147,7 +147,7 @@ There is no active task with id <%= bean.getId() %>
         if (bean.getVariables() != null && !bean.getVariables().isEmpty())
         {
 
-            Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(getContainer(), bean.getVariables());
+            Map<String, Object> displayVariables = WorkflowProcessImpl.getDisplayVariables(getContainer(), bean.getVariables());
     %>
 
      <%
@@ -234,7 +234,7 @@ There is no active task with id <%= bean.getId() %>
                         // TODO add a type that is text area that has "information" for the rows and columns
                         // TODO handle other input field types as well: Date, long, boolean
                         // TODO investigate what the rendered form object is
-                        if (field.getValue().getType().getName().equals("string"))
+                        if (field.getValue().getType().equals("string"))
                         {
             %>
         <%= field.getValue().getName() %>
@@ -242,16 +242,16 @@ There is no active task with id <%= bean.getId() %>
         <textarea title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId()%>" rows="10" cols="100"></textarea>
         <%
                         }
-                        else if (field.getValue().getType().getName().equals("enum"))
+                        else if (field.getValue().getType().equals("enum"))
                         {
-                            Map<String, String> choices = (Map<String, String>) field.getValue().getType().getInformation("values");
+                            Map<String, String> choices = (Map<String, String>) field.getValue().getInformation("values");
                             if (choices != null && !choices.isEmpty())
                             {
         %>
         <%= field.getValue().getName() %>
         <select title="<%= field.getValue().getName() %>" name="<%= field.getValue().getId() %>">
                 <%
-                                for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getType().getInformation("values")).entrySet())
+                                for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getInformation("values")).entrySet())
                                 {
                 %>
                 <option value="<%= choice.getKey()%>"><%= choice.getValue()%></option>

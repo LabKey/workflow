@@ -14,7 +14,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.workflow.PermissionsHandler;
+import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
 import org.labkey.workflow.WorkflowModule;
 import org.labkey.workflow.WorkflowRegistry;
@@ -29,7 +31,7 @@ import java.util.Set;
  * Created by susanh on 5/3/15.
  */
 @Marshal(Marshaller.Jackson)
-public class WorkflowTask
+public class WorkflowTaskImpl implements WorkflowTask
 {
     private Task _engineTask;
     private String _id;
@@ -37,13 +39,13 @@ public class WorkflowTask
     private Map<String, TaskFormField> _formFields = null;
     private ProcessInstance _processInstance = null;
 
-    public WorkflowTask(String taskId, Container container)
+    public WorkflowTaskImpl(String taskId, Container container)
     {
         _engineTask = WorkflowManager.get().getEngineTask(taskId, container);
         _id = taskId;
     }
 
-    public WorkflowTask(Task engineTask)
+    public WorkflowTaskImpl(Task engineTask)
     {
         _engineTask = engineTask;
     }

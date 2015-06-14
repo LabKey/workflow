@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.workflow.WorkflowProcess" %>
+<%@ page import="org.labkey.api.workflow.WorkflowTask" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
-<%@ page import="org.labkey.workflow.model.WorkflowProcess" %>
-<%@ page import="org.labkey.workflow.model.WorkflowTask" %>
+<%@ page import="org.labkey.workflow.model.WorkflowProcessImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
@@ -103,7 +104,7 @@ There is no active process with id <%= h(bean.getId()) %>
     if (bean.getProcessVariables() != null && !bean.getProcessVariables().isEmpty())
     {
 
-        Map<String, Object> displayVariables = WorkflowProcess.getDisplayVariables(getContainer(), bean.getProcessVariables());
+        Map<String, Object> displayVariables = WorkflowProcessImpl.getDisplayVariables(getContainer(), bean.getProcessVariables());
 %>
 
 <strong>Process Instance Details</strong>

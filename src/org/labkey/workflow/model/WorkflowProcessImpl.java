@@ -16,9 +16,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
-import org.labkey.workflow.PermissionsHandler;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
-import org.labkey.workflow.WorkflowModule;
 import org.labkey.workflow.WorkflowRegistry;
 
 import java.util.Date;
@@ -30,14 +31,9 @@ import java.util.Map;
  * Created by susanh on 5/3/15.
  */
 @Marshal(Marshaller.Jackson)
-public class WorkflowProcess implements HasViewContext
+public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
 {
     private ProcessInstance _engineProcessInstance;
-
-    public static final String INITIATOR_ID = "initiatorId";
-    public static final String CONTAINER_ID = "container";
-    public static final String CREATED_DATE = "created";
-    public static final String PROCESS_INSTANCE_URL = "processInstanceUrl";
 
     private String _processDefinitionKey;
     private String _id = null;
@@ -49,17 +45,17 @@ public class WorkflowProcess implements HasViewContext
     private List<WorkflowTask> _currentTasks;
     private Container _container;
 
-    public WorkflowProcess()
+    public WorkflowProcessImpl()
     {
     }
 
-    public WorkflowProcess(String id, Container container)
+    public WorkflowProcessImpl(String id, Container container)
     {
         this(WorkflowManager.get().getProcessInstance(id));
         _id = id;
     }
 
-    public WorkflowProcess(ProcessInstance engineProcessInstance)
+    public WorkflowProcessImpl(ProcessInstance engineProcessInstance)
     {
 
         _engineProcessInstance = engineProcessInstance;
@@ -240,7 +236,7 @@ public class WorkflowProcess implements HasViewContext
         Map<String, Object> _displayVariables = new HashMap<String, Object>();
         for (String key : variables.keySet())
         {
-            if (WorkflowProcess.CONTAINER_ID.equalsIgnoreCase(key) || WorkflowProcess.INITIATOR_ID.equalsIgnoreCase(key))
+            if (CONTAINER_ID.equalsIgnoreCase(key) || INITIATOR_ID.equalsIgnoreCase(key))
                 continue;
             else if (key.endsWith("GroupId"))
             {

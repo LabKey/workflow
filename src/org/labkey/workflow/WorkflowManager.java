@@ -36,7 +36,6 @@ import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
-import org.activiti.engine.task.TaskInfoQuery;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -55,9 +54,11 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.workflow.model.TaskFormField;
-import org.labkey.workflow.model.WorkflowProcess;
-import org.labkey.workflow.model.WorkflowTask;
+import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowTask;
+import org.labkey.workflow.model.TaskFormFieldImpl;
+import org.labkey.workflow.model.WorkflowTaskImpl;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -120,7 +121,7 @@ public class WorkflowManager
      */
     public WorkflowTask getTask(@NotNull String taskId, @Nullable Container container)
     {
-        return new WorkflowTask(getEngineTask(taskId, container));
+        return new WorkflowTaskImpl(getEngineTask(taskId, container));
     }
 
     public Task getEngineTask(@NotNull String taskId, @Nullable Container container)
@@ -142,7 +143,7 @@ public class WorkflowManager
      */
     public void completeTask(@NotNull String taskId, User user, Container container) throws Exception
     {
-        WorkflowTask task = new WorkflowTask(getTaskService().createTaskQuery().taskId(taskId).singleResult());
+        WorkflowTask task = new WorkflowTaskImpl(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
         if (!task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
@@ -286,7 +287,7 @@ public class WorkflowManager
         List<WorkflowTask> tasks = new ArrayList<>();
         for (Task engineTask : engineTasks)
         {
-            tasks.add(new WorkflowTask(engineTask));
+            tasks.add(new WorkflowTaskImpl(engineTask));
         }
         return tasks;
     }
@@ -444,7 +445,7 @@ public class WorkflowManager
         Map<String, TaskFormField> fields = new HashMap<>();
         for (FormProperty property : properties)
         {
-            fields.put(property.getId(), new TaskFormField(property));
+            fields.put(property.getId(), new TaskFormFieldImpl(property));
         }
         return fields;
     }
