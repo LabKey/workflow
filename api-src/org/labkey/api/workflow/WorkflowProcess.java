@@ -1,5 +1,6 @@
 package org.labkey.api.workflow;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -24,19 +25,29 @@ public interface WorkflowProcess
 
     String getProcessDefinitionModule();
 
+    @Nullable
     Map<String, Object> getProcessVariables();
 
+    @Nullable
+    Map<String, Object> getVariables();
+
     Integer getInitiatorId();
+
     String getProcessInstanceId();
+
     String getName();
+
     User getInitiator();
+
     List<WorkflowTask> getCurrentTasks();
 
     boolean canAccessData(User user, Container container);
+
     boolean canView(User user, Container container);
 
     boolean canDelete(User user, Container container);
 
     boolean hasDiagram(Container container);
+
     boolean isActive();
 }

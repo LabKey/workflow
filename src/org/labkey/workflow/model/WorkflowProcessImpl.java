@@ -16,11 +16,11 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
-import org.labkey.api.workflow.WorkflowRegistry;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -126,6 +126,11 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _processVariables = processVariables;
     }
 
+    @Override
+    public Map<String, Object> getVariables()
+    {
+        return getProcessVariables();
+    }
 
     @Override
     public void setViewContext(ViewContext context)

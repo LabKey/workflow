@@ -59,9 +59,6 @@ public interface WorkflowTask
 
     Map<String, Object> getProcessVariables();
 
-    @Nullable
-    Map<String, Object> getVariables();
-
     String getContainer();
 
     List<Integer> getGroupIds();
@@ -115,4 +112,8 @@ public interface WorkflowTask
 
     @NotNull
     Map<String, TaskFormField> getFormFields();
+
+    @Nullable
+    Map<String, Object> getVariables();
+
 }
