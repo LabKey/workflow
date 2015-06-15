@@ -133,8 +133,42 @@ public class WorkflowQuerySchema extends UserSchema
             filter.addAllClauses(processFilter);
         }
 
+
         if (settings.getQueryName().equalsIgnoreCase(TABLE_TASK))
         {
+            String assigneeId = context.getRequest().getParameter("assignee");
+            SimpleFilter baseFilter = settings.getBaseFilter();
+            if (StringUtils.isNotBlank(assigneeId))
+            {
+                FieldKey field = new FieldKey(null, "assignee_");
+                SimpleFilter assigneeFilter;
+                if (assigneeId.equals("_blank"))
+                {
+                    assigneeFilter = new SimpleFilter(field, assigneeId, CompareType.ISBLANK);
+                }
+                else
+                {
+                    assigneeFilter = new SimpleFilter(field, assigneeId, CompareType.EQUAL);
+                }
+                baseFilter.addAllClauses(assigneeFilter);
+            }
+
+            String ownerId = context.getRequest().getParameter("owner");
+            if (StringUtils.isNotBlank(ownerId))
+            {
+                FieldKey field = new FieldKey(null, "owner_");
+                SimpleFilter ownerFilter;
+                if (ownerId.equals("_blank"))
+                {
+                    ownerFilter = new SimpleFilter(field, ownerId, CompareType.ISBLANK);
+                }
+                else
+                {
+                    ownerFilter = new SimpleFilter(field, ownerId, CompareType.EQUAL);
+                }
+                baseFilter.addAllClauses(ownerFilter);
+            }
+
             queryView =  new QueryView(this, settings, errors)
             {
                 @Override

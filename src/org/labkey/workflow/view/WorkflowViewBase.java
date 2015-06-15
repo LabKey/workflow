@@ -166,7 +166,7 @@ public abstract class WorkflowViewBase extends JspBase
             builder.append(PageFlowUtil.textLink("This Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer()).addParameter("processInstanceId", processInstanceId)));
             builder.append("\n&nbsp;&nbsp;\n");
         }
-        builder.append(PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("query.assignee_~eq", getUser().getUserId())));
+        builder.append(PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("assignee", getUser().getUserId())));
 
         return builder.toString();
     }

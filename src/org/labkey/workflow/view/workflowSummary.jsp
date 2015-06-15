@@ -27,7 +27,6 @@
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
 
-    ActionURL taskListURL = new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey());
 %>
 <labkey:errors></labkey:errors>
 <%
@@ -60,17 +59,17 @@
     <li>Tasks</li>
     <ul>
         <li>
-            <%= PageFlowUtil.textLink("All tasks", taskListURL)%>
+            <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
         </li>
 
         <li>
-            <%= PageFlowUtil.textLink("Assigned tasks", taskListURL.addParameter("query.assignee_~eq", getUser().getUserId()))%>
+            <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", getUser().getUserId()))%>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Owned tasks", taskListURL.addParameter("query.owner_~eq", getUser().getUserId())) %>
+            <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("owner", getUser().getUserId())) %>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Unassigned tasks", taskListURL.addParameter("query.assignee_/DisplayName~isblank", true)) %>
+            <%= PageFlowUtil.textLink("Unassigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", "_blank")) %>
         </li>
     </ul>
 
