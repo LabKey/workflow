@@ -14,7 +14,9 @@ public interface PermissionsHandler
 {
     // TODO perhaps better to have a method getPermissions(task, user, container) if we define own Permission classes for workflow
 
-    boolean canStartProcess(@NotNull String processDefinitionKey);
+    boolean canStartProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container);
+
+    boolean canDeployProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container);
 
     boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
 

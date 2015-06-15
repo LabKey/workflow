@@ -51,9 +51,16 @@
 <ul>
     <li>
         <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+<%
+        if (bean.canStartProcess(getUser(), getContainer()))
+        {
 
-        <%-- TODO add the start form--%>
-        <%--&nbsp;&nbsp;<%= PageFlowUtil.button("Start new process").href(new ActionURL(WorkflowController.StartProcessAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("approverGroupId", "-1"))%>--%>
+%>
+        &nbsp;&nbsp;
+        <%= PageFlowUtil.textLink("Start new process", new ActionURL(WorkflowController.StartProcessFormAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("workflowModelModule", bean.getWorkflowModelModule())) %>
+<%
+        }
+%>
     </li>
 
     <li>Tasks</li>

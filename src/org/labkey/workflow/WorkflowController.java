@@ -16,6 +16,7 @@
 
 package org.labkey.workflow;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
@@ -152,6 +153,31 @@ public class WorkflowController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(_navLabel);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class StartProcessFormAction extends SimpleViewAction<StartWorkflowProcessForm>
+    {
+        @Override
+        public ModelAndView getView(StartWorkflowProcessForm form, BindException errors) throws Exception
+        {
+            WorkflowProcess bean = new WorkflowProcessImpl(form.getProcessDefinitionKey(), form.getWorkflowModelModule());
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowProcessStart.jsp", bean, errors);
+            return jsp;
+        }
+
+        @Override
+        public void validate(StartWorkflowProcessForm form, BindException errors)
+        {
+            form.validate(getUser(), getContainer(), errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -659,22 +685,6 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class StartProcessFormAction extends SimpleViewAction<StartWorkflowProcessForm>
-    {
-
-        @Override
-        public ModelAndView getView(StartWorkflowProcessForm startWorkflowProcessForm, BindException errors) throws Exception
-        {
-            return null;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
 
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
@@ -690,7 +700,6 @@ public class WorkflowController extends SpringActionController
 
             form.setInitiatorId(getUser().getUserId());
             form.setContainerId(getContainer().getId());
-
             String instanceId = WorkflowManager.get().startWorkflow(form.getWorkflowModelModule(), form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("processInstanceId", instanceId);
@@ -700,16 +709,7 @@ public class WorkflowController extends SpringActionController
         @Override
         public void validateForm(StartWorkflowProcessForm form, Errors errors)
         {
-            if (form.getProcessDefinitionKey() == null)
-                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
-            else if (form.getWorkflowModelModule() == null)
-                errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
-            else
-            {
-                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(form.getWorkflowModelModule());
-                if (!handler.canStartProcess(form.getProcessDefinitionKey()))
-                    throw new UnauthorizedException("User does not have permission to start a process with key " + form.getProcessDefinitionKey() + " from module " + form.getWorkflowModelModule());
-            }
+            form.validate(getUser(), getContainer(), errors);
         }
     }
 
@@ -776,6 +776,20 @@ public class WorkflowController extends SpringActionController
         public void setProcessVariables(Map<String, Object> processVariables)
         {
             _processVariables = processVariables;
+        }
+
+        public void validate(User user, Container container, Errors errors)
+        {
+            if (getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
+            else if (getWorkflowModelModule() == null)
+                errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
+            else
+            {
+                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule());
+                if (!handler.canStartProcess(getProcessDefinitionKey(), user, container))
+                    throw new UnauthorizedException("User does not have permission to start a process with key " + getProcessDefinitionKey() + " from module " + getWorkflowModelModule());
+            }
         }
     }
 

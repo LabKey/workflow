@@ -26,6 +26,7 @@ import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.form.FormProperty;
+import org.activiti.engine.form.StartFormData;
 import org.activiti.engine.form.TaskFormData;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
@@ -436,6 +437,18 @@ public class WorkflowManager
             keyToNameMap.put(definition.getKey(), definition.getName());
         }
         return keyToNameMap;
+    }
+
+    public Map<String, TaskFormField> getStartFormFields(String processDefinitionKey)
+    {
+        StartFormData form = getFormService().getStartFormData(processDefinitionKey);
+        List<FormProperty> properties = form.getFormProperties();
+        Map<String, TaskFormField> fields = new HashMap<>();
+        for (FormProperty property : properties)
+        {
+            fields.put(property.getId(), new TaskFormFieldImpl(property));
+        }
+        return fields;
     }
 
     public Map<String, TaskFormField> getFormFields(String taskId)

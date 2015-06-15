@@ -3,8 +3,6 @@ package org.labkey.workflow.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -13,16 +11,15 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
 
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +41,12 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private String _name; // the name for this process instance
     private List<WorkflowTask> _currentTasks;
     private Container _container;
+    private String _moduleName;
 
-    public WorkflowProcessImpl()
+    public WorkflowProcessImpl(String processDefinitionKey, String moduleName)
     {
+        _processDefinitionKey = processDefinitionKey;
+        _moduleName = moduleName;
     }
 
     public WorkflowProcessImpl(String id, Container container)
@@ -99,15 +99,23 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     {
         if (getProcessDefinitionKey() == null)
             return null;
-        return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null).getName();
+        ProcessDefinition definition = WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), null);
+        if (definition != null)
+            return definition.getName();
+        else
+            return null;
     }
 
     public String getProcessDefinitionModule()
     {
         if (_engineProcessInstance == null)
-            return null;
-        Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), _container).getCategory());
-        return lsid.getObjectId();
+            return _moduleName;
+        if (_moduleName == null)
+        {
+            Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), _container).getCategory());
+            _moduleName = lsid.getObjectId();
+        }
+        return _moduleName;
     }
 
     public void setProcessDefinitionKey(String processKey)
@@ -219,6 +227,12 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return getPermissionsHandler().canDelete(this, user, container);
     }
 
+    @Override
+    public boolean canDeploy(User user, Container container)
+    {
+        return getPermissionsHandler().canDeployProcess(getProcessDefinitionKey(), user, container);
+    }
+
     public boolean hasDiagram(Container container)
     {
         if (_engineProcessInstance == null)
@@ -227,52 +241,25 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return definition != null && definition.getDiagramResourceName() != null;
     }
 
+    @Override
     public boolean isActive()
     {
         return _engineProcessInstance != null;
     }
 
-    @JsonIgnore
-    @Nullable
-    public static Map<String, Object> getDisplayVariables(Container container, Map<String, Object> variables)
+    @Override
+    public boolean isDeployed(Container container)
     {
-        String displayKey = null;
-        Object displayValue = null;
-        Map<String, Object> _displayVariables = new HashMap<String, Object>();
-        for (String key : variables.keySet())
-        {
-            if (CONTAINER_ID.equalsIgnoreCase(key) || INITIATOR_ID.equalsIgnoreCase(key))
-                continue;
-            else if (key.endsWith("GroupId"))
-            {
-                displayKey = key.substring(0, key.length() - 2);
-                try
-                {
-                    displayValue = org.labkey.api.security.SecurityManager.getGroup(Integer.valueOf((String) variables.get(key)));
-                }
-                catch (NumberFormatException e)
-                {
-                    displayValue = variables.get(key);
-                }
-            }
-            else if (variables.get(key) instanceof Date)
-            {
-                displayKey = key;
-                displayValue = DateUtil.formatDateTime(container, (Date) variables.get(key));
-            }
-            else
-            {
-                displayKey = key;
-                displayValue = variables.get(key);
-            }
-            displayKey = StringUtilsLabKey.splitCamelCase(StringUtils.capitalize(displayKey));
-
-            _displayVariables.put(displayKey, displayValue);
-        }
-
-        return _displayVariables;
-
+        return WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), container) != null;
     }
 
-
+    @Override
+    public Map<String, TaskFormField> getStartFormFields(Container container)
+    {
+        ProcessDefinition definition = WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(), container);
+        if (definition != null)
+            return WorkflowManager.get().getStartFormFields(definition.getId());
+        else
+            return Collections.emptyMap();
+    }
 }

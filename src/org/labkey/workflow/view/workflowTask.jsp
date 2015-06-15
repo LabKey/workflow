@@ -16,14 +16,11 @@
      */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.workflow.TaskFormField" %>
 <%@ page import="org.labkey.api.workflow.WorkflowTask" %>
-<%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
@@ -159,8 +156,8 @@ There is no active task with id <%= bean.getId() %>
             else
             {
 %>
-<%= taskForm(bean.getName(), bean.getTaskDefinitionKey(),
-        "javascript:completeWorkflowTask("+ q(bean.getId())+ "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields) %>
+<%= actionForm(bean.getName(), bean.getTaskDefinitionKey(),
+        "javascript:completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields, null) %>
 <br>
 <%
             }

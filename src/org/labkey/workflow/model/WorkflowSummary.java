@@ -2,8 +2,11 @@ package org.labkey.workflow.model;
 
 import org.activiti.engine.repository.ProcessDefinition;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.WorkflowManager;
 
 import java.io.File;
@@ -30,6 +33,26 @@ public class WorkflowSummary
     {
         _processDefinitionKey = processDefinitionKey;
         _engineProcessDefinition = WorkflowManager.get().getProcessDefinition(processDefinitionKey, container);
+    }
+
+    public String getWorkflowModelModule()
+    {
+        if (_engineProcessDefinition == null)
+            return null;
+        else
+        {
+            Lsid lsid = new Lsid(_engineProcessDefinition.getCategory());
+            return lsid.getObjectId();
+        }
+    }
+
+    public boolean canStartProcess(User user, Container container)
+    {
+        PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule());
+        if (handler != null)
+            return handler.canStartProcess(getProcessDefinitionKey(), user, container);
+        else
+            return false;
     }
 
     public String getName()

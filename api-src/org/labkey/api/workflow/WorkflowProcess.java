@@ -1,5 +1,6 @@
 package org.labkey.api.workflow;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -20,6 +21,8 @@ public interface WorkflowProcess
     String getId();
 
     String getProcessDefinitionKey();
+
+    void setProcessDefinitionKey(String processKey);
 
     String getProcessDefinitionName();
 
@@ -47,7 +50,14 @@ public interface WorkflowProcess
 
     boolean canDelete(User user, Container container);
 
+    boolean canDeploy(User user, Container conatiner);
+
     boolean hasDiagram(Container container);
 
     boolean isActive();
+
+    boolean isDeployed(Container container);
+
+    @Nullable
+    Map<String, TaskFormField> getStartFormFields(Container container);
 }

@@ -72,7 +72,7 @@ public abstract class WorkflowViewBase extends JspBase
         return builder.toString();
     }
 
-    public String taskForm(String name, String formName, String formAction, Map<String, TaskFormField> fields)
+    public String actionForm(String name, String formName, String formAction, Map<String, TaskFormField> fields, @Nullable Map<String, String> hiddenFields)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<strong>").append(h(name)).append("</strong>");
@@ -86,7 +86,7 @@ public abstract class WorkflowViewBase extends JspBase
             {
                 builder.append(field.getValue().getName());
                 builder.append("\n<br>\n");
-                builder.append("<textarea title=\"").append(field.getValue().getName()).append("\" name=\"").append(field.getValue().getId()).append("\" rows=\"10\" cols=\"100\"></textarea>\n");
+                builder.append("<textarea title=\"").append(field.getValue().getName()).append("\" name=\"").append(field.getValue().getId()).append("\" rows=\"10\" cols=\"100\"></textarea>\n<br>\n");
             }
             else if (field.getValue().getType().equals("enum"))
             {
@@ -102,6 +102,13 @@ public abstract class WorkflowViewBase extends JspBase
                     builder.append("</select>\n");
                     builder.append("<br>\n");
                 }
+            }
+        }
+        if (hiddenFields != null)
+        {
+            for (Map.Entry<String, String> hiddenField : hiddenFields.entrySet())
+            {
+                builder.append("<input type=\"hidden\" name=\"").append(hiddenField.getKey()).append("\" value=\"").append(hiddenField.getValue()).append("\" >\n");
             }
         }
         builder.append("<br><br>\n");
@@ -152,13 +159,16 @@ public abstract class WorkflowViewBase extends JspBase
 
     }
 
-    public String navigationLinks(@NotNull String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
+    public String navigationLinks(@Nullable String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
     {
         StringBuilder builder = new StringBuilder();
         builder.append(PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer())));
         builder.append("\n&nbsp;&nbsp;\n");
-        builder.append(PageFlowUtil.textLink(h(processDefinitionName), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
-        builder.append("\n&nbsp;&nbsp;\n");
+        if (processDefinitionName != null)
+        {
+            builder.append(PageFlowUtil.textLink(h(processDefinitionName), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
+            builder.append("\n&nbsp;&nbsp;\n");
+        }
         builder.append(PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
         builder.append("\n&nbsp;&nbsp;\n");
         if (processInstanceId != null)

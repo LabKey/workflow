@@ -19,10 +19,13 @@ import java.util.Set;
 public class PermissionsHandlerImpl implements PermissionsHandler
 {
     @Override
-    public boolean canStartProcess(@NotNull String processDefinitionKey)
+    public boolean canStartProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container)
     {
         return true;
     }
+
+    @Override
+    public boolean canDeployProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container) { return container.hasPermission(user, AdminPermission.class); }
 
     @Override
     public boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)

@@ -28,9 +28,6 @@ public interface TaskFormField
 
     /**
      * @return the extra information used in defining this form field.
-     *      * For a String, use "textArea" to return the dimensions of the text area for this string's input.  This will
-     *        be a Pair<Integer, Integer> with the first element the number of rows and the second the number of columns.
-     *        If the string's field does not require a textarea, this calls will return null;
      *      * For an enum, use "value" as the key to return a Map<String, String> of the choices, mapping from the choice key to the display string
      *      * For a date, use "datePattern" as the key to return the date display format
      */
