@@ -14,28 +14,28 @@ public interface PermissionsHandler
 {
     // TODO perhaps better to have a method getPermissions(task, user, container) if we define own Permission classes for workflow
 
-    boolean canStartProcess(String processDefinitionKey);
+    boolean canStartProcess(@NotNull String processDefinitionKey);
 
-    boolean canView(@NotNull WorkflowProcess process, User user, Container container);
+    boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
 
-    boolean canAccessData(@NotNull WorkflowProcess process, User user, Container container);
+    boolean canAccessData(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
 
-    boolean canDelete(@NotNull WorkflowProcess process, User user, Container container);
+    boolean canDelete(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
 
-    boolean canClaim(@NotNull WorkflowTask task, User user, Container container);
+    boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean canDelegate(@NotNull WorkflowTask task, User user, Container container);
+    boolean canDelegate(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean canAssign(@NotNull WorkflowTask task, User user, Container container);
+    boolean canAssign(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean canView(@NotNull WorkflowTask task, User user, Container container);
+    boolean canView(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean canAccessData(@NotNull WorkflowTask task, User user, Container container);
+    boolean canAccessData(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean isAssigned(@NotNull WorkflowTask task, User user);
+    boolean isAssigned(@NotNull WorkflowTask task, @NotNull User user);
 
-    boolean canComplete(@NotNull WorkflowTask task, User user, Container container);
+    boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, User user, Container container);
+    Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
 }

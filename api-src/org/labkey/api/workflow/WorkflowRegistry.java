@@ -1,24 +1,20 @@
-package org.labkey.workflow;
+package org.labkey.api.workflow;
 
 import org.labkey.api.module.Module;
-import org.labkey.api.workflow.PermissionsHandler;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Class for registering handlers, listeners, etc. for workflow processes.
+ *
  * Created by susanh on 5/27/15.
  */
 public class WorkflowRegistry
 {
-    private static final String DEFAULT_HANDLER = WorkflowModule.NAME;
+    private static String defaultHandler = null;
     private static final WorkflowRegistry _instance = new WorkflowRegistry();
     private static final Map<String, PermissionsHandler> _permissionsRegistry = new ConcurrentHashMap<>();
-
-    static
-    {
-        _permissionsRegistry.put(DEFAULT_HANDLER, new PermissionsHandlerImpl());
-    }
 
     private WorkflowRegistry()
     {
@@ -29,13 +25,21 @@ public class WorkflowRegistry
 
     public static void registerPermissionsHandler(Module module, PermissionsHandler handler)
     {
+       registerPermissionsHandler(module, handler, false);
+    }
+
+    public static void registerPermissionsHandler(Module module, PermissionsHandler handler, Boolean isDefault)
+    {
         _permissionsRegistry.put(module.getName(), handler);
+        if (isDefault)
+            defaultHandler = module.getName();
+
     }
 
     public PermissionsHandler getPermissionsHandler(String moduleName)
     {
         PermissionsHandler handler = _permissionsRegistry.get(moduleName);
-        return null != handler ? handler : _permissionsRegistry.get(DEFAULT_HANDLER);
+        return null != handler ? handler : _permissionsRegistry.get(defaultHandler);
     }
 }
 

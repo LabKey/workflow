@@ -20,7 +20,7 @@ import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
-import org.labkey.workflow.WorkflowRegistry;
+import org.labkey.api.workflow.WorkflowRegistry;
 
 import java.util.Date;
 import java.util.HashMap;

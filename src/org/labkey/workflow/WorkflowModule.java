@@ -17,12 +17,11 @@
 package org.labkey.workflow;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 
 import java.util.Collection;
@@ -63,6 +62,7 @@ public class WorkflowModule extends DefaultModule
     {
         addController(WorkflowController.NAME, WorkflowController.class);
         WorkflowQuerySchema.register(this);
+        WorkflowRegistry.registerPermissionsHandler(this, new PermissionsHandlerImpl(), true);
     }
 
     @Override

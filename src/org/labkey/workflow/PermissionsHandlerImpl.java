@@ -18,8 +18,6 @@ import java.util.Set;
  */
 public class PermissionsHandlerImpl implements PermissionsHandler
 {
-    // TODO perhaps make this take a User and Container in its constructor so the methods below don't have to all have those as parameters.
-
     @Override
     public boolean canStartProcess(@NotNull String processDefinitionKey)
     {
@@ -27,27 +25,27 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     }
 
     @Override
-    public boolean canView(@NotNull WorkflowProcess process, User user, Container container)
+    public boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
     {
         return (process.getInitiatorId() == user.getUserId()) || container.hasPermission(user, AdminPermission.class);
     }
 
     @Override
-    public boolean canAccessData(@NotNull WorkflowProcess process, User user, Container container)
+    public boolean canAccessData(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
     {
         return container.hasPermission(user, AdminPermission.class);
     }
 
     @Override
-    public boolean canDelete(@NotNull WorkflowProcess process, User user, Container container)
+    public boolean canDelete(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
     {
         return process.getInitiatorId() == user.getUserId() || container.hasPermission(user, AdminPermission.class);
     }
 
     @Override
-    public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
+    public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
-        return  (container != null && container.hasPermission(user, AdminPermission.class)) || task.isInCandidateGroups(user);
+        return container.hasPermission(user, AdminPermission.class) || task.isInCandidateGroups(user);
     }
 
     @Override
@@ -81,13 +79,13 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     }
 
     @Override
-    public boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @Nullable Container container)
+    public boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
         return isAssigned(task, user);
     }
 
     @Override
-    public Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, User user, Container container)
+    public Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
         return Collections.<Class<? extends Permission>>singleton(AdminPermission.class);
     }
