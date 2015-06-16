@@ -519,7 +519,8 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             User currentUser = getUser();
             boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
-            List<User> users = SecurityManager.getUsersWithPermissions(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
+            // TODO should this be one of the permissions set or all in the permissions set?
+            List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
             List<Map<String,Object>> userResponseList = new ArrayList<>();
             for (User user : users)
             {
