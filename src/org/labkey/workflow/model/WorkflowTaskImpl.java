@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -83,6 +84,17 @@ public class WorkflowTaskImpl implements WorkflowTask
     public String getProcessDefinitionName(Container container)
     {
         return _engineTask == null ? null : WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getName();
+    }
+
+    public String getProcessDefinitionModule(Container container)
+    {
+        if (_engineTask == null)
+            return WorkflowModule.NAME;
+        else
+        {
+            Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getCategory());
+            return lsid.getObjectId();
+        }
     }
 
     @Nullable
@@ -205,41 +217,39 @@ public class WorkflowTaskImpl implements WorkflowTask
         return getGroupIds() != null && !_groupIds.isEmpty();
     }
 
-    private PermissionsHandler getPermissionsHandler()
+    private PermissionsHandler getPermissionsHandler(Container container)
     {
-        // TODO get the "category" from the deployment model, which will be the module in which the workflow is defined
-        // and use that as the argument here.
-       return WorkflowRegistry.get().getPermissionsHandler(WorkflowModule.NAME);
+       return WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule(container));
     }
 
     public boolean canClaim(User user, Container container)
     {
-        return getAssigneeId() == null && isActive() && getPermissionsHandler().canClaim(this, user, container);
+        return getAssigneeId() == null && isActive() && getPermissionsHandler(container).canClaim(this, user, container);
     }
 
     public boolean canDelegate(User user, Container container)
     {
-        return isActive() && getPermissionsHandler().canDelegate(this, user, container);
+        return isActive() && getPermissionsHandler(container).canDelegate(this, user, container);
     }
 
     public boolean canAssign(User user, Container container)
     {
-        return isActive() && getPermissionsHandler().canAssign(this, user, container);
+        return isActive() && getPermissionsHandler(container).canAssign(this, user, container);
     }
 
     public boolean canView(User user, Container container)
     {
-        return isActive() && getPermissionsHandler().canView(this, user, container);
+        return isActive() && getPermissionsHandler(container).canView(this, user, container);
     }
 
     public boolean canAccessData(User user, Container container)
     {
-        return isActive() && getPermissionsHandler().canAccessData(this, user, container);
+        return isActive() && getPermissionsHandler(container).canAccessData(this, user, container);
     }
 
     public boolean canComplete(User user, Container container)
     {
-        return isActive() && getPermissionsHandler().canComplete(this, user, container);
+        return isActive() && getPermissionsHandler(container).canComplete(this, user, container);
     }
 
     public void setName(String name)
@@ -313,7 +323,7 @@ public class WorkflowTaskImpl implements WorkflowTask
 
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
     {
-        return getPermissionsHandler().getCandidateUserPermissions(this, user, container);
+        return getPermissionsHandler(container).getCandidateUserPermissions(this, user, container);
     }
 
     public boolean isActive() { return _engineTask != null; }
