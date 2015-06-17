@@ -47,6 +47,7 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
 
+        addInitiatorColumn();
 
         if (!container.hasPermission(user, AdminPermission.class))
         {
@@ -54,13 +55,10 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
             sql.add(String.valueOf(user.getUserId()));
             addCondition(sql,new FieldKey(null,"id_"));
         }
-        else
-        {
-            addInitiatorColumn(user, container);
-        }
+
     }
 
-   private ColumnInfo addInitiatorColumn(User user, Container container)
+   private ColumnInfo addInitiatorColumn()
     {
         SQLFragment sql = new SQLFragment("(SELECT V.text_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.execution_id_ = act_ru_execution.id_)");
 

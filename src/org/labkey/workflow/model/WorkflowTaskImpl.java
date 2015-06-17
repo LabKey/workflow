@@ -281,6 +281,11 @@ public class WorkflowTaskImpl implements WorkflowTask
         _engineTask.setOwner(String.valueOf(assignee.getUserId()));
     }
 
+    public boolean isAssigned(User user)
+    {
+        return getAssigneeId() != null && getAssigneeId() == user.getUserId();
+    }
+
     public boolean isDelegated()
     {
         return _engineTask.getDelegationState() == DelegationState.PENDING;

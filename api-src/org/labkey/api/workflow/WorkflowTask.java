@@ -96,6 +96,8 @@ public interface WorkflowTask
      */
     void setAssignee(User assignee);
 
+    boolean isAssigned(User user);
+
     boolean isDelegated();
 
     boolean isReadyForReview();

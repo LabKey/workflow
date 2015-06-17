@@ -34,8 +34,6 @@ public interface PermissionsHandler
 
     boolean canAccessData(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
-    boolean isAssigned(@NotNull WorkflowTask task, @NotNull User user);
-
     boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
 
     Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);

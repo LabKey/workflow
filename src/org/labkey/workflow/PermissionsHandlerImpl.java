@@ -76,15 +76,9 @@ public class PermissionsHandlerImpl implements PermissionsHandler
     }
 
     @Override
-    public boolean isAssigned(@NotNull WorkflowTask task, @NotNull User user)
-    {
-        return task.getAssignee() != null && task.getAssignee().getUserId() == user.getUserId();
-    }
-
-    @Override
     public boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
     {
-        return isAssigned(task, user);
+        return task.isAssigned(user);
     }
 
     @Override

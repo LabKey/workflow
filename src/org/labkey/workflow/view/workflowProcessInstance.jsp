@@ -57,7 +57,7 @@ There is no active process with id <%= h(bean.getId()) %>
     else if (!bean.canView(getUser(), getContainer()))
     {
 %>
-<%= h(getUser()) %> does not have permission to view this process instance.
+<%= h(getUser().getDisplayName(getUser())) %> does not have permission to view this process instance.
 <%
     }
     else
@@ -96,7 +96,7 @@ There is no active process with id <%= h(bean.getId()) %>
 <table class="labkey-proj">
     <tr>
         <td>Initiator</td>
-        <td><%= h(bean.getInitiator()) %></td>
+        <td><%= h(bean.getInitiator().getDisplayName(getUser())) %></td>
     </tr>
 
 <%= variablesTableRows(bean.getVariables()) %>
@@ -128,7 +128,7 @@ There is no active process with id <%= h(bean.getId()) %>
             if (task.getAssignee() != null)
             {
     %>
-    (assigned to <%= h(task.getAssignee()) %>)
+    (assigned to <%= h(task.getAssignee().getDisplayName(getUser())) %>)
     <%
             }
             else

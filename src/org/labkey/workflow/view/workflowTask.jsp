@@ -16,6 +16,7 @@
      */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
@@ -49,7 +50,7 @@ There is no active task with id <%= bean.getId() %>
     else if (!bean.canView(getUser(), getContainer()))
     {
 %>
-<%= getUser() %> does not have permission to view this task.
+<%= h(getUser().getDisplayName(getUser())) %> does not have permission to view this task.
 <%
     }
     else
@@ -79,12 +80,12 @@ There is no active task with id <%= bean.getId() %>
         }
     %>
     <tr>
-    <td>Created: <%= bean.getCreateTime() %></td>
+    <td>Created: <%= DateUtil.formatDateTime(getContainer(), bean.getCreateTime()) %></td>
     <%
         if (bean.getDueDate() != null)
         {
     %>
-    <td><strong>   Due: </strong> <%= bean.getDueDate() %></td>
+    <td><strong>   Due: </strong> <%= DateUtil.formatDateTime(getContainer(), bean.getDueDate()) %></td>
     <%
         }
     %>
@@ -101,7 +102,7 @@ There is no active task with id <%= bean.getId() %>
     %>
     <tr>
         <td>Owned by</td>
-        <td><%= bean.getOwner() %></td>
+        <td><%= h(bean.getOwner().getDisplayName(getUser())) %></td>
     </tr>
     <%
         }
@@ -112,7 +113,7 @@ There is no active task with id <%= bean.getId() %>
     %>
     <tr>
         <td><%= assigneeLabel %></td>
-        <td><%= bean.getAssignee() %></td>
+        <td><%= h(bean.getAssignee().getDisplayName(getUser())) %></td>
     </tr>
     <tr></tr>
     <%
