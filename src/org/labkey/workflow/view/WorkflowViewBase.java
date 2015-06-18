@@ -14,6 +14,8 @@ import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.workflow.WorkflowController;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +60,7 @@ public abstract class WorkflowViewBase extends JspBase
             {
                 builder.append("<tr>\n");
                 builder.append("<td>").append(h(parameter.getKey())).append("</td>\n");
-                builder.append("<td>").append(h(parameter.getValue())).append("</td>\n");
+                builder.append("<td>").append(h(getParameterValue(parameter.getKey(), parameter.getValue()))).append("</td>\n");
                 builder.append("</tr>\n");
             }
             if (canAccessData)
@@ -70,6 +72,20 @@ public abstract class WorkflowViewBase extends JspBase
             builder.append("</table>\n");
         }
         return builder.toString();
+    }
+
+    private Object getParameterValue(String key, Object value)
+    {
+        if (key.endsWith("~in"))
+        {
+            // value should be an array list of a single item that is the string representing the set of ids to check for inclusion in
+            String[] items = ((ArrayList<String>) value).get(0).split(";");
+            if (items.length > 20)
+            {
+                value = "[" + StringUtils.join(Arrays.copyOfRange(items, 0, 20), ";") + " ... and " + (items.length - 20) + " more ]";
+            }
+        }
+        return value;
     }
 
     public String actionForm(String name, String formName, String formAction, Map<String, TaskFormField> fields, @Nullable Map<String, String> hiddenFields)
