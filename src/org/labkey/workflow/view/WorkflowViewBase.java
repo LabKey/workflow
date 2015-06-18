@@ -64,7 +64,7 @@ public abstract class WorkflowViewBase extends JspBase
             if (canAccessData)
             {
                 builder.append("<tr colspan=\"2\">");
-                builder.append("<td><br>").append(PageFlowUtil.button("Download Data").onClick(" downloadDataGrid(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;")).append("<br><br></td>\n");
+                builder.append("<td><br>").append(PageFlowUtil.button("Download Data").id("downloadDataBtn").onClick(" downloadWorkflowTaskData(" + q((String) dataAccess.get("url")) + ", " + new JSONObject(parameters).toString() + "); return false;")).append("<br><br></td>\n");
                 builder.append("</tr>");
             }
             builder.append("</table>\n");
