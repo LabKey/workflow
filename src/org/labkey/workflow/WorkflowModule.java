@@ -62,7 +62,7 @@ public class WorkflowModule extends DefaultModule
     {
         addController(WorkflowController.NAME, WorkflowController.class);
         WorkflowQuerySchema.register(this);
-        WorkflowRegistry.registerPermissionsHandler(this, new PermissionsHandlerImpl(), true);
+        WorkflowRegistry.registerPermissionsHandler(this, PermissionsHandlerImpl.class, true);
     }
 
     @Override

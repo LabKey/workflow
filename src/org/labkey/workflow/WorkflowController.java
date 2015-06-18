@@ -16,7 +16,6 @@
 
 package org.labkey.workflow;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
@@ -787,8 +786,8 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
             else
             {
-                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule());
-                if (!handler.canStartProcess(getProcessDefinitionKey(), user, container))
+                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule(), user, container);
+                if (!handler.canStartProcess(getProcessDefinitionKey()))
                     throw new UnauthorizedException("User does not have permission to start a process with key " + getProcessDefinitionKey() + " from module " + getWorkflowModelModule());
             }
         }

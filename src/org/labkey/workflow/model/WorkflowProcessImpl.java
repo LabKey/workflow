@@ -42,6 +42,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private List<WorkflowTask> _currentTasks;
     private Container _container;
     private String _moduleName;
+    private PermissionsHandler _permissionsHandler;
 
     public WorkflowProcessImpl(String processDefinitionKey, String moduleName)
     {
@@ -207,30 +208,34 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _currentTasks = currentTasks;
     }
 
-    private PermissionsHandler getPermissionsHandler()
+    private PermissionsHandler getPermissionsHandler(User user, Container container)
     {
-        return WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule());
+        if (_permissionsHandler == null)
+        {
+            _permissionsHandler =  WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule(), user, container);
+        }
+        return _permissionsHandler;
     }
 
     public boolean canAccessData(User user, Container container)
     {
-        return getPermissionsHandler().canAccessData(this, user, container);
+        return getPermissionsHandler(user, container).canAccessData(this);
     }
 
     public boolean canView(User user, Container container)
     {
-        return getPermissionsHandler().canView(this, user, container);
+        return getPermissionsHandler(user, container).canView(this);
     }
 
     public boolean canDelete(User user, Container container)
     {
-        return getPermissionsHandler().canDelete(this, user, container);
+        return getPermissionsHandler(user, container).canDelete(this);
     }
 
     @Override
     public boolean canDeploy(User user, Container container)
     {
-        return getPermissionsHandler().canDeployProcess(getProcessDefinitionKey(), user, container);
+        return getPermissionsHandler(user, container).canDeployProcess(getProcessDefinitionKey());
     }
 
     public boolean hasDiagram(Container container)

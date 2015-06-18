@@ -10,32 +10,39 @@ import java.util.Set;
 /**
  * Created by susanh on 5/27/15.
  */
-public interface PermissionsHandler
+public abstract class PermissionsHandler
 {
-    // TODO perhaps better to have a method getPermissions(task, user, container) if we define own Permission classes for workflow
+    protected User _user;
+    protected Container _container;
 
-    boolean canStartProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container);
+    public PermissionsHandler(User user, Container container)
+    {
+        _user = user;
+        _container = container;
+    }
 
-    boolean canDeployProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container);
+    public abstract boolean canStartProcess(@NotNull String processDefinitionKey);
 
-    boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
+    public abstract boolean canDeployProcess(@NotNull String processDefinitionKey);
 
-    boolean canAccessData(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
+    public abstract boolean canView(@NotNull WorkflowProcess process);
 
-    boolean canDelete(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container);
+    public abstract boolean canAccessData(@NotNull WorkflowProcess process);
 
-    boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canDelete(@NotNull WorkflowProcess process);
 
-    boolean canDelegate(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canClaim(@NotNull WorkflowTask task);
 
-    boolean canAssign(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canDelegate(@NotNull WorkflowTask task);
 
-    boolean canView(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canAssign(@NotNull WorkflowTask task);
 
-    boolean canAccessData(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canView(@NotNull WorkflowTask task);
 
-    boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canAccessData(@NotNull WorkflowTask task);
 
-    Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container);
+    public abstract boolean canComplete(@NotNull WorkflowTask task);
+
+    public abstract Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task);
 
 }

@@ -6,6 +6,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowTask;
@@ -16,73 +17,81 @@ import java.util.Set;
 /**
  * Created by susanh on 5/27/15.
  */
-public class PermissionsHandlerImpl implements PermissionsHandler
+public class PermissionsHandlerImpl extends PermissionsHandler
 {
-    @Override
-    public boolean canStartProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    private boolean _hasAdmin;
+
+    public PermissionsHandlerImpl(@NotNull User user, @NotNull Container container)
     {
-        return true;
+        super (user, container);
+        _hasAdmin = _container.hasPermission(_user, AdminPermission.class);
     }
 
     @Override
-    public boolean canDeployProcess(@NotNull String processDefinitionKey, @NotNull User user, @NotNull Container container) { return container.hasPermission(user, AdminPermission.class); }
-
-    @Override
-    public boolean canView(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
+    public boolean canStartProcess(@NotNull String processDefinitionKey)
     {
-        return (process.getInitiatorId() == user.getUserId()) || container.hasPermission(user, AdminPermission.class);
+        return _container.hasPermission(_user, ReadPermission.class);
     }
 
     @Override
-    public boolean canAccessData(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
+    public boolean canDeployProcess(@NotNull String processDefinitionKey) { return _hasAdmin; }
+
+    @Override
+    public boolean canView(@NotNull WorkflowProcess process)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return (process.getInitiatorId() == _user.getUserId()) || _hasAdmin;
     }
 
     @Override
-    public boolean canDelete(@NotNull WorkflowProcess process, @NotNull User user, @NotNull Container container)
+    public boolean canAccessData(@NotNull WorkflowProcess process)
     {
-        return process.getInitiatorId() == user.getUserId() || container.hasPermission(user, AdminPermission.class);
+        return _hasAdmin;
     }
 
     @Override
-    public boolean canClaim(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canDelete(@NotNull WorkflowProcess process)
     {
-        return container.hasPermission(user, AdminPermission.class) || task.isInCandidateGroups(user);
+        return process.getInitiatorId() == _user.getUserId() || _hasAdmin;
     }
 
     @Override
-    public boolean canDelegate(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canClaim(@NotNull WorkflowTask task)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return _hasAdmin || task.isInCandidateGroups(_user);
     }
 
     @Override
-    public boolean canAssign(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canDelegate(@NotNull WorkflowTask task)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return _hasAdmin;
     }
 
     @Override
-    public boolean canView(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canAssign(@NotNull WorkflowTask task)
     {
-        return ((task.getAssignee() != null && task.getAssignee().getUserId() == user.getUserId())) || canClaim(task, user, container) || canDelegate(task, user, container);
+        return _hasAdmin;
     }
 
     @Override
-    public boolean canAccessData(@Nullable WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canView(@NotNull WorkflowTask task)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return ((task.getAssignee() != null && task.getAssignee().getUserId() == _user.getUserId())) || canClaim(task) || canDelegate(task);
     }
 
     @Override
-    public boolean canComplete(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canAccessData(@Nullable WorkflowTask task)
     {
-        return task.isAssigned(user);
+        return _hasAdmin;
     }
 
     @Override
-    public Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task, @NotNull User user, @NotNull Container container)
+    public boolean canComplete(@NotNull WorkflowTask task)
+    {
+        return task.isAssigned(_user);
+    }
+
+    @Override
+    public Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task)
     {
         return Collections.<Class<? extends Permission>>singleton(AdminPermission.class);
     }

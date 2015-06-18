@@ -48,9 +48,9 @@ public class WorkflowSummary
 
     public boolean canStartProcess(User user, Container container)
     {
-        PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule());
+        PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule(), user, container);
         if (handler != null)
-            return handler.canStartProcess(getProcessDefinitionKey(), user, container);
+            return handler.canStartProcess(getProcessDefinitionKey());
         else
             return false;
     }

@@ -39,6 +39,7 @@ public class WorkflowTaskImpl implements WorkflowTask
     private List<Integer> _groupIds = null;
     private Map<String, TaskFormField> _formFields = null;
     private ProcessInstance _processInstance = null;
+    private PermissionsHandler _permissionsHandler = null;
 
     public WorkflowTaskImpl(String taskId, Container container)
     {
@@ -217,39 +218,43 @@ public class WorkflowTaskImpl implements WorkflowTask
         return getGroupIds() != null && !_groupIds.isEmpty();
     }
 
-    private PermissionsHandler getPermissionsHandler(Container container)
+    private PermissionsHandler getPermissionsHandler(User user, Container container)
     {
-       return WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule(container));
+        if (_permissionsHandler == null)
+        {
+            _permissionsHandler = WorkflowRegistry.get().getPermissionsHandler(getProcessDefinitionModule(container), user, container);
+        }
+        return _permissionsHandler;
     }
 
     public boolean canClaim(User user, Container container)
     {
-        return getAssigneeId() == null && isActive() && getPermissionsHandler(container).canClaim(this, user, container);
+        return getAssigneeId() == null && isActive() && getPermissionsHandler(user, container).canClaim(this);
     }
 
     public boolean canDelegate(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(container).canDelegate(this, user, container);
+        return isActive() && getPermissionsHandler(user, container).canDelegate(this);
     }
 
     public boolean canAssign(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(container).canAssign(this, user, container);
+        return isActive() && getPermissionsHandler(user, container).canAssign(this);
     }
 
     public boolean canView(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(container).canView(this, user, container);
+        return isActive() && getPermissionsHandler(user, container).canView(this);
     }
 
     public boolean canAccessData(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(container).canAccessData(this, user, container);
+        return isActive() && getPermissionsHandler(user, container).canAccessData(this);
     }
 
     public boolean canComplete(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(container).canComplete(this, user, container);
+        return isActive() && getPermissionsHandler(user, container).canComplete(this);
     }
 
     public void setName(String name)
@@ -328,7 +333,7 @@ public class WorkflowTaskImpl implements WorkflowTask
 
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
     {
-        return getPermissionsHandler(container).getCandidateUserPermissions(this, user, container);
+        return getPermissionsHandler(user, container).getCandidateUserPermissions(this);
     }
 
     public boolean isActive() { return _engineTask != null; }
