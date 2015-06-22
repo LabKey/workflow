@@ -12,8 +12,8 @@ import java.util.Set;
  */
 public abstract class PermissionsHandler
 {
-    protected User _user;
-    protected Container _container;
+    protected final User _user;
+    protected final Container _container;
 
     public PermissionsHandler(User user, Container container)
     {

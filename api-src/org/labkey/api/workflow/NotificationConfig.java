@@ -13,16 +13,21 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import java.util.List;
 import java.util.Map;
 
-public interface NotificationConfig
+public abstract class NotificationConfig
 {
-    List<User> getUsers();
+    protected final Map<String, Object> _variables;
 
-    void setVariables(Map<String, Object> variables);
+    public NotificationConfig(Map<String, Object> variables)
+    {
+        _variables = variables;
+    }
 
-    EmailTemplate getEmailTemplate(String processInstanceId, Map<String, Object> variables);
+    public abstract List<User> getUsers();
 
-    Container getContainer();
+    public abstract EmailTemplate getEmailTemplate(String processInstanceId, Map<String, Object> variables);
+
+    public abstract Container getContainer();
 
     @Nullable
-    User getLogUser();
+    public abstract User getLogUser();
 }

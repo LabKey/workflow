@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class PermissionsHandlerImpl extends PermissionsHandler
 {
-    private boolean _hasAdmin;
+    private final boolean _hasAdmin;
 
     public PermissionsHandlerImpl(@NotNull User user, @NotNull Container container)
     {

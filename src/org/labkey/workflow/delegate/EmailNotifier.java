@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.mail.Address;
 import javax.mail.internet.AddressException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Java delegate that can be used within a workflow to send email to a set of users using an email template.
@@ -31,7 +33,6 @@ public class EmailNotifier implements JavaDelegate
 {
     private static final Logger _log = LoggerFactory.getLogger(EmailNotifier.class);
     private Expression _notificationClassName;
-    private Expression _emailTemplateClassName;
 
     public Expression getNotificationClassName()
     {
@@ -48,26 +49,9 @@ public class EmailNotifier implements JavaDelegate
         return (Class<NotificationConfig>) Class.forName((String) getNotificationClassName().getValue(execution));
     }
 
-    public Expression getEmailTemplateClassName()
+    private NotificationConfig getNotificationConfig(DelegateExecution execution) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException
     {
-        return _emailTemplateClassName;
-    }
-
-    public void setEmailTemplateClassName(Expression emailTemplateClassName)
-    {
-        _emailTemplateClassName = emailTemplateClassName;
-    }
-
-    private Class<? extends EmailTemplate> getEmailTemplateClass(DelegateExecution execution) throws ClassNotFoundException
-    {
-        return (Class<? extends EmailTemplate>) Class.forName((String) getEmailTemplateClassName().getValue(execution));
-    }
-
-    private NotificationConfig getNotificationConfig(DelegateExecution execution) throws ClassNotFoundException, IllegalAccessException, InstantiationException
-    {
-        NotificationConfig notificationConfig = getNotificationClass(execution).newInstance();
-        notificationConfig.setVariables(execution.getVariables());
-        return notificationConfig;
+        return getNotificationClass(execution).getDeclaredConstructor(Map.class).newInstance(execution.getVariables());
     }
 
     @Override
