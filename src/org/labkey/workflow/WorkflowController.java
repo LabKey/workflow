@@ -39,9 +39,13 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.workflow.model.WorkflowProcess;
+import org.labkey.api.workflow.PermissionsHandler;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowRegistry;
+import org.labkey.api.workflow.WorkflowTask;
+import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
-import org.labkey.workflow.model.WorkflowTask;
+import org.labkey.workflow.model.WorkflowTaskImpl;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -85,17 +89,15 @@ public class WorkflowController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        private String _navLabel = "Workflow Process List";
-
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             AllWorkflowsBean bean = new AllWorkflowsBean(getContainer());
-            return new JspView("/org/labkey/workflow/view/allWorkflows.jsp", bean);
+            return new JspView<>("/org/labkey/workflow/view/allWorkflows.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(_navLabel);
+            return root.addChild("Workflow Process List");
         }
     }
 
@@ -137,7 +139,7 @@ public class WorkflowController extends SpringActionController
             WorkflowSummary bean = new WorkflowSummary(form.getProcessDefinitionKey(), getUser(), getContainer());
             _navLabel = bean.getName();
 
-            return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean, errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowSummary.jsp", bean, errors);
         }
 
         @Override
@@ -150,6 +152,31 @@ public class WorkflowController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(_navLabel);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class StartProcessFormAction extends SimpleViewAction<StartWorkflowProcessForm>
+    {
+        @Override
+        public ModelAndView getView(StartWorkflowProcessForm form, BindException errors) throws Exception
+        {
+            WorkflowProcess bean = new WorkflowProcessImpl(form.getProcessDefinitionKey(), form.getWorkflowModelModule());
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowProcessStart.jsp", bean, errors);
+            return jsp;
+        }
+
+        @Override
+        public void validate(StartWorkflowProcessForm form, BindException errors)
+        {
+            form.validate(getUser(), getContainer(), errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -167,7 +194,7 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
 
             bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
 
@@ -224,7 +251,7 @@ public class WorkflowController extends SpringActionController
             }
 
             form.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer()).getName());
-            JspView jsp = new JspView("/org/labkey/workflow/view/workflowList.jsp", form);
+            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", form);
             jsp.setTitle("Active Processes");
 
             QuerySettings settings = _schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
@@ -271,8 +298,11 @@ public class WorkflowController extends SpringActionController
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
+            WorkflowTask task = new WorkflowTaskImpl(form.getTaskId(), getContainer());
+            if (task.getName() != null)
+                _navLabel = "'" + task.getName() + "' task details";
 
-            return new JspView("/org/labkey/workflow/view/workflowTask.jsp", new WorkflowTask(form.getTaskId(), getContainer()), errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", task, errors);
         }
 
         @Override
@@ -308,11 +338,15 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            WorkflowProcess bean = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+            WorkflowProcessImpl bean = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
+            if (form.getProcessDefinitionKey() != null && bean.getProcessDefinitionKey() == null)
+            {
+                bean.setProcessDefinitionKey(form.getProcessDefinitionKey());
+            }
             if (bean.getProcessDefinitionName() != null)
                 _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
 
-            return new JspView("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
 
 
@@ -326,6 +360,7 @@ public class WorkflowController extends SpringActionController
     private static class ProcessInstanceDetailsForm
     {
         private String _processInstanceId;
+        private String _processDefinitionKey;
 
         public String getProcessInstanceId()
         {
@@ -335,6 +370,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessInstanceId(String processInstanceId)
         {
             _processInstanceId = processInstanceId;
+        }
+
+        public String getProcessDefinitionKey()
+        {
+            return _processDefinitionKey;
+        }
+
+        public void setProcessDefinitionKey(String processDefinitionKey)
+        {
+            _processDefinitionKey = processDefinitionKey;
         }
     }
 
@@ -400,7 +445,7 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
             else
             {
-                _processInstance = new WorkflowProcess(form.getProcessInstanceId(), getUser(), getContainer());
+                _processInstance = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
                 if (!_processInstance.isActive())
                     errors.reject(ERROR_MSG, NO_SUCH_INSTANCE_ERROR);
                 else if (!_processInstance.canView(getUser(), getContainer()))
@@ -412,6 +457,12 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(ProcessInstanceDetailsForm processInstanceDetailsForm, BindException errors) throws Exception
         {
+            // remove the data access parameters if the user does not have permission to data access the data
+            if (!_processInstance.canAccessData(getUser(), getContainer()))
+            {
+                Map<String, Object> variables = _processInstance.getProcessVariables();
+                variables.remove("dataAccess");
+            }
             return success(_processInstance);
         }
 
@@ -428,6 +479,12 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm workflowTaskForm, BindException errors) throws Exception
         {
+            // remove the data access parameters if the user does not have permission to data access the data
+            if (!_task.canAccessData(getUser(), getContainer()))
+            {
+                Map<String, Object> variables = _task.getProcessVariables();
+                variables.remove("dataAccess");
+            }
             return success(_task);
         }
 
@@ -461,7 +518,8 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             User currentUser = getUser();
             boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
-            List<User> users = SecurityManager.getUsersWithPermissions(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
+            // TODO should this be one of the permissions set or all in the permissions set?
+            List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
             List<Map<String,Object>> userResponseList = new ArrayList<>();
             for (User user : users)
             {
@@ -627,6 +685,7 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
@@ -641,7 +700,6 @@ public class WorkflowController extends SpringActionController
 
             form.setInitiatorId(getUser().getUserId());
             form.setContainerId(getContainer().getId());
-
             String instanceId = WorkflowManager.get().startWorkflow(form.getWorkflowModelModule(), form.getProcessDefinitionKey(), form.getName(), form.getProcessVariables(), getContainer());
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("processInstanceId", instanceId);
@@ -651,16 +709,7 @@ public class WorkflowController extends SpringActionController
         @Override
         public void validateForm(StartWorkflowProcessForm form, Errors errors)
         {
-            if (form.getProcessDefinitionKey() == null)
-                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
-            else if (form.getWorkflowModelModule() == null)
-                errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
-            else
-            {
-                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(form.getWorkflowModelModule());
-                if (!handler.canStartProcess(form.getProcessDefinitionKey()))
-                    throw new UnauthorizedException("User does not have permission to start a process with key " + form.getProcessDefinitionKey() + " from module " + form.getWorkflowModelModule());
-            }
+            form.validate(getUser(), getContainer(), errors);
         }
     }
 
@@ -728,6 +777,20 @@ public class WorkflowController extends SpringActionController
         {
             _processVariables = processVariables;
         }
+
+        public void validate(User user, Container container, Errors errors)
+        {
+            if (getProcessDefinitionKey() == null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
+            else if (getWorkflowModelModule() == null)
+                errors.rejectValue("workflowModelModule", ERROR_MSG, MODULE_NAME_MISSING);
+            else
+            {
+                PermissionsHandler handler = WorkflowRegistry.get().getPermissionsHandler(getWorkflowModelModule(), user, container);
+                if (!handler.canStartProcess(getProcessDefinitionKey()))
+                    throw new UnauthorizedException("User does not have permission to start a process with key " + getProcessDefinitionKey() + " from module " + getWorkflowModelModule());
+            }
+        }
     }
 
     /**
@@ -747,7 +810,7 @@ public class WorkflowController extends SpringActionController
             if (form.getComment() != null)
                 removalMsg += "Reason: " + form.getComment();
             form.setComment(removalMsg);
-            WorkflowProcess process = new WorkflowProcess(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()), getUser(), getContainer());
+            WorkflowProcess process = new WorkflowProcessImpl(WorkflowManager.get().getProcessInstance(form.getProcessInstanceId()));
             if (!process.canDelete(getUser(), getContainer()))
             {
                 throw new UnauthorizedException("You do not have permission to delete this process instance");
@@ -836,6 +899,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _taskId;
         private String _processInstanceId;
+        private String _processDefintionKey;
         private Map<String, Object> _processVariables;
 
         public String getTaskId()
@@ -868,7 +932,15 @@ public class WorkflowController extends SpringActionController
             _processVariables = processVariables;
         }
 
-        // TODO add processDefinitionKey here as well for better linking when the process ends as a result of this completion
+        public String getProcessDefintionKey()
+        {
+            return _processDefintionKey;
+        }
+
+        public void setProcessDefintionKey(String processDefintionKey)
+        {
+            _processDefintionKey = processDefintionKey;
+        }
     }
 
     /**
@@ -916,183 +988,6 @@ public class WorkflowController extends SpringActionController
         public void setFile(String file)
         {
             _file = file;
-        }
-    }
-
-    // TODO the methods and classes below here are specific to the data export proof of concept example.
-    private static final String PROCESS_KEY = "submitForApprovalWithoutRetry";
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class StartExportAction extends SimpleViewAction
-    {
-        private String _navLabel = "Workflow Summary";
-
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView("/org/labkey/workflow/view/exportRequest.jsp", null);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild(_navLabel);
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class RequestExportAction extends SimpleViewAction<ExportRequestDetailsBean>
-    {
-        private String _navLabel = "Data Export Request";
-
-        public ModelAndView getView(ExportRequestDetailsBean form, BindException errors) throws Exception
-        {
-            if (form.getProcessInstanceId() != null)
-            {
-                form = new ExportRequestDetailsBean(form.getProcessInstanceId(), getUser(), getContainer());
-            }
-
-            return new JspView("/org/labkey/workflow/view/requestExport.jsp", form, errors);
-
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild(_navLabel);
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SubmitRequestAction extends SimpleViewAction<ExportRequestDetailsBean>
-    {
-
-        @Override
-        public ModelAndView getView(ExportRequestDetailsBean form, BindException errors) throws Exception
-        {
-            if (form.getDataSetId() != null)
-            {
-                WorkflowProcess process = new WorkflowProcess();
-                process.setProcessDefintionKey(PROCESS_KEY);
-                process.setInitiatorId(getUser().getUserId());
-
-                Map<String, Object> variables = new HashMap<String, Object>();
-                variables.put("userId", String.valueOf(getUser().getUserId())); // N.B. This needs to be a string if used as a variable for the candidate assignment
-                variables.put("approverGroupId", "-1");  // -1 is the Administrator group  HACK!
-                variables.put("dataSetId", form.getDataSetId());
-                variables.put("reason", form.getReason());
-                variables.put("container", getContainer().getId());
-                process.setProcessVariables(variables);
-                process.setName("Request from " + getUser() + " for export of data set " + form.getDataSetId());
-
-                String instanceId =  WorkflowManager.get().startWorkflow(WorkflowModule.NAME, PROCESS_KEY, "Request for export from Proof of Concept", variables, getContainer());
-
-                form.setProcessInstanceId(instanceId);
-
-                WorkflowSummary bean = new WorkflowSummary(PROCESS_KEY, getUser(), getContainer());
-
-                return new JspView("/org/labkey/workflow/view/workflowSummary.jsp", bean);
-            }
-            else
-                throw new Exception("Data set id cannot be null");
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-
-    public static class ExportRequestDetailsBean
-    {
-        private String _processInstanceId;
-        private User _user;
-        private Integer _dataSetId;
-        private String _reason;
-        private List<WorkflowTask> _currentTasks;
-        private String _taskId;
-        private String _taskState;
-
-        public ExportRequestDetailsBean()
-        {
-        }
-
-        public ExportRequestDetailsBean(String processInstanceId, User user, Container container) throws Exception
-        {
-            Map<String, Object> details = WorkflowManager.get().getProcessInstanceVariables(processInstanceId);
-            this.setDataSetId((Integer) details.get("dataSetId"));
-            this.setReason((String) details.get("reason"));
-            this.setUser((User) details.get("requester"));
-            this.setProcessInstanceId(processInstanceId);
-            this.setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(processInstanceId, container));
-        }
-
-        public String getTaskState()
-        {
-            return _taskState;
-        }
-
-        public void setTaskState(String taskState)
-        {
-            _taskState = taskState;
-        }
-
-        public String getTaskId()
-        {
-            return _taskId;
-        }
-
-        public void setTaskId(String taskId)
-        {
-            _taskId = taskId;
-        }
-
-        public void setCurrentTasks(List<WorkflowTask> currentTasks)
-        {
-            _currentTasks = currentTasks;
-        }
-
-        public List<WorkflowTask> getCurrentTasks()
-        {
-            return _currentTasks;
-        }
-
-        public User getUser()
-        {
-            return _user;
-        }
-
-        public void setUser(User user)
-        {
-            _user = user;
-        }
-
-        public Integer getDataSetId()
-        {
-            return _dataSetId;
-        }
-
-        public void setDataSetId(Integer dataSetId)
-        {
-            _dataSetId = dataSetId;
-        }
-
-        public String getReason()
-        {
-            return _reason;
-        }
-
-        public void setReason(String reason)
-        {
-            _reason = reason;
-        }
-
-        public String getProcessInstanceId()
-        {
-            return _processInstanceId;
-        }
-
-        public void setProcessInstanceId(String processInstanceId)
-        {
-            _processInstanceId = processInstanceId;
         }
     }
 

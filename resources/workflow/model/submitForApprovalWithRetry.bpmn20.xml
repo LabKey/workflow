@@ -13,7 +13,6 @@
     <startEvent id="theStart" name="Request" activiti:initiator="initiatorId">
       <documentation>User makes a request to an approver, with the ability to resubmit or abort a request after denial.</documentation>
       <extensionElements>
-        <activiti:formProperty id="dataAccess" name="Data access parameters" type="string"/>
         <activiti:formProperty id="reason" name="Reason for request" type="string" required="true" />
       </extensionElements>
     </startEvent>
@@ -27,11 +26,6 @@
         </activiti:formProperty>
         <activiti:formProperty id="responseComment" name="Comment" type="string" />
       </extensionElements>
-      <potentialOwner>
-        <resourceAssignmentExpression>
-          <formalExpression>${approverGroupId}</formalExpression>
-        </resourceAssignmentExpression>
-      </potentialOwner>
     </userTask>
     <sequenceFlow id="submittedRequest" name="submitted" sourceRef="handleRequest" targetRef="reviewRequest"></sequenceFlow>
     <exclusiveGateway id="reviewRequest" name="Review">

@@ -26,6 +26,7 @@ import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.form.FormProperty;
+import org.activiti.engine.form.StartFormData;
 import org.activiti.engine.form.TaskFormData;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
@@ -36,7 +37,6 @@ import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
-import org.activiti.engine.task.TaskInfoQuery;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -53,10 +53,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.workflow.model.TaskFormField;
-import org.labkey.workflow.model.WorkflowProcess;
-import org.labkey.workflow.model.WorkflowTask;
+import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowTask;
+import org.labkey.workflow.model.TaskFormFieldImpl;
+import org.labkey.workflow.model.WorkflowTaskImpl;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -80,8 +83,6 @@ public class WorkflowManager
 
     // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
     private final ModuleResourceCache<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
-
-    public enum TaskInvolvement {ASSIGNED, GROUP_TASK, DELEGATION_OWNER}
 
     private WorkflowManager()
     {
@@ -121,7 +122,7 @@ public class WorkflowManager
      */
     public WorkflowTask getTask(@NotNull String taskId, @Nullable Container container)
     {
-        return new WorkflowTask(getEngineTask(taskId, container));
+        return new WorkflowTaskImpl(getEngineTask(taskId, container));
     }
 
     public Task getEngineTask(@NotNull String taskId, @Nullable Container container)
@@ -143,9 +144,9 @@ public class WorkflowManager
      */
     public void completeTask(@NotNull String taskId, User user, Container container) throws Exception
     {
-        WorkflowTask task = new WorkflowTask(getTaskService().createTaskQuery().taskId(taskId).singleResult());
+        WorkflowTask task = new WorkflowTaskImpl(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
-        if (task == null || !task.isActive())
+        if (!task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
         if (!task.canComplete(user, container))
             throw new UnauthorizedException("User does not have permission to complete this task");
@@ -264,6 +265,7 @@ public class WorkflowManager
         {
             builder.addVariable(variable.getKey(), variable.getValue());
         }
+        builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // TODO this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
         return instance.getId();
@@ -286,7 +288,7 @@ public class WorkflowManager
         List<WorkflowTask> tasks = new ArrayList<>();
         for (Task engineTask : engineTasks)
         {
-            tasks.add(new WorkflowTask(engineTask));
+            tasks.add(new WorkflowTaskImpl(engineTask));
         }
         return tasks;
     }
@@ -437,6 +439,18 @@ public class WorkflowManager
         return keyToNameMap;
     }
 
+    public Map<String, TaskFormField> getStartFormFields(String processDefinitionKey)
+    {
+        StartFormData form = getFormService().getStartFormData(processDefinitionKey);
+        List<FormProperty> properties = form.getFormProperties();
+        Map<String, TaskFormField> fields = new HashMap<>();
+        for (FormProperty property : properties)
+        {
+            fields.put(property.getId(), new TaskFormFieldImpl(property));
+        }
+        return fields;
+    }
+
     public Map<String, TaskFormField> getFormFields(String taskId)
     {
         TaskFormData form =  getFormService().getTaskFormData(taskId);
@@ -444,9 +458,15 @@ public class WorkflowManager
         Map<String, TaskFormField> fields = new HashMap<>();
         for (FormProperty property : properties)
         {
-            fields.put(property.getId(), new TaskFormField(property));
+            fields.put(property.getId(), new TaskFormFieldImpl(property));
         }
         return fields;
+    }
+
+    public String getProcessDefinitionKey(@NotNull String processDefinitionId)
+    {
+        ProcessDefinition definition =  getRepositoryService().createProcessDefinitionQuery().processDefinitionId(processDefinitionId).singleResult();
+        return definition.getKey();
     }
 
     public InputStream getProcessDiagram(@NotNull String processInstanceId)

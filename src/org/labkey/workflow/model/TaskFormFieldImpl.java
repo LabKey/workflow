@@ -18,16 +18,16 @@ package org.labkey.workflow.model;
 
 import org.activiti.engine.form.FormProperty;
 import org.activiti.engine.form.FormType;
+import org.labkey.api.workflow.TaskFormField;
 
 /**
  * Created by susanh on 5/25/15.
  */
-public class TaskFormField
+public class TaskFormFieldImpl implements TaskFormField
 {
     private FormProperty _engineFormProperty;
 
-
-    public TaskFormField(FormProperty engineFormProperty)
+    public TaskFormFieldImpl(FormProperty engineFormProperty)
     {
         _engineFormProperty = engineFormProperty;
     }
@@ -42,10 +42,12 @@ public class TaskFormField
         return _engineFormProperty.getName();
     }
 
-    public FormType getType()
+    public String getType()
     {
-        return _engineFormProperty.getType();
+        return _engineFormProperty.getType().getName();
     }
+
+    public Object getInformation(String key) { return _engineFormProperty.getType().getInformation(key); }
 
     public String getValue()
     {

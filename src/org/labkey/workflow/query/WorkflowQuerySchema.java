@@ -15,11 +15,12 @@
  */
 package org.labkey.workflow.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DetailsColumn;
@@ -28,6 +29,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.AliasedColumn;
@@ -39,6 +41,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -104,18 +107,21 @@ public class WorkflowQuerySchema extends UserSchema
     @Override
     protected TableInfo createTable(String name)
     {
-        if (name.equals(TABLE_TASK))
-            return new WorkflowTaskTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_PROCESS_DEFINITION))
-            return new WorkflowProcessDefinitionTable(this);
-        else if (name.equals(TABLE_PROCESS_INSTANCE))
-            return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_IDENTITY_LINK))
-            return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_VARIABLE))
-            return new WorkflowVariableTable(this, getUser(), getContainer());
-        else if (name.equals(TABLE_DEPLOYMENT))
-            return new WorkflowTenantTable(this, name);
+        switch (name)
+        {
+            case TABLE_TASK:
+                return new WorkflowTaskTable(this, getUser(), getContainer());
+            case TABLE_PROCESS_DEFINITION:
+                return new WorkflowProcessDefinitionTable(this);
+            case TABLE_PROCESS_INSTANCE:
+                return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
+            case TABLE_IDENTITY_LINK:
+                return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
+            case TABLE_VARIABLE:
+                return new WorkflowVariableTable(this, getUser(), getContainer());
+            case TABLE_DEPLOYMENT:
+                return new WorkflowTenantTable(this, name);
+        }
 
         //just return a filtered table over the db table if it exists
         SchemaTableInfo tableInfo = getDbSchema().getTable(name);
@@ -128,12 +134,56 @@ public class WorkflowQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        QueryView queryView = new QueryView(this, settings, errors);
+        QueryView queryView = null;
+
+        String processDefinitionKey = context.getRequest().getParameter("processDefinitionKey");
+        if (StringUtils.isNotBlank(processDefinitionKey))
+        {
+            SimpleFilter filter = settings.getBaseFilter();
+            FieldKey definitionKeyField = new FieldKey(null, "proc_def_id_");
+            // These keys have the form <key string>:revision:id, so we add the ":" to distinguish keys with the same prefix.
+            SimpleFilter processFilter = new SimpleFilter(definitionKeyField, processDefinitionKey + ":", CompareType.CONTAINS);
+            filter.addAllClauses(processFilter);
+        }
+
 
         if (settings.getQueryName().equalsIgnoreCase(TABLE_TASK))
         {
+            String assigneeId = context.getRequest().getParameter("assignee");
+            SimpleFilter baseFilter = settings.getBaseFilter();
+            if (StringUtils.isNotBlank(assigneeId))
+            {
+                FieldKey field = new FieldKey(null, "assignee_");
+                SimpleFilter assigneeFilter;
+                if (assigneeId.equals("_blank"))
+                {
+                    assigneeFilter = new SimpleFilter(field, assigneeId, CompareType.ISBLANK);
+                }
+                else
+                {
+                    assigneeFilter = new SimpleFilter(field, assigneeId, CompareType.EQUAL);
+                }
+                baseFilter.addAllClauses(assigneeFilter);
+            }
+
+            String ownerId = context.getRequest().getParameter("owner");
+            if (StringUtils.isNotBlank(ownerId))
+            {
+                FieldKey field = new FieldKey(null, "owner_");
+                SimpleFilter ownerFilter;
+                if (ownerId.equals("_blank"))
+                {
+                    ownerFilter = new SimpleFilter(field, ownerId, CompareType.ISBLANK);
+                }
+                else
+                {
+                    ownerFilter = new SimpleFilter(field, ownerId, CompareType.EQUAL);
+                }
+                baseFilter.addAllClauses(ownerFilter);
+            }
+
             queryView =  new QueryView(this, settings, errors)
             {
                 @Override
@@ -146,6 +196,10 @@ public class WorkflowQuerySchema extends UserSchema
                     ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
+        }
+        else
+        {
+            queryView = new QueryView(this, settings, errors);
         }
         queryView.setShowDeleteButton(false);
         queryView.setShowUpdateColumn(false);
@@ -163,7 +217,7 @@ public class WorkflowQuerySchema extends UserSchema
 
     private class ReassignmentDisplayColumnFactory implements DisplayColumnFactory
     {
-        private String _assignmentType;
+        private final String _assignmentType;
 
         public ReassignmentDisplayColumnFactory(String assignmentType)
         {

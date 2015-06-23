@@ -4,6 +4,10 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
+ * The Ext component is currently not used in the application.  We would need to pass in the
+ * form fields to do something more than just a generic "comment" form, and then write the
+ * logic to display the different fields with Ext components.
+ *
  * Created by susanh on 5/20/15.
  */
 Ext4.define("Workflow.view.dialog.CompleteTask", {
@@ -15,6 +19,7 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
     name: null,
     parameters: null,
     processInstanceId: null,
+    processDefinitionKey: null,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -109,10 +114,14 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
         this.on(this.completeTaskEvent, this.makeTaskCompletionRequest, this);
     },
 
+
     makeTaskCompletionRequest: function(taskId, parameters)
     {
         parameters.comment = this.down('textfield#TaskComment').getValue();
-        var returnURLParams = {processInstanceId: this.processInstanceId};
+        var returnURLParams = {
+            processInstanceId: this.processInstanceId,
+            processDefinitionKey: this.processDefinitionKey
+        };
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
             method: 'POST',
@@ -140,8 +149,8 @@ Ext4.define("Workflow.view.dialog.CompleteTask", {
 
 });
 
-// TODO move out of global scope
-function downloadDataGrid(url, parameters) {
+// TODO move out of global scope once there's an object to attach it to.
+function downloadWorkflowTaskData(url, parameters) {
     var newForm = document.createElement('form');
     document.body.appendChild(newForm);
     Ext4.Ajax.request({
@@ -163,8 +172,9 @@ function downloadDataGrid(url, parameters) {
     });
 }
 
-// TODO remove from global scope
-function completeWorkflowTask(taskId, formName, fields, processInstanceId)
+// TODO remove from global scope once there's an object to attach it to.
+// The one above is currently not used in the application.
+function completeWorkflowTask(taskId, formName, fields, processInstanceId, processDefinitionKey)
 {
     var form = document.forms[formName];
     var parameters = {};
@@ -172,7 +182,10 @@ function completeWorkflowTask(taskId, formName, fields, processInstanceId)
     {
         parameters[fields[i]] = form[fields[i]].value;
     }
-    var returnURLParams = {processInstanceId: processInstanceId};
+    var returnURLParams = {
+        processInstanceId: processInstanceId,
+        processDefinitionKey: processDefinitionKey
+    };
     Ext4.Ajax.request({
         url: LABKEY.ActionURL.buildURL('workflow', 'completeTask'),
         method: 'POST',
@@ -195,13 +208,4 @@ function completeWorkflowTask(taskId, formName, fields, processInstanceId)
             }
         }
     });
-}
-
-function createCompleteTaskWindow(taskId, name, parameters, processInstanceId) {
-    Ext4.create("Workflow.view.dialog.CompleteTask", {
-        taskId: taskId,
-        name: name,
-        parameters: parameters,
-        processInstanceId: processInstanceId
-    }).show();
 }
