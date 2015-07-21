@@ -124,7 +124,7 @@ public class WorkflowController extends SpringActionController
     }
 
     /**
-     * Shows a summary of a given workfow for the current container and user, including the number of tasks
+     * Shows a summary of a given workflow for the current container and user, including the number of tasks
      * and number of workflow instances currently active for this user.
      */
     @RequiresPermissionClass(ReadPermission.class)
@@ -709,7 +709,8 @@ public class WorkflowController extends SpringActionController
         @Override
         public void validateForm(StartWorkflowProcessForm form, Errors errors)
         {
-            form.validate(getUser(), getContainer(), errors);
+            if (form != null)
+                form.validate(getUser(), getContainer(), errors);
         }
     }
 

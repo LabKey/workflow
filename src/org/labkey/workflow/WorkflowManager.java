@@ -505,7 +505,7 @@ public class WorkflowManager
         {
             Deployment containerDeployment = getDeployment(containerDef.getDeploymentId());
             // if the container version was deployed after the global version, there's nothing more to do
-            if (containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
+            if (containerDeployment != null && containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
                 return;
         }
 
@@ -629,7 +629,7 @@ public class WorkflowManager
                             // find the latest process definition without a container
                             ProcessDefinition processDef = WorkflowManager.get().getProcessDefinition(processDefinitionKey, null);
                             String deploymentId;
-                            if (processDef == null) // no such defintion, we'll deploy one
+                            if (processDef == null) // no such definition, we'll deploy one
                             {
                                 deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
                                 return WorkflowManager.get().getDeployment(deploymentId);
