@@ -15,6 +15,8 @@
  */
 package org.labkey.api.workflow;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
@@ -36,6 +38,7 @@ public class WorkflowRegistry
     private static String _defaultHandler = null;
     private static final WorkflowRegistry _instance = new WorkflowRegistry();
     private static final Map<String, Class<? extends PermissionsHandler>> _permissionsRegistry = new ConcurrentHashMap<>();
+    private static final Map<String, Class<? extends WorkflowProcessEventListener>> _processListenerRegistry = new ConcurrentHashMap<>();
 
     private WorkflowRegistry()
     {
@@ -57,6 +60,7 @@ public class WorkflowRegistry
 
     }
 
+    @Nullable
     public PermissionsHandler getPermissionsHandler(String moduleName, User user, Container container)
     {
         Class<? extends PermissionsHandler> handler;
@@ -77,6 +81,36 @@ public class WorkflowRegistry
             _log.error("Unable to instantiate permissions handler for module " + moduleName, e);
             return null;
         }
+    }
+
+    private static String getProcessListenerKey(String moduleName, String processDefinitionKey)
+    {
+        return moduleName + ":" + processDefinitionKey;
+    }
+
+    public static void registerProcessInstanceListener(Module module, String processDefinitionKey, Class<? extends WorkflowProcessEventListener> listener)
+    {
+        _processListenerRegistry.put(getProcessListenerKey(module.getName(), processDefinitionKey), listener);
+    }
+
+    @Nullable
+    public WorkflowProcessEventListener getWorkflowProcessEventListener(@NotNull WorkflowProcess instance, User user, Container container)
+    {
+
+        Class<? extends WorkflowProcessEventListener> listener = _processListenerRegistry.get(getProcessListenerKey(instance.getProcessDefinitionModule(), instance.getProcessDefinitionKey()));
+        if (listener != null)
+        {
+            try
+            {
+                return listener.getDeclaredConstructor(WorkflowProcess.class, User.class, Container.class).newInstance(instance, user, container);
+            }
+            catch (InstantiationException|IllegalAccessException|InvocationTargetException|NoSuchMethodException e)
+            {
+                _log.error("Unable to instantiate process instance event listener for process " + instance.getName() + " with id " + instance.getId(), e);
+                return null;
+            }
+        }
+        return null;
     }
 }
 

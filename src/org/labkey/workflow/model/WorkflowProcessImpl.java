@@ -107,7 +107,12 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     public String getProcessDefinitionKey()
     {
         if (_engineProcessInstance != null)
-            return _engineProcessInstance.getProcessDefinitionKey();
+        {
+            if (_engineProcessInstance.getProcessDefinitionKey() == null)
+                _processDefinitionKey = WorkflowManager.get().getProcessDefinitionKey(_engineProcessInstance.getProcessDefinitionId());
+            else
+                return _engineProcessInstance.getProcessDefinitionKey();
+        }
         return _processDefinitionKey;
     }
 

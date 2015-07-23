@@ -72,6 +72,7 @@ public class WorkflowQuerySchema extends UserSchema
     public static final String TABLE_DEPLOYMENT = "act_re_deployment";
     public static final String TABLE_VARIABLE = "act_ru_variable";
     public static final String TABLE_IDENTITY_LINK = "act_ru_identitylink";
+    public static final String TABLE_RUNTIME_JOB = "act_ru_job";
 
     public WorkflowQuerySchema(User user, Container container)
     {
@@ -100,6 +101,7 @@ public class WorkflowQuerySchema extends UserSchema
         names.add(TABLE_PROCESS_INSTANCE);
         names.add(TABLE_VARIABLE);
         names.add(TABLE_IDENTITY_LINK);
+        names.add(TABLE_RUNTIME_JOB);
         return names;
     }
 

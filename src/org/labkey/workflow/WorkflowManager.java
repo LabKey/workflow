@@ -43,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
@@ -401,6 +402,17 @@ public class WorkflowManager
             query.processDefinitionWithoutTenantId();
         }
         return query.latestVersion().singleResult();
+    }
+
+    /**
+     * @param processDefinitionId unique id of a process definition
+     * @param container container in which the process is defined
+     * @return name of the module that this process definition comes from
+     */
+    public String getProcessDefinitionModule(@NotNull String processDefinitionId, Container container)
+    {
+        Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(processDefinitionId), container).getCategory());
+        return lsid.getObjectId();
     }
 
     /**
