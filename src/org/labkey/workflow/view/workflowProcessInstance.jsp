@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.workflow.WorkflowTask" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.workflow.WorkflowJob" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -100,12 +101,40 @@ There is no active process with id <%= h(bean.getId()) %>
     </tr>
 
 <%= variablesTableRows(bean.getVariables()) %>
+<tr>
+    <td>Current Job(s)</td>
 
+    <%
+        if (bean.getCurrentJobs().isEmpty())
+        {
+            out.println("<td>None</td></tr>");
+        }
+        else
+        {
+            out.println("<td></td></tr>");
+            for (WorkflowJob job: bean.getCurrentJobs())
+            {
+    %>
+    <tr>
+        <td></td>
+        <td>
+            <%= h(job.getId()) %>: Due date <%= formatDateTime(job.getDueDate()) %>
+        </td>
+    </tr>
+    <%
+            }
+        }
+    %>
 <tr>
     <td>Current Task(s)</td>
-    <td></td>
-</tr>
 <%
+    if (bean.getCurrentTasks().isEmpty())
+    {
+        out.println("<td>None</td></tr>");
+    }
+    else
+    {
+        out.println("<td></td></tr>");
         for (WorkflowTask task: bean.getCurrentTasks())
         {
 %>
@@ -143,6 +172,7 @@ There is no active process with id <%= h(bean.getId()) %>
 </table>
 <%
         }
+    }
 %>
 <%= dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer())) %>
 <%

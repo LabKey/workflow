@@ -20,7 +20,7 @@
            -->
            <!-- enable the asynchronous executor to manage a threat pool that fires timers and other asynchronous tasks -->
            <property name="asyncExecutorEnabled" value="true" />
-           <property name="asyncExecutorActivate" value="false" />
+           <property name="asyncExecutorActivate" value="true" />
 
        </bean>
 </beans>

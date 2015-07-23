@@ -29,6 +29,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
@@ -58,6 +59,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private Container _container;
     private String _moduleName;
     private PermissionsHandler _permissionsHandler;
+    private List<WorkflowJob> _currentJobs;
 
     public WorkflowProcessImpl(String processDefinitionKey, String moduleName)
     {
@@ -83,6 +85,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
             if (_processVariables.get(INITIATOR_ID) != null)
                 setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
             setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), _container));
+            setCurrentJobs(WorkflowManager.get().getCurrentProcessJobs(engineProcessInstance.getProcessInstanceId(), _container));
         }
     }
 
@@ -226,6 +229,16 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     public void setCurrentTasks(List<WorkflowTask> currentTasks)
     {
         _currentTasks = currentTasks;
+    }
+
+    public List<WorkflowJob> getCurrentJobs()
+    {
+        return _currentJobs;
+    }
+
+    public void setCurrentJobs(List<WorkflowJob> currentJobs)
+    {
+        _currentJobs = currentJobs;
     }
 
     private PermissionsHandler getPermissionsHandler(User user, Container container)

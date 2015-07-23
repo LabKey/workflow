@@ -59,6 +59,8 @@ public interface WorkflowProcess
 
     List<WorkflowTask> getCurrentTasks();
 
+    List<WorkflowJob> getCurrentJobs();
+
     boolean canAccessData(User user, Container container);
 
     boolean canView(User user, Container container);

@@ -32,6 +32,8 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.repository.ProcessDefinitionQuery;
+import org.activiti.engine.runtime.Job;
+import org.activiti.engine.runtime.JobQuery;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
@@ -57,9 +59,11 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.TaskFormFieldImpl;
+import org.labkey.workflow.model.WorkflowJobImpl;
 import org.labkey.workflow.model.WorkflowTaskImpl;
 
 import javax.sql.DataSource;
@@ -273,11 +277,31 @@ public class WorkflowManager
     }
 
     /**
+     * Gets the list of jobs taht are currently active for the given processInstanceId in the given container,
+     * or in all containers if container is null
+     * @param processInstanceId instance for which tasks are to be retrieved
+     * @param container container in which the process instnace is active
+     * @return list of workflow jobs, or an empty list of there are none
+     */
+    public List<WorkflowJob> getCurrentProcessJobs(@NotNull String processInstanceId, @Nullable Container container)
+    {
+        JobQuery query = getManagementService().createJobQuery().processInstanceId(processInstanceId);
+        if (container != null)
+            query.jobTenantId(container.getId());
+        List<WorkflowJob> list = new ArrayList<>();
+        for (Job job : query.list())
+        {
+            list.add(new WorkflowJobImpl(job));
+        }
+        return list;
+    }
+
+    /**
      * Gets the list of tasks that are currently active for the given processInstanceId in the given container,
      * or in all containers if container is null
      * @param processInstanceId instance for which tasks are to be retrieved
-     * @param container contianer in which the process instance is active
-     * @return list of workflow tasks, or an empty list of ther are nonel
+     * @param container container in which the process instance is active
+     * @return list of workflow tasks, or an empty list of there are none
      */
     @NotNull
     public List<WorkflowTask> getCurrentProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
