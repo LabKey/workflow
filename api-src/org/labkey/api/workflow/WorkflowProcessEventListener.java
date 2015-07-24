@@ -22,21 +22,33 @@ public abstract class WorkflowProcessEventListener
     /**
      * Called when an entity create event is received.
      */
-    public abstract void onCreate();
+    public void onCreate()
+    {
+        // NO-OP for now
+    }
 
     /**
      * Called when an entity initialized event is received.
      */
-    public abstract void onInitialized();
+    public void onInitialized()
+    {
+        // NO-OP for now
+    }
 
     /**
      * Called when an entity delete event is received.
      */
-    public abstract void onDelete();
+    public void onDelete()
+    {
+        // NO-OP for now
+    }
 
     /**
      * Called when an entity update event is received.
      */
-    public abstract void onUpdate();
+    public void onUpdate()
+    {
+        // NO-OP for now
+    }
 
 }

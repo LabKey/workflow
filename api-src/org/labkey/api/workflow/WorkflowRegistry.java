@@ -88,7 +88,7 @@ public class WorkflowRegistry
         return moduleName + ":" + processDefinitionKey;
     }
 
-    public static void registerProcessInstanceListener(Module module, String processDefinitionKey, Class<? extends WorkflowProcessEventListener> listener)
+    public static void registerWorkflowProcessEventListener(Module module, String processDefinitionKey, Class<? extends WorkflowProcessEventListener> listener)
     {
         _processListenerRegistry.put(getProcessListenerKey(module.getName(), processDefinitionKey), listener);
     }
