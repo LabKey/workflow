@@ -19,8 +19,6 @@ public class DataManager implements JavaDelegate
     private static final Logger _log = LoggerFactory.getLogger(EmailNotifier.class);
     private Expression _dataManagerClassName;
 
-    protected static final String DATA_ENTITY = "entity";
-
     public Expression getDataManagerClassName()
     {
         return _dataManagerClassName;
@@ -46,7 +44,7 @@ public class DataManager implements JavaDelegate
     public void execute(DelegateExecution execution) throws Exception
     {
         DataManagerConfig dataManagerConfig = getDataManagerConfig(execution);
-        Object entity = dataManagerConfig.doAction(execution.getVariable(DATA_ENTITY));
-        execution.setVariable(DATA_ENTITY, entity);
+        dataManagerConfig.doAction();
+        execution.setVariables(dataManagerConfig.getVariables());
     }
 }

@@ -20,10 +20,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by susanh on 5/27/15.
+ *
  */
 public abstract class PermissionsHandler
 {
@@ -60,4 +62,16 @@ public abstract class PermissionsHandler
 
     public abstract Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task);
 
+    @SuppressWarnings("unchecked")
+    public Object getDataAccessParameter(Map<String, Object> variables, String key)
+    {
+        Object dataAccess = variables.get(WorkflowProcess.DATA_ACCESS_KEY);
+        if (null != dataAccess && dataAccess instanceof Map)
+        {
+            Object parameters = ((Map<String, Object>) dataAccess).get(WorkflowProcess.DATA_ACCESS_PARAMETERS_KEY);
+            if (null != parameters && parameters instanceof Map)
+                return ((Map<String, Object>)parameters).get(key);
+        }
+        return null;
+    }
 }

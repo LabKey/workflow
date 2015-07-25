@@ -461,7 +461,7 @@ public class WorkflowController extends SpringActionController
             if (!_processInstance.canAccessData(getUser(), getContainer()))
             {
                 Map<String, Object> variables = _processInstance.getProcessVariables();
-                variables.remove("dataAccess");
+                variables.remove(WorkflowProcess.DATA_ACCESS_KEY);
             }
             return success(_processInstance);
         }
@@ -483,7 +483,7 @@ public class WorkflowController extends SpringActionController
             if (!_task.canAccessData(getUser(), getContainer()))
             {
                 Map<String, Object> variables = _task.getProcessVariables();
-                variables.remove("dataAccess");
+                variables.remove(WorkflowProcess.DATA_ACCESS_KEY);
             }
             return success(_task);
         }
