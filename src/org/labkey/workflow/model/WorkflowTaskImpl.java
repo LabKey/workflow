@@ -108,8 +108,7 @@ public class WorkflowTaskImpl implements WorkflowTask
             return WorkflowModule.NAME;
         else
         {
-            Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getCategory());
-            return lsid.getObjectId();
+            return WorkflowManager.get().getProcessDefinitionModule(getProcessDefinitionId(), container);
         }
     }
 
