@@ -31,10 +31,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -61,6 +62,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Marshal(Marshaller.Jackson)
 public class WorkflowController extends SpringActionController
@@ -86,7 +88,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows a summary of the workflows for the current container and user
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -127,7 +129,7 @@ public class WorkflowController extends SpringActionController
      * Shows a summary of a given workflow for the current container and user, including the number of tasks
      * and number of workflow instances currently active for this user.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class SummaryAction extends SimpleViewAction<WorkflowRequestForm>
     {
         private String _navLabel = "Workflow Summary";
@@ -156,7 +158,7 @@ public class WorkflowController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StartProcessFormAction extends SimpleViewAction<StartWorkflowProcessForm>
     {
         @Override
@@ -183,7 +185,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows a list of tasks that are associated with a particular workflow.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TaskListAction extends SimpleViewAction<WorkflowRequestForm>
     {
         private UserSchema _schema;
@@ -237,7 +239,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows a list of the current workflow instances for a given workflow model key
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class InstanceListAction extends SimpleViewAction<WorkflowRequestForm>
     {
         private UserSchema _schema;
@@ -289,7 +291,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows the data about a task if the user has permissions to see this task
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TaskAction extends SimpleViewAction<WorkflowTaskForm>
     {
         private String _navLabel = "Task details";
@@ -321,7 +323,7 @@ public class WorkflowController extends SpringActionController
     /**
      * View the details of a process instance.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProcessInstanceAction extends SimpleViewAction<ProcessInstanceDetailsForm>
     {
         private String _navLabel = "Workflow process instance details";
@@ -387,7 +389,7 @@ public class WorkflowController extends SpringActionController
      * Retrieves the process diagram associated with a particular processInstance or processName as a png.
      * If there is no such diagram, a plain text response will be returned indicating that there is no such image.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProcessDiagramAction extends BaseViewAction
     {
         @Override
@@ -432,7 +434,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows the data about a process instance if the user has permissions to see this task
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ProcessInstanceDataAction extends ApiAction<ProcessInstanceDetailsForm>
     {
         private WorkflowProcess _processInstance;
@@ -471,7 +473,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Shows the data about a task if the user has permissions to see this task
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class TaskDataAction extends ApiAction<WorkflowTaskForm>
     {
         private WorkflowTask _task;
@@ -504,13 +506,53 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
+    public class GetReassignPermissionNamesAction extends ApiAction<WorkflowTaskForm>
+    {
+        private WorkflowTask _task;
+
+
+        @Override
+        public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Set<Class<?  extends Permission>> permissionClasses = _task.getReassignPermissions(getUser(), getContainer());
+            List<Map<String, String>> names = new ArrayList<>();
+            for (Class<? extends Permission> permissionClass : permissionClasses)
+            {
+                Map<String, String> permData = new HashMap<>();
+                Permission permission = (Permission) newInstance(permissionClass);
+                permData.put("name", permission.getName());
+                names.add(permData);
+            }
+            response.put("permissions", names);
+
+            return success(response);
+        }
+
+        @Override
+        public void validateForm(WorkflowTaskForm form, Errors errors)
+        {
+            if (form.getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+            else
+            {
+                _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+                if (!_task.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
+            }
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
     public class CandidateUsersAction extends ApiAction<WorkflowTaskForm>
     {
         protected static final String PROP_USER_ID = "userId";
         protected static final String PROP_USER_NAME = "displayName";
 
         private WorkflowTask _task;
+
 
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -555,7 +597,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Claims a task for a user, making that user the owner and the assignee.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class ClaimTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -575,7 +617,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Delegates a task to a particular user.  The owner of the task remains unchanged.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class DelegateTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -622,7 +664,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Assigns a task to a user
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class AssignTaskAction extends ApiAction<WorkflowTaskForm>
     {
         @Override
@@ -689,7 +731,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class StartProcessAction extends ApiAction<StartWorkflowProcessForm>
     {
         @Override
@@ -798,7 +840,7 @@ public class WorkflowController extends SpringActionController
      * Deletes a particular process instance.  This is allowed for the initiator of the
      * process and for administrators.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class RemoveProcessInstanceAction extends ApiAction<RemoveWorkflowProcessForm>
     {
         @Override
@@ -863,7 +905,7 @@ public class WorkflowController extends SpringActionController
      * Complete a task in a workflow.  This is allowed only if the task is currently assigned
      * to the current user.
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class CompleteTaskAction extends ApiAction<TaskCompletionForm>
     {
         @Override
@@ -947,7 +989,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Creates a new deployment of a process definition
      */
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeployAction extends ApiAction<DeploymentForm>
     {
         @Override
