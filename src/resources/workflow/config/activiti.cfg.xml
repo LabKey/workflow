@@ -18,7 +18,7 @@
 
            <property name="jobExecutorActivate" value="false" />
            -->
-           <!-- enable the asynchronous executor to manage a threat pool that fires timers and other asynchronous tasks -->
+           <!-- enable the asynchronous executor to manage a thread pool that fires timers and other asynchronous tasks -->
            <property name="asyncExecutorEnabled" value="true" />
            <property name="asyncExecutorActivate" value="true" />
 
