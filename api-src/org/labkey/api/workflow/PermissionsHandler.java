@@ -85,7 +85,7 @@ public abstract class PermissionsHandler
         SQLFragment sql = new SQLFragment("owner_ = ? OR assignee_ = ?");
         sql.add(String.valueOf(_user.getUserId()));
         sql.add(String.valueOf(_user.getUserId()));
-        return new SimpleFilter.SQLClause("(" + sql.getSQL() + ")", sql.getParams().toArray());
+        return new SimpleFilter.SQLClause("(" + sql.getSQL() + ")", sql.getParams().toArray(), new FieldKey(null, "id_"));
     }
 
     public abstract Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task);
