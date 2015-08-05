@@ -41,7 +41,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -194,7 +193,9 @@ public class WorkflowQuerySchema extends UserSchema
                     ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
                     DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
                     setDetailsURL(detailsURL.toString());
-                    ret.add(new DetailsColumn(detailsURL, table));
+                    DetailsColumn column = new DetailsColumn(detailsURL, table);
+                    column.setDisplayHtml("Task Details");
+                    ret.add(column);
                     ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
@@ -203,6 +204,7 @@ public class WorkflowQuerySchema extends UserSchema
         {
             queryView = new QueryView(this, settings, errors);
         }
+//        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
         queryView.setShowDeleteButton(false);
         queryView.setShowUpdateColumn(false);
         queryView.setShowInsertNewButton(false);

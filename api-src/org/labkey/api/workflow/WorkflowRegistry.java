@@ -18,12 +18,15 @@ package org.labkey.api.workflow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,26 +64,57 @@ public class WorkflowRegistry
     }
 
     @Nullable
-    public PermissionsHandler getPermissionsHandler(String moduleName, User user, Container container)
+    public PermissionsHandler getPermissionsHandler(@Nullable String moduleName, User user, Container container)
     {
-        Class<? extends PermissionsHandler> handler;
+        Class<? extends PermissionsHandler> handlerClass;
         if (null == moduleName)
-            handler = _permissionsRegistry.get(_defaultHandler);
+            handlerClass = _permissionsRegistry.get(_defaultHandler);
         else
         {
-            handler = _permissionsRegistry.get(moduleName);
-            if (null == handler)
-                handler = _permissionsRegistry.get(_defaultHandler);
+            handlerClass = _permissionsRegistry.get(moduleName);
+            if (null == handlerClass)
+                handlerClass = _permissionsRegistry.get(_defaultHandler);
         }
+        return createPermissionsHandler(handlerClass, user, container);
+    }
+
+    private static PermissionsHandler createPermissionsHandler(Class<? extends PermissionsHandler> handlerClass, User user, Container container)
+    {
         try
         {
-            return handler.getDeclaredConstructor(User.class, Container.class).newInstance(user, container);
+            return handlerClass.getDeclaredConstructor(User.class, Container.class).newInstance(user, container);
         }
         catch (InstantiationException|IllegalAccessException|InvocationTargetException|NoSuchMethodException e)
         {
-            _log.error("Unable to instantiate permissions handler for module " + moduleName, e);
+            _log.error("Unable to instantiate permissions handler for class " + handlerClass, e);
             return null;
         }
+    }
+
+    public static List<SimpleFilter> getProcessListFilters(User user, Container container)
+    {
+        List<SimpleFilter> filters = new ArrayList<>();
+        for (Class<? extends PermissionsHandler> handlerClass : _permissionsRegistry.values())
+        {
+            PermissionsHandler handler = createPermissionsHandler(handlerClass, user, container);
+            SimpleFilter filter = handler.getProcessListFilter();
+            if (!filter.isEmpty())
+                filters.add(filter);
+        }
+        return filters;
+    }
+
+    public static List<SimpleFilter> getTaskListFilters(User user, Container container)
+    {
+        List<SimpleFilter> filters = new ArrayList<>();
+        for (Class<? extends PermissionsHandler> handlerClass : _permissionsRegistry.values())
+        {
+            PermissionsHandler handler = createPermissionsHandler(handlerClass, user, container);
+            SimpleFilter filter = handler.getTaskListFilter();
+            if (!filter.isEmpty())
+                filters.add(filter);
+        }
+        return filters;
     }
 
     private static String getProcessListenerKey(String moduleName, String processDefinitionKey)

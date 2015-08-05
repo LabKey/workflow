@@ -17,6 +17,9 @@ package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
@@ -59,6 +62,31 @@ public abstract class PermissionsHandler
     public abstract boolean canAccessData(@NotNull WorkflowTask task);
 
     public abstract boolean canComplete(@NotNull WorkflowTask task);
+
+    public SimpleFilter getProcessListFilter()
+    {
+        return new SimpleFilter();
+    }
+
+    protected SimpleFilter.FilterClause getInitiatorCondition()
+    {
+        SQLFragment sql = new SQLFragment("act_ru_execution.id_ IN (SELECT V.execution_id_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.text_ = ?)");
+        sql.add(String.valueOf(_user.getUserId()));
+        return new SimpleFilter.SQLClause("(" + sql.getSQL() + ")", sql.getParams().toArray(),  new FieldKey(null, "id_"));
+    }
+
+    public SimpleFilter getTaskListFilter()
+    {
+        return new SimpleFilter();
+    }
+
+    protected SimpleFilter.FilterClause getAssigneeOwnerClause()
+    {
+        SQLFragment sql = new SQLFragment("owner_ = ? OR assignee_ = ?");
+        sql.add(String.valueOf(_user.getUserId()));
+        sql.add(String.valueOf(_user.getUserId()));
+        return new SimpleFilter.SQLClause("(" + sql.getSQL() + ")", sql.getParams().toArray());
+    }
 
     public abstract Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task);
 
