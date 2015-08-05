@@ -51,8 +51,6 @@
 There is no active process with id <%= h(bean.getId()) %>
 <br><br>
 <%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
-&nbsp;&nbsp;
-<%= PageFlowUtil.textLink(h(bean.getProcessDefinitionName()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
 <%
     }
     else if (!bean.canView(getUser(), getContainer()))
@@ -69,26 +67,26 @@ There is no active process with id <%= h(bean.getId()) %>
 <br>
 <br>
 <%
-    if (bean.getName() == null)
-    {
+        if (bean.getName() == null)
+        {
 %>
 <strong>Process <%= h(bean.getId()) %></strong>
 <%
-    }
-    else
-    {
+        }
+        else
+        {
 %>
 <strong><%= h(bean.getName()) %></strong>
 <%
-    }
+        }
 %>
 <%
-    if (bean.canDelete(getUser(), getContainer()))
-    {
+        if (bean.canDelete(getUser(), getContainer()))
+        {
 %>
 &nbsp;&nbsp;<%= PageFlowUtil.button("Delete").onClick(" createDeleteProcessInstanceConfirmationWindow(" + q(bean.getProcessInstanceId()) + ", " + q(bean.getProcessDefinitionKey()) + ", " + q(bean.getName()) + ")") %>
 <%
-    }
+        }
 %>
 <br>
 <br>
@@ -151,7 +149,7 @@ There is no active process with id <%= h(bean.getId()) %>
             else
             {
     %>
-        <%= task.getName() %>
+        <%= h(task.getName()) %>
     <%
             }
             if (task.getAssignee() != null)
