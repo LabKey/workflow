@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class DataManager implements JavaDelegate
 {
-    private static final Logger _log = LoggerFactory.getLogger(EmailNotifier.class);
+    private static final Logger _log = LoggerFactory.getLogger(DataManager.class);
     private Expression _dataManagerClassName;
 
     public Expression getDataManagerClassName()
