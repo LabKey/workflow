@@ -18,6 +18,7 @@ package org.labkey.workflow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -103,6 +104,28 @@ public class PermissionsHandlerImpl extends PermissionsHandler
     public boolean canComplete(@NotNull WorkflowTask task)
     {
         return task.isAssigned(_user);
+    }
+
+    @Override
+    public SimpleFilter getProcessListFilter()
+    {
+        SimpleFilter filter = new SimpleFilter();
+        if (!_hasAdmin) // admins can see everything by default
+        {
+            filter.addClause(getInitiatorCondition());
+        }
+        return filter;
+    }
+
+    @Override
+    public SimpleFilter getTaskListFilter()
+    {
+        SimpleFilter filter = new SimpleFilter();
+        if (!_hasAdmin) // admins can see everything by default
+        {
+            filter.addClause(getAssigneeOwnerClause()); // otherwise you see tasks you are assigned or that you own
+        }
+        return filter;
     }
 
     @Override

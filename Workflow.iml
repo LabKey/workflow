@@ -44,7 +44,9 @@
           <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.17.0.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.17.0-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">

@@ -32,6 +32,8 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.repository.ProcessDefinitionQuery;
+import org.activiti.engine.runtime.Job;
+import org.activiti.engine.runtime.JobQuery;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.runtime.ProcessInstanceBuilder;
 import org.activiti.engine.runtime.ProcessInstanceQuery;
@@ -43,6 +45,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
@@ -56,9 +59,11 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.TaskFormFieldImpl;
+import org.labkey.workflow.model.WorkflowJobImpl;
 import org.labkey.workflow.model.WorkflowTaskImpl;
 
 import javax.sql.DataSource;
@@ -272,11 +277,31 @@ public class WorkflowManager
     }
 
     /**
+     * Gets the list of jobs taht are currently active for the given processInstanceId in the given container,
+     * or in all containers if container is null
+     * @param processInstanceId instance for which tasks are to be retrieved
+     * @param container container in which the process instnace is active
+     * @return list of workflow jobs, or an empty list of there are none
+     */
+    public List<WorkflowJob> getCurrentProcessJobs(@NotNull String processInstanceId, @Nullable Container container)
+    {
+        JobQuery query = getManagementService().createJobQuery().processInstanceId(processInstanceId);
+        if (container != null)
+            query.jobTenantId(container.getId());
+        List<WorkflowJob> list = new ArrayList<>();
+        for (Job job : query.list())
+        {
+            list.add(new WorkflowJobImpl(job));
+        }
+        return list;
+    }
+
+    /**
      * Gets the list of tasks that are currently active for the given processInstanceId in the given container,
      * or in all containers if container is null
      * @param processInstanceId instance for which tasks are to be retrieved
-     * @param container contianer in which the process instance is active
-     * @return list of workflow tasks, or an empty list of ther are nonel
+     * @param container container in which the process instance is active
+     * @return list of workflow tasks, or an empty list of there are none
      */
     @NotNull
     public List<WorkflowTask> getCurrentProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
@@ -404,6 +429,17 @@ public class WorkflowManager
     }
 
     /**
+     * @param processDefinitionId unique id of a process definition
+     * @param container container in which the process is defined
+     * @return name of the module that this process definition comes from
+     */
+    public String getProcessDefinitionModule(@NotNull String processDefinitionId, Container container)
+    {
+        Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(processDefinitionId), container).getCategory());
+        return lsid.getObjectId();
+    }
+
+    /**
      * @param container the container for which this query is being made
      * @return the number of process definitions currently deployed in the container, or defined without a container if null
      */
@@ -505,7 +541,7 @@ public class WorkflowManager
         {
             Deployment containerDeployment = getDeployment(containerDef.getDeploymentId());
             // if the container version was deployed after the global version, there's nothing more to do
-            if (containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
+            if (containerDeployment != null && containerDeployment.getDeploymentTime().after(globalDeployment.getDeploymentTime()))
                 return;
         }
 
@@ -629,7 +665,7 @@ public class WorkflowManager
                             // find the latest process definition without a container
                             ProcessDefinition processDef = WorkflowManager.get().getProcessDefinition(processDefinitionKey, null);
                             String deploymentId;
-                            if (processDef == null) // no such defintion, we'll deploy one
+                            if (processDef == null) // no such definition, we'll deploy one
                             {
                                 deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
                                 return WorkflowManager.get().getDeployment(deploymentId);

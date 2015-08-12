@@ -51,24 +51,28 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
             }
         });
 
-        this.items = [
-            {
-                itemId: 'instructions',
-                xtype: 'box',
-                width: 400,
-                padding: '15px 15px',
-                tpl: new Ext4.XTemplate (
-                    'You can reassign a task to any user within this project.  ',
+        this.instructions = Ext4.create('Ext.view.View', {
+            itemId: 'instructions',
+            xtype: 'box',
+            width: 400,
+            padding: '15px 15px',
+            store : this.getPermissionsStore(),
+            tpl: new Ext4.XTemplate (
+                    'You can reassign a task to any user with one of the following permissions within this folder:  ',
+                    '<ul>',
+                    '<tpl for=".">',
+                    '<li>{name:htmlEncode}',
+                    '</tpl>',
+                    '</ul>',
                     'When delegating, you will retain ownership of the task for further review after the task is completed.'
-                ),
-                data: {
-                    reassignmentType: this.reassignmentType,
-                    taskId: this.taskId
-                }
+            )
+        });
 
-            },
+        this.items = [
+            this.instructions,
             this.userCombo
-        ]
+        ];
+
         this.buttons = [{
             itemId: 'CancelButton',
             disabled: false,
@@ -105,7 +109,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
                 this.close();
             }
         }
-        ]
+        ];
 
         this.callParent();
 
@@ -138,6 +142,31 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
         });
     },
 
+    getPermissionsStore : function() {
+        // define data models
+        if (!Ext4.ModelManager.isRegistered('LABKEY.Workflow.ReassignmentPermissions')) {
+            Ext4.define('LABKEY.Workflow.ReassignmentPermissions', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'name', type: 'string'}
+                ]
+            });
+        }
+
+        return Ext4.create('Ext.data.Store', {
+            model: 'LABKEY.Workflow.ReassignmentPermissions',
+            autoLoad: true,
+            proxy: {
+                type: 'ajax',
+                url: LABKEY.ActionURL.buildURL('workflow', 'getReassignPermissionNames.api', LABKEY.container.path, {taskId: this.taskId}),
+                reader: {
+                    type: 'json',
+                    root: 'data.permissions'
+                }
+            }
+        });
+    },
+
     getUserStore: function(){
         // define data models
         if (!Ext4.ModelManager.isRegistered('LABKEY.Workflow.ReassignmentUsers')) {
@@ -155,7 +184,7 @@ Ext4.define("Workflow.view.dialog.ReassignTask", {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('workflow', 'candidateUsers', LABKEY.container.path, {taskId: this.taskId}),
+                url: LABKEY.ActionURL.buildURL('workflow', 'candidateUsers.api', LABKEY.container.path, {taskId: this.taskId}),
                 reader: {
                     type: 'json',
                     root: 'data.users'

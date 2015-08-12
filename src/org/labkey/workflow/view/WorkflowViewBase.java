@@ -29,14 +29,13 @@ import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.workflow.WorkflowController;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by susanh on 6/14/15.
+ *
  */
 public abstract class WorkflowViewBase extends JspBase
 {
@@ -61,15 +60,16 @@ public abstract class WorkflowViewBase extends JspBase
         return builder.toString();
     }
 
+    @SuppressWarnings("unchecked")
     public String dataAccessTable(Map<String, Object> variables, boolean canAccessData)
     {
         StringBuilder builder = new StringBuilder();
-        if (variables != null && variables.containsKey("dataAccess"))
+        if (variables != null && variables.containsKey(WorkflowProcess.DATA_ACCESS_KEY))
         {
             builder.append("<strong>Data Parameters</strong><br><br>\n");
             builder.append("<table class=\"labkey-proj\">\n");
-            Map<String, Object> dataAccess = (Map<String, Object>) variables.get("dataAccess");
-            HashMap<String, Object> parameters = (HashMap<String, Object>) dataAccess.get("parameters");
+            Map<String, Object> dataAccess = (Map<String, Object>) variables.get(WorkflowProcess.DATA_ACCESS_KEY);
+            HashMap<String, Object> parameters = (HashMap<String, Object>) dataAccess.get(WorkflowProcess.DATA_ACCESS_PARAMETERS_KEY);
 
             for (Map.Entry<String, Object> parameter : parameters.entrySet())
             {
@@ -91,15 +91,6 @@ public abstract class WorkflowViewBase extends JspBase
 
     private Object getParameterValue(String key, Object value)
     {
-        if (key.endsWith("~in"))
-        {
-            // value should be an array list of a single item that is the string representing the set of ids to check for inclusion in
-            String[] items = ((ArrayList<String>) value).get(0).split(";");
-            if (items.length > 20)
-            {
-                value = "[" + StringUtils.join(Arrays.copyOfRange(items, 0, 20), ";") + " ... and " + (items.length - 20) + " more ]";
-            }
-        }
         return value;
     }
 
@@ -154,7 +145,7 @@ public abstract class WorkflowViewBase extends JspBase
     {
         String displayKey = null;
         Object displayValue = null;
-        Map<String, Object> _displayVariables = new HashMap<String, Object>();
+        Map<String, Object> _displayVariables = new HashMap<>();
         for (String key : variables.keySet())
         {
             if (WorkflowProcess.CONTAINER_ID.equalsIgnoreCase(key) || WorkflowProcess.INITIATOR_ID.equalsIgnoreCase(key))

@@ -17,19 +17,27 @@ package org.labkey.workflow.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.WorkflowController;
+import org.labkey.workflow.WorkflowManager;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -59,18 +67,13 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
         ColumnInfo idColumn = getColumn("id_");
         ActionURL base = new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer());
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("processInstanceId", "proc_inst_id_"));
+
         idColumn.setURL(detailsURL);
         setDetailsURL(detailsURL);
 
         addInitiatorColumn();
 
-        if (!container.hasPermission(user, AdminPermission.class))
-        {
-            SQLFragment sql = new SQLFragment("act_ru_execution.id_ IN (SELECT V.execution_id_ FROM workflow.act_ru_variable V WHERE V.name_ = 'initiatorId' AND V.text_ = ?)");
-            sql.add(String.valueOf(user.getUserId()));
-            addCondition(sql,new FieldKey(null,"id_"));
-        }
-
+        addWorkflowListFilter(WorkflowRegistry.getProcessListFilters(user, container));
     }
 
    private ColumnInfo addInitiatorColumn()
@@ -91,4 +94,27 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
     {
         return !_columnsToIgnore.contains(columnInfo.getName().toLowerCase());
     }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        TableInfo table = getRealTable();
+        if (table != null && table.getTableType() == DatabaseTableType.TABLE)
+        {
+            return new DefaultQueryUpdateService(this, table)
+            {
+                @Override
+                protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+                {
+                    // FIXME this doesn't quite work
+                    WorkflowManager.get().deleteProcessInstance((String) oldRowMap.get("PROC_INST_ID_"), null);
+                    return oldRowMap;
+
+                }
+            };
+        }
+        return null;
+    }
+
+
 }

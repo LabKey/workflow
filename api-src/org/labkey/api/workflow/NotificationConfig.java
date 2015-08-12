@@ -28,13 +28,11 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import java.util.List;
 import java.util.Map;
 
-public abstract class NotificationConfig
+public abstract class NotificationConfig extends WorkflowDelegateActionBase
 {
-    protected final Map<String, Object> _variables;
-
     public NotificationConfig(Map<String, Object> variables)
     {
-        _variables = variables;
+        super(variables);
     }
 
     public abstract List<User> getUsers();

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.workflow;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -25,6 +24,7 @@ import java.util.Map;
 
 /**
  * Created by susanh on 6/14/15.
+ *
  */
 public interface WorkflowProcess
 {
@@ -32,6 +32,9 @@ public interface WorkflowProcess
     String CONTAINER_ID = "container";
     String CREATED_DATE = "created";
     String PROCESS_INSTANCE_URL = "processInstanceUrl";
+
+    String DATA_ACCESS_KEY = "dataAccess";
+    String DATA_ACCESS_PARAMETERS_KEY = "parameters";
 
     String getId();
 
@@ -58,6 +61,8 @@ public interface WorkflowProcess
     User getInitiator();
 
     List<WorkflowTask> getCurrentTasks();
+
+    List<WorkflowJob> getCurrentJobs();
 
     boolean canAccessData(User user, Container container);
 

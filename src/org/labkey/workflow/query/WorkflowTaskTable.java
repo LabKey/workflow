@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.WorkflowController;
 
 import java.io.IOException;
@@ -74,8 +75,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
 
         addCandidateGroupColumn(user, container);
 
-        if (!container.hasPermission(user, AdminPermission.class))
-            addCondition(new SQLFragment("owner_ = ? OR assignee_ = ?", user.getUserId(), user.getUserId()));
+        addWorkflowListFilter(WorkflowRegistry.getTaskListFilters(user, container));
     }
 
     private ColumnInfo addCandidateGroupColumn(User user, Container container)

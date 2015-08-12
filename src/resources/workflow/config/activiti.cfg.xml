@@ -10,19 +10,6 @@
                Note that the '.' is necessary in the prefix. -->
            <property name="databaseTablePrefix" value="workflow."/>
            <property name="tablePrefixIsSchema" value="true"/>
-           <!--
-           <property name="postBpmnParseHandlers">
-               <list>
-                   <bean class="org.labkey.workflow.parse.CandidateAssigneeParseHandler" />
-               </list>
-           </property>
-
-           <property name="eventListeners">
-               <list>
-                   <bean class="org.labkey.workflow.WorkflowEventListener"/>
-               </list>
-           </property>
-           -->
 
            <property name="historyLevel" value="ACTIVITY"/>
            <property name="dbIdentityUsed" value="false"/>
@@ -30,9 +17,10 @@
            <property name="databaseSchemaUpdate" value="true" />
 
            <property name="jobExecutorActivate" value="false" />
-           <property name="asyncExecutorEnabled" value="true" />
-           <property name="asyncExecutorActivate" value="false" />
            -->
+           <!-- enable the asynchronous executor to manage a thread pool that fires timers and other asynchronous tasks -->
+           <property name="asyncExecutorEnabled" value="true" />
+           <property name="asyncExecutorActivate" value="true" />
 
        </bean>
 </beans>

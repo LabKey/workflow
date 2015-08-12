@@ -41,7 +41,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
@@ -72,6 +71,7 @@ public class WorkflowQuerySchema extends UserSchema
     public static final String TABLE_DEPLOYMENT = "act_re_deployment";
     public static final String TABLE_VARIABLE = "act_ru_variable";
     public static final String TABLE_IDENTITY_LINK = "act_ru_identitylink";
+    public static final String TABLE_RUNTIME_JOB = "act_ru_job";
 
     public WorkflowQuerySchema(User user, Container container)
     {
@@ -100,6 +100,7 @@ public class WorkflowQuerySchema extends UserSchema
         names.add(TABLE_PROCESS_INSTANCE);
         names.add(TABLE_VARIABLE);
         names.add(TABLE_IDENTITY_LINK);
+        names.add(TABLE_RUNTIME_JOB);
         return names;
     }
 
@@ -192,7 +193,9 @@ public class WorkflowQuerySchema extends UserSchema
                     ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
                     DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
                     setDetailsURL(detailsURL.toString());
-                    ret.add(new DetailsColumn(detailsURL, table));
+                    DetailsColumn column = new DetailsColumn(detailsURL, table);
+                    column.setDisplayHtml("Task Details");
+                    ret.add(column);
                     ret.add(getReassignmentColumn(table, "Reassign", null));
                 }
             };
@@ -201,6 +204,7 @@ public class WorkflowQuerySchema extends UserSchema
         {
             queryView = new QueryView(this, settings, errors);
         }
+//        queryView.setShowDeleteButton(settings.getQueryName().equalsIgnoreCase(TABLE_PROCESS_INSTANCE));
         queryView.setShowDeleteButton(false);
         queryView.setShowUpdateColumn(false);
         queryView.setShowInsertNewButton(false);

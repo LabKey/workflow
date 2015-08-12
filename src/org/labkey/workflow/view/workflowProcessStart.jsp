@@ -20,12 +20,10 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.workflow.TaskFormField" %>
 <%@ page import="org.labkey.api.workflow.WorkflowProcess" %>
+<%@ page import="org.labkey.workflow.WorkflowManager" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.workflow.WorkflowManager" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
