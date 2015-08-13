@@ -858,7 +858,7 @@ public class WorkflowController extends SpringActionController
             {
                 throw new UnauthorizedException("You do not have permission to delete this process instance");
             }
-            WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), null);
+            WorkflowManager.get().deleteProcessInstance(form.getProcessInstanceId(), form.getComment());
             return success();
         }
 
