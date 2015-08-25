@@ -72,6 +72,13 @@ public class WorkflowQuerySchema extends UserSchema
     public static final String TABLE_VARIABLE = "act_ru_variable";
     public static final String TABLE_IDENTITY_LINK = "act_ru_identitylink";
     public static final String TABLE_RUNTIME_JOB = "act_ru_job";
+    public static final String TABLE_HISTORY_ACTIVITY_INSTANCE = "act_hi_actinst";
+    public static final String TABLE_HISTORY_COMMENT = "act_hi_comment";
+    public static final String TABLE_HISTORY_DETAIL = "act_hi_detail";
+    public static final String TABLE_HISTORY_IDENTITY_LINK = "act_hi_identitylink";
+    public static final String TABLE_HISTORY_PROCESS_INSTANCE = "act_hi_procinst";
+    public static final String TABLE_HISTORY_TASK_INSTANCE = "act_hi_taskinst";
+    public static final String TABLE_HISTORY_VARIABLE_INSTANCE = "act_hi_varinst";
 
     public WorkflowQuerySchema(User user, Container container)
     {
@@ -101,6 +108,13 @@ public class WorkflowQuerySchema extends UserSchema
         names.add(TABLE_VARIABLE);
         names.add(TABLE_IDENTITY_LINK);
         names.add(TABLE_RUNTIME_JOB);
+        names.add(TABLE_HISTORY_ACTIVITY_INSTANCE);
+        names.add(TABLE_HISTORY_COMMENT);
+        names.add(TABLE_HISTORY_IDENTITY_LINK);
+        names.add(TABLE_HISTORY_DETAIL);
+        names.add(TABLE_HISTORY_PROCESS_INSTANCE);
+        names.add(TABLE_HISTORY_TASK_INSTANCE);
+        names.add(TABLE_HISTORY_VARIABLE_INSTANCE);
         return names;
     }
 

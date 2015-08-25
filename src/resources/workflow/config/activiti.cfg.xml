@@ -11,7 +11,7 @@
            <property name="databaseTablePrefix" value="workflow."/>
            <property name="tablePrefixIsSchema" value="true"/>
 
-           <property name="historyLevel" value="ACTIVITY"/>
+           <property name="historyLevel" value="FULL"/>
            <property name="dbIdentityUsed" value="false"/>
            <!--
            <property name="databaseSchemaUpdate" value="true" />
