@@ -18,6 +18,7 @@ package org.labkey.workflow.delegate;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.workflow.DataManagerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,5 +62,17 @@ public class DataManager implements JavaDelegate
         DataManagerConfig dataManagerConfig = getDataManagerConfig(execution);
         dataManagerConfig.doAction();
         execution.setVariables(dataManagerConfig.getVariables());
+
+        // give the config a chance to add a UI notification to the system for this data manager action
+        if (dataManagerConfig.shouldAddUINotification())
+        {
+            NotificationService.get().addNotification(
+                    dataManagerConfig.getContainer(),
+                    dataManagerConfig.getInitiator(), // TODO: not sure that this should be the initiator of the workflow task
+                    execution.getProcessInstanceId(),
+                    dataManagerConfig.getUINotificationType(),
+                    dataManagerConfig.getInitiator().getUserId()
+            );
+        }
     }
 }

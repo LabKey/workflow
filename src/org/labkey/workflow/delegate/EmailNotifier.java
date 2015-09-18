@@ -18,6 +18,7 @@ package org.labkey.workflow.delegate;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -90,6 +91,18 @@ public class EmailNotifier implements JavaDelegate
                     m.setText(body);
 
                     MailHelper.send(m, notificationConfig.getLogUser(), container);
+
+                    // give the config a chance to add a UI notification to the system for this email message
+                    if (notificationConfig.shouldAddUINotification())
+                    {
+                        NotificationService.get().addNotification(
+                                container,
+                                notificationConfig.getLogUser(), // TODO: not sure that this should be the initiator of the workflow task
+                                execution.getProcessInstanceId(),
+                                notificationConfig.getUINotificationType(),
+                                user.getUserId()
+                        );
+                    }
                 }
             }
             catch (ConfigurationException | AddressException e)
