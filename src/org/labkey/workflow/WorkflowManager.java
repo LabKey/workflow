@@ -342,6 +342,22 @@ public class WorkflowManager
     }
 
     /**
+     * Given the process definition key, returns the corresponding list of process instances in the
+     * current container that were initiated by the given user
+     * @param processDefinitionKey identifier for the process definition
+     * @param user user making the request
+     * @param container container of context, or null for all containers
+     * @return the list of ProcessInstnace objects
+     */
+    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    {
+        ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
+        query.processInstanceTenantId(container.getId());
+        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
+        return query.list();
+    }
+
+    /**
      * Given the id of a process instance, returns the corresponding process instance
      * @param processInstanceId id of process instance to retrieve
      * @return the ProcessInstnace corresponding to the given id.
