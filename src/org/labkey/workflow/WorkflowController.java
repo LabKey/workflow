@@ -16,8 +16,8 @@
 
 package org.labkey.workflow;
 
+import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.repository.ProcessDefinition;
-import org.activiti.engine.runtime.ProcessInstance;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
@@ -487,8 +487,8 @@ public class WorkflowController extends SpringActionController
 
     private void ensureProcessUserAccessData(WorkflowProcess process, User user, Container container)
     {
-        // remove the data access parameters if the user does not have permission to data access the data
-        if (!process.canAccessData(user, container))
+        // remove the data access parameters if the user does not have permission to data access the data or if it is inactive
+        if (!process.isActive() || !process.canAccessData(user, container))
         {
             Map<String, Object> variables = process.getProcessVariables();
             variables.remove(WorkflowProcess.DATA_ACCESS_KEY);
@@ -515,10 +515,11 @@ public class WorkflowController extends SpringActionController
         {
             List<WorkflowProcess> workflowProcessList = new ArrayList<>();
 
-            List<ProcessInstance> processInstanceList = WorkflowManager.get().getProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
-            for (ProcessInstance processInstance : processInstanceList)
+            // use the historical process instance query so we get all process instances (active and inactive)
+            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricalProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
+            for (HistoricProcessInstance historicProcessInstance : processInstanceList)
             {
-                WorkflowProcess workflowProcess = new WorkflowProcessImpl(processInstance.getId(), getContainer());
+                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance);
                 ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
                 workflowProcessList.add(workflowProcess);
             }
@@ -529,7 +530,6 @@ public class WorkflowController extends SpringActionController
             return resp;
 
         }
-
     }
 
 
