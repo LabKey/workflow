@@ -68,6 +68,8 @@ public interface WorkflowTask
 
     Date getDueDate();
 
+    Date getEndDate();
+
     String getParentTaskId();
 
     Map<String, Object> getTaskLocalVariables();

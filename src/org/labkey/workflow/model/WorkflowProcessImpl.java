@@ -57,6 +57,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private ViewContext _viewContext;
     private String _name; // the name for this process instance
     private List<WorkflowTask> _currentTasks;
+    private List<WorkflowTask> _completedTasks;
     private Container _container;
     private String _moduleName;
     private PermissionsHandler _permissionsHandler;
@@ -85,14 +86,18 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         }
     }
 
-    public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance)
+    public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance, boolean includeCompletedTasks)
     {
         this(WorkflowManager.get().getProcessInstance(historicProcessInstance.getId()));
         setId(historicProcessInstance.getId());
 
+        if (includeCompletedTasks)
+            setCompletedTasks(WorkflowManager.get().getCompletedProcessTasks(historicProcessInstance.getId(), _container));
+
         if (!isActive())
         {
             setProcessInstanceId(historicProcessInstance.getId());
+            // TODO set name, processDefinitionKey, processDefinitionModule, processDefinitionName
 
             Map<String, Object> variables = WorkflowManager.get().getHistoricProcessInstanceVariables(historicProcessInstance.getId());
             variables.put("endDate", historicProcessInstance.getEndTime());
@@ -244,6 +249,16 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     public void setCurrentTasks(List<WorkflowTask> currentTasks)
     {
         _currentTasks = currentTasks;
+    }
+
+    public List<WorkflowTask> getCompletedTasks()
+    {
+        return _completedTasks;
+    }
+
+    public void setCompletedTasks(List<WorkflowTask> completedTasks)
+    {
+        _completedTasks = completedTasks;
     }
 
     public List<WorkflowJob> getCurrentJobs()

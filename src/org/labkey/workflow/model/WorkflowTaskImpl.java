@@ -17,8 +17,7 @@ package org.labkey.workflow.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.activiti.engine.runtime.ProcessInstance;
-import org.activiti.engine.task.DelegationState;
-import org.activiti.engine.task.Task;
+import org.activiti.engine.task.TaskInfo;
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -47,64 +45,61 @@ import java.util.Set;
  * Created by susanh on 5/3/15.
  */
 @Marshal(Marshaller.Jackson)
-public class WorkflowTaskImpl implements WorkflowTask
+public abstract class WorkflowTaskImpl implements WorkflowTask
 {
-    private Task _engineTask;
-    private String _id;
-    private List<Integer> _groupIds = null;
+    protected TaskInfo _taskInfo;
+    protected String _id;
+    protected List<Integer> _groupIds = null;
     private Map<String, TaskFormField> _formFields = null;
     private ProcessInstance _processInstance = null;
     private PermissionsHandler _permissionsHandler = null;
 
-    public WorkflowTaskImpl(String taskId, Container container)
-    {
-        _engineTask = WorkflowManager.get().getEngineTask(taskId, container);
-        _id = taskId;
-    }
+    protected WorkflowTaskImpl()
+    {}
 
-    public WorkflowTaskImpl(Task engineTask)
+    public WorkflowTaskImpl(TaskInfo taskInfo)
     {
-        _engineTask = engineTask;
+        _taskInfo = taskInfo;
     }
 
     public String getId()
     {
-        return _engineTask == null ? _id : _engineTask.getId();
+        return _taskInfo == null ? _id : _taskInfo.getId();
     }
 
     public String getName()
     {
-        return _engineTask == null ? null : _engineTask.getName();
+        return _taskInfo == null ? null : _taskInfo.getName();
     }
 
     public String getDescription()
     {
-        return _engineTask == null ? null : _engineTask.getDescription();
+        return _taskInfo == null ? null : _taskInfo.getDescription();
     }
 
     @JsonIgnore
     private ProcessInstance getProcessInstance()
     {
-        if (_processInstance == null && _engineTask != null)
+        if (_processInstance == null && _taskInfo != null)
         {
-            _processInstance = WorkflowManager.get().getProcessInstance(_engineTask.getProcessInstanceId());
+            _processInstance = WorkflowManager.get().getProcessInstance(_taskInfo.getProcessInstanceId());
         }
         return _processInstance;
     }
 
     public String getProcessDefinitionKey(Container container)
     {
-        return _engineTask == null ? null : getProcessInstance().getProcessDefinitionKey();
+        return _taskInfo == null ? null : getProcessInstance().getProcessDefinitionKey();
     }
 
     public String getProcessDefinitionName(Container container)
     {
-        return _engineTask == null ? null : WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getName();
+        return _taskInfo == null ? null : WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getName();
     }
 
     public String getProcessDefinitionModule(Container container)
     {
-        if (_engineTask == null)
+        if (_taskInfo == null)
             return WorkflowModule.NAME;
         else
         {
@@ -126,10 +121,15 @@ public class WorkflowTaskImpl implements WorkflowTask
     @Nullable
     public Integer getOwnerId()
     {
-        if (_engineTask == null || _engineTask.getOwner() == null)
+        if (_taskInfo == null || _taskInfo.getOwner() == null)
             return null;
         else
-            return Integer.valueOf(_engineTask.getOwner());
+            return Integer.valueOf(_taskInfo.getOwner());
+    }
+
+    public boolean isAssigned(User user)
+    {
+        return getAssigneeId() != null && getAssigneeId() == user.getUserId();
     }
 
     @Nullable
@@ -146,50 +146,50 @@ public class WorkflowTaskImpl implements WorkflowTask
     @Nullable
     public Integer getAssigneeId()
     {
-        if (_engineTask == null || _engineTask.getAssignee() == null)
+        if (_taskInfo == null || _taskInfo.getAssignee() == null)
             return null;
         else
-            return Integer.valueOf(_engineTask.getAssignee());
+            return Integer.valueOf(_taskInfo.getAssignee());
     }
 
     public String getProcessInstanceId()
     {
-        return _engineTask.getProcessInstanceId();
+        return _taskInfo.getProcessInstanceId();
     }
 
     public String getProcessDefinitionId()
     {
-        return _engineTask.getProcessDefinitionId();
+        return _taskInfo.getProcessDefinitionId();
     }
 
     public Date getCreateTime()
     {
-        return _engineTask.getCreateTime();
+        return _taskInfo.getCreateTime();
     }
 
     public String getTaskDefinitionKey()
     {
-        return _engineTask.getTaskDefinitionKey();
+        return _taskInfo.getTaskDefinitionKey();
     }
 
     public Date getDueDate()
     {
-        return _engineTask.getDueDate();
+        return _taskInfo.getDueDate();
     }
 
     public String getParentTaskId()
     {
-        return _engineTask.getParentTaskId();
+        return _taskInfo.getParentTaskId();
     }
 
     public Map<String, Object> getTaskLocalVariables()
     {
-        return _engineTask.getTaskLocalVariables();
+        return _taskInfo.getTaskLocalVariables();
     }
 
     public Map<String, Object> getProcessVariables()
     {
-        return _engineTask.getProcessVariables();
+        return _taskInfo.getProcessVariables();
     }
 
     @JsonIgnore
@@ -212,14 +212,7 @@ public class WorkflowTaskImpl implements WorkflowTask
     @NotNull
     public String getContainer()
     {
-        return _engineTask.getTenantId();
-    }
-
-    public List<Integer> getGroupIds()
-    {
-        if (_groupIds == null)
-            _groupIds = WorkflowManager.get().getCandidateGroupIds(getId());
-        return _groupIds;
+        return _taskInfo.getTenantId();
     }
 
     public boolean isInCandidateGroups(User user)
@@ -271,86 +264,10 @@ public class WorkflowTaskImpl implements WorkflowTask
         return isActive() && getPermissionsHandler(user, container).canComplete(this);
     }
 
-    public void setName(String name)
-    {
-        _engineTask.setName(name);
-    }
-
-    public void setDescription(String description)
-    {
-        _engineTask.setDescription(description);
-    }
-
-    /**
-     * Set the user responsible for full completion of the task, which may include review of results
-     * if the task has been delegated
-     * @param owner
-     */
-    public void setOwner(User owner)
-    {
-        _engineTask.setOwner(String.valueOf(owner.getUserId()));
-    }
-
-    /**
-     * Set the user who is currently assigned to work on this task
-     * @param assignee
-     */
-    public void setAssignee(User assignee)
-    {
-        _engineTask.setOwner(String.valueOf(assignee.getUserId()));
-    }
-
-    public boolean isAssigned(User user)
-    {
-        return getAssigneeId() != null && getAssigneeId() == user.getUserId();
-    }
-
-    public boolean isDelegated()
-    {
-        return _engineTask.getDelegationState() == DelegationState.PENDING;
-    }
-
-    public boolean isReadyForReview()
-    {
-        return _engineTask.getDelegationState() == DelegationState.RESOLVED;
-    }
-
-    public void setReadyForReview()
-    {
-        _engineTask.setDelegationState(DelegationState.RESOLVED);
-    }
-
-    public void setDueDate(Date dueDate)
-    {
-        _engineTask.setDueDate(dueDate);
-    }
-
-    public void delegate(User user)
-    {
-        _engineTask.delegate(String.valueOf(user.getUserId()));
-    }
-
-    public void setParentTaskId(String parentTaskId)
-    {
-        _engineTask.setParentTaskId(parentTaskId);
-    }
-
-    public void setContainer(String containerId)
-    {
-        _engineTask.setTenantId(containerId);
-    }
-
-    public boolean isSuspended()
-    {
-        return _engineTask.isSuspended();
-    }
-
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
     {
         return getPermissionsHandler(user, container).getCandidateUserPermissions(this);
     }
-
-    public boolean isActive() { return _engineTask != null; }
 
     @JsonIgnore
     @NotNull

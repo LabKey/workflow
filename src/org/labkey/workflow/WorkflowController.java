@@ -48,9 +48,9 @@ import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
+import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
-import org.labkey.workflow.model.WorkflowTaskImpl;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -321,7 +321,7 @@ public class WorkflowController extends SpringActionController
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
-            WorkflowTask task = new WorkflowTaskImpl(form.getTaskId(), getContainer());
+            WorkflowTask task = new WorkflowEngineTaskImpl(form.getTaskId(), getContainer());
             if (task.getName() != null)
                 _navLabel = "'" + task.getName() + "' task details";
 
@@ -519,7 +519,7 @@ public class WorkflowController extends SpringActionController
             List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricalProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
             for (HistoricProcessInstance historicProcessInstance : processInstanceList)
             {
-                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance);
+                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.isIncludeCompletedTasks());
                 ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
                 workflowProcessList.add(workflowProcess);
             }
@@ -702,6 +702,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _processDefinitionKey;
         private String _processDefinitionName;
+        private boolean _includeCompletedTasks;
 
         public String getProcessDefinitionKey()
         {
@@ -721,6 +722,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionName(String processDefinitionName)
         {
             _processDefinitionName = processDefinitionName;
+        }
+
+        public boolean isIncludeCompletedTasks()
+        {
+            return _includeCompletedTasks;
+        }
+
+        public void setIncludeCompletedTasks(boolean includeCompletedTasks)
+        {
+            _includeCompletedTasks = includeCompletedTasks;
         }
     }
 
