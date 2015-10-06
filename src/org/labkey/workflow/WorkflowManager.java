@@ -407,13 +407,13 @@ public class WorkflowManager
 
     /**
      * Given the process definition key, returns the corresponding list of historic process instances in the
-     * current container that were initiated by the given user
+     * current container that were initiated by the given user (...)
      * @param processDefinitionKey identifier for the process definition
      * @param user user making the request
      * @param container container of context, or null for all containers
      * @return the list of HistoricProcessInstance objects
      */
-    public List<HistoricProcessInstance> getHistoricalProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
     {
         HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
