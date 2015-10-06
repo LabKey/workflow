@@ -46,6 +46,7 @@ import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.exceptions.PersistenceException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
@@ -438,8 +439,15 @@ public class WorkflowManager
      */
     public Map<String, Object> getHistoricProcessInstanceVariables(@NotNull String processInstanceId)
     {
-        HistoricProcessInstance processInstance  = getHistoryService().createHistoricProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-        return processInstance.getProcessVariables();
+        try
+        {
+            HistoricProcessInstance processInstance = getHistoryService().createHistoricProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
+            return processInstance.getProcessVariables();
+        }
+        catch (PersistenceException e)
+        {
+            return new HashMap<>();
+        }
     }
 
     /**
@@ -495,8 +503,15 @@ public class WorkflowManager
      */
     public Map<String, Object> getProcessInstanceVariables(@NotNull String processInstanceId)
     {
-        ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-        return processInstance.getProcessVariables();
+        try
+        {
+            ProcessInstance processInstance = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
+            return processInstance.getProcessVariables();
+        }
+        catch (PersistenceException e)
+        {
+            return new HashMap<>();
+        }
     }
 
     /**
