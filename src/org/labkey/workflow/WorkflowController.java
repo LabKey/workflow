@@ -487,7 +487,7 @@ public class WorkflowController extends SpringActionController
 
     private void ensureProcessUserAccessData(WorkflowProcess process, User user, Container container)
     {
-        // remove the data access parameters if the user does not have permission to data access the data or if it is inactive
+        // remove the data access parameters if the user does not have permission to access the data or if it is inactive
         if (!process.isActive() || !process.canAccessData(user, container))
         {
             Map<String, Object> variables = process.getProcessVariables();
@@ -997,6 +997,11 @@ public class WorkflowController extends SpringActionController
             {
                 throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");
             }
+            if (!task.isAssigned(getUser())) // if user can complete it but it is not assigned to this user, we should change that.
+            {
+                WorkflowManager.get().assignTask(form.getTaskId(), getUser().getUserId(), getUser(), getContainer());
+                task.setAssignee(getUser());
+            }
             WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
             WorkflowManager.get().completeTask(form.getTaskId(), getUser(), getContainer());
             response.put("status", "success");
@@ -1016,7 +1021,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _taskId;
         private String _processInstanceId;
-        private String _processDefintionKey;
+        private String _processDefinitionKey;
         private Map<String, Object> _processVariables;
 
         public String getTaskId()
@@ -1049,14 +1054,14 @@ public class WorkflowController extends SpringActionController
             _processVariables = processVariables;
         }
 
-        public String getProcessDefintionKey()
+        public String getProcessDefinitionKey()
         {
-            return _processDefintionKey;
+            return _processDefinitionKey;
         }
 
-        public void setProcessDefintionKey(String processDefintionKey)
+        public void setProcessDefinitionKey(String processDefinitionKey)
         {
-            _processDefintionKey = processDefintionKey;
+            _processDefinitionKey = processDefinitionKey;
         }
     }
 
