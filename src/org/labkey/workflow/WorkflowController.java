@@ -516,10 +516,10 @@ public class WorkflowController extends SpringActionController
             List<WorkflowProcess> workflowProcessList = new ArrayList<>();
 
             // use the historical process instance query so we get all process instances (active and inactive)
-            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricalProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
+            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
             for (HistoricProcessInstance historicProcessInstance : processInstanceList)
             {
-                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.isIncludeCompletedTasks());
+                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
                 ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
                 workflowProcessList.add(workflowProcess);
             }
@@ -724,7 +724,7 @@ public class WorkflowController extends SpringActionController
             _processDefinitionName = processDefinitionName;
         }
 
-        public boolean isIncludeCompletedTasks()
+        public boolean includeCompletedTasks()
         {
             return _includeCompletedTasks;
         }
