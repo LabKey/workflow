@@ -384,6 +384,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _processInstanceId;
         private String _processDefinitionKey;
+        private boolean _includeCompletedTasks;
 
         public String getProcessInstanceId()
         {
@@ -403,6 +404,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionKey(String processDefinitionKey)
         {
             _processDefinitionKey = processDefinitionKey;
+        }
+
+        public boolean includeCompletedTasks()
+        {
+            return _includeCompletedTasks;
+        }
+
+        public void setIncludeCompletedTasks(boolean includeCompletedTasks)
+        {
+            _includeCompletedTasks = includeCompletedTasks;
         }
     }
 
@@ -468,12 +479,17 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
             else
             {
-                _processInstance = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
-                if (!_processInstance.isActive())
+                HistoricProcessInstance historicProcessInstance = WorkflowManager.get().getHistoricProcessInstance(form.getProcessInstanceId());
+                if (historicProcessInstance == null)
+                {
                     errors.reject(ERROR_MSG, NO_SUCH_INSTANCE_ERROR);
-                else if (!_processInstance.canView(getUser(), getContainer()))
-                    errors.reject(ERROR_MSG, "User does not have permission to view process instance data for this process");
-
+                }
+                else
+                {
+                    _processInstance = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
+                    if (!_processInstance.canView(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "User does not have permission to view process instance data for this process");
+                }
             }
         }
 
