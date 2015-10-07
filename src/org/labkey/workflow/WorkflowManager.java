@@ -382,24 +382,22 @@ public class WorkflowManager
 
     /**
      * Given the process definition key, returns the corresponding list of process instances in the
-     * current container that were initiated by the given user
+     * current container
      * @param processDefinitionKey identifier for the process definition
-     * @param user user making the request
      * @param container container of context, or null for all containers
-     * @return the list of ProcessInstnace objects
+     * @return the list of ProcessInstance objects
      */
-    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull Container container)
     {
         ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
-        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
         return query.list();
     }
 
     /**
      * Given the id of a process instance, returns the corresponding process instance
      * @param processInstanceId id of process instance to retrieve
-     * @return ProcessInstnace corresponding to the given id.
+     * @return ProcessInstance corresponding to the given id.
      */
     public ProcessInstance getProcessInstance(@NotNull String processInstanceId)
     {
@@ -408,17 +406,15 @@ public class WorkflowManager
 
     /**
      * Given the process definition key, returns the corresponding list of historic process instances in the
-     * current container that were initiated by the given user (...)
+     * current container
      * @param processDefinitionKey identifier for the process definition
-     * @param user user making the request
      * @param container container of context, or null for all containers
      * @return the list of HistoricProcessInstance objects
      */
-    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull Container container)
     {
         HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
-        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
         return query.list();
     }
 

@@ -202,6 +202,14 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _initiatorId;
     }
 
+    public String getInitiatorName()
+    {
+        User initiator = getInitiator();
+        if (initiator != null)
+            return initiator.getDisplayName(null);
+        return null;
+    }
+
     public void setInitiatorId(Integer initiatorId)
     {
         _initiatorId = initiatorId;

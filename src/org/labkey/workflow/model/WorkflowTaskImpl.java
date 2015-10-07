@@ -127,6 +127,17 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return Integer.valueOf(_taskInfo.getOwner());
     }
 
+    @Nullable
+    public String getOwnerName()
+    {
+        User owner = getOwner();
+        if (owner != null)
+        {
+            return owner.getDisplayName(null);
+        }
+        return null;
+    }
+
     public boolean isAssigned(User user)
     {
         return getAssigneeId() != null && getAssigneeId() == user.getUserId();
@@ -150,6 +161,15 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return null;
         else
             return Integer.valueOf(_taskInfo.getAssignee());
+    }
+
+    @Nullable
+    public String getAssigneeName()
+    {
+        User user = getAssignee();
+        if (user != null)
+            return user.getDisplayName(null);
+        return null;
     }
 
     public String getProcessInstanceId()
