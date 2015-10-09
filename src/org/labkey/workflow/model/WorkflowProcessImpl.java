@@ -178,6 +178,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
             setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
     }
 
+    @JsonIgnore
     @Override
     public Map<String, Object> getVariables()
     {

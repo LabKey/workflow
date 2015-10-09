@@ -284,6 +284,11 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return isActive() && getPermissionsHandler(user, container).canComplete(this);
     }
 
+    public boolean canUpdate(User user, Container container)
+    {
+        return isActive() && getPermissionsHandler(user, container).canUpdate(this);
+    }
+
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
     {
         return getPermissionsHandler(user, container).getCandidateUserPermissions(this);

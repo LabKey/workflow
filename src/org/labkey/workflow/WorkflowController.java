@@ -442,7 +442,7 @@ public class WorkflowController extends SpringActionController
             if (stream == null)
             {
                 contentType = "text/plain";
-                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes());
+                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes("UTF-8"));
             }
             byte[] imageBytes = IOUtils.toByteArray(stream);
             HttpServletResponse response = getViewContext().getResponse();
@@ -642,7 +642,6 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             User currentUser = getUser();
             boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
-            // TODO should this be one of the permissions set or all in the permissions set?
             List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
             List<Map<String,Object>> userResponseList = new ArrayList<>();
             for (User user : users)
@@ -763,6 +762,9 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
+            if (form.getProcessVariables() != null) {
+                WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
+            }
             WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId(), getUser(), getContainer());
             return success();
         }
@@ -779,6 +781,7 @@ public class WorkflowController extends SpringActionController
         private String _taskId;
         private Integer _ownerId;
         private Integer _assigneeId;
+        private Map<String, Object> _processVariables;
 
         public String getTaskId()
         {
@@ -808,6 +811,16 @@ public class WorkflowController extends SpringActionController
         public void setOwnerId(int ownerId)
         {
             _ownerId = ownerId;
+        }
+
+        public Map<String, Object> getProcessVariables()
+        {
+            return _processVariables;
+        }
+
+        public void setProcessVariables(Map<String, Object> processVariables)
+        {
+            _processVariables = processVariables;
         }
 
         public void validate(Errors errors)
@@ -994,9 +1007,72 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class UpdateVariablesAction extends ApiAction<ProcessVariablesForm>
+    {
+        private WorkflowTask _task;
+
+        @Override
+        public Object execute(ProcessVariablesForm form, BindException errors) throws Exception
+        {
+            _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+            if (_task.canUpdate(getUser(), getContainer()))
+            {
+                WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
+            }
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            return success();
+        }
+
+        @Override
+        public void validateForm(ProcessVariablesForm form, Errors errors)
+        {
+            form.validate(errors);
+            if (!errors.hasErrors())
+            {
+                _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+                if (_task == null || !_task.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
+                if (!_task.canUpdate(getUser(), getContainer()))
+                    throw new UnauthorizedException("User does not have permission to update task " + form.getTaskId());
+
+            }
+        }
+    }
+
+    public static class ProcessVariablesForm {
+        private String _taskId;
+        private Map<String, Object> _processVariables;
+
+        public String getTaskId()
+        {
+            return _taskId;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            _taskId = taskId;
+        }
+
+        public Map<String, Object> getProcessVariables()
+        {
+            return _processVariables;
+        }
+
+        public void setProcessVariables(Map<String, Object> processVariables)
+        {
+            _processVariables = processVariables;
+        }
+
+        public void validate(Errors errors)
+        {
+            if (getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+        }
+    }
+
     /**
-     * Complete a task in a workflow.  This is allowed only if the task is currently assigned
-     * to the current user.
+     * Complete a task in a workflow.  If the task is currently unassigned, it will be assigned to the current user.
      */
     @RequiresPermission(ReadPermission.class)
     public class CompleteTaskAction extends ApiAction<TaskCompletionForm>
