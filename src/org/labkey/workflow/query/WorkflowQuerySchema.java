@@ -135,6 +135,9 @@ public class WorkflowQuerySchema extends UserSchema
             case TABLE_VARIABLE:
                 return new WorkflowVariableTable(this, getUser(), getContainer());
             case TABLE_DEPLOYMENT:
+            case TABLE_HISTORY_PROCESS_INSTANCE:
+            case TABLE_HISTORY_ACTIVITY_INSTANCE:
+            case TABLE_HISTORY_TASK_INSTANCE:
                 return new WorkflowTenantTable(this, name);
         }
 
