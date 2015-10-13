@@ -49,6 +49,7 @@ import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.WorkflowEngineTaskImpl;
+import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
 import org.labkey.workflow.query.WorkflowQuerySchema;
@@ -322,8 +323,11 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
             WorkflowTask task = new WorkflowEngineTaskImpl(form.getTaskId(), getContainer());
+            if (!task.isActive())
+                task = new WorkflowHistoricTaskImpl(form.getTaskId(), getContainer());
+
             if (task.getName() != null)
-                _navLabel = "'" + task.getName() + "' task details";
+                _navLabel = "'" + task.getName() + "' " + (task.isActive() ? "active" : " inactive ") + " task details";
 
             return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", task, errors);
         }
@@ -361,13 +365,13 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            WorkflowProcessImpl bean = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
+            WorkflowProcessImpl bean = new WorkflowProcessImpl(form.getProcessInstanceId());
             if (form.getProcessDefinitionKey() != null && bean.getProcessDefinitionKey() == null)
             {
                 bean.setProcessDefinitionKey(form.getProcessDefinitionKey());
             }
             if (bean.getProcessDefinitionName() != null)
-                _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
+                _navLabel = "'" + bean.getProcessDefinitionName() + "' " + (bean.isActive()? "active" : "inactive") + " process instance details";
 
             return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -580,9 +584,7 @@ public class WorkflowController extends SpringActionController
             else
             {
                 _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
-                if (!_task.isActive())
-                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
-                else if (!_task.canView(getUser(), getContainer()))
+                if (!_task.canView(getUser(), getContainer()))
                     errors.reject(ERROR_MSG, "User does not have permission to view task data for this task");
             }
         }
