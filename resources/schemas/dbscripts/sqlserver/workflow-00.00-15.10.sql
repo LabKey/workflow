@@ -2,8 +2,6 @@
  * Copyright 2010-2014 Alfresco Software, Ltd.. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
- */
-
 -- @SkipLabKeySyntaxCheck
 -- Create schema, tables, indexes, and constraints used for Workflow module here
 -- All SQL VIEW definitions should be created in workflow-create.sql and dropped in workflow-drop.sql
