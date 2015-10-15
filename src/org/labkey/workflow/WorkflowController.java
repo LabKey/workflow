@@ -371,7 +371,7 @@ public class WorkflowController extends SpringActionController
                 bean.setProcessDefinitionKey(form.getProcessDefinitionKey());
             }
             if (bean.getProcessDefinitionName() != null)
-                _navLabel = "'" + bean.getProcessDefinitionName() + "' " + (bean.isActive()? "active" : "inactive") + " process instance details";
+                _navLabel = "'" + bean.getProcessDefinitionName() + "' " + (bean.isActive() ? "active" : "inactive") + " process instance details";
 
             return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -536,7 +536,7 @@ public class WorkflowController extends SpringActionController
             List<WorkflowProcess> workflowProcessList = new ArrayList<>();
 
             // use the historical process instance query so we get all process instances (active and inactive)
-            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getContainer());
+            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getContainer(), false);
             for (HistoricProcessInstance historicProcessInstance : processInstanceList)
             {
                 WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
@@ -600,7 +600,7 @@ public class WorkflowController extends SpringActionController
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Set<Class<?  extends Permission>> permissionClasses = _task.getReassignPermissions(getUser(), getContainer());
+            Set<Class<? extends Permission>> permissionClasses = _task.getReassignPermissions(getUser(), getContainer());
             List<Map<String, String>> names = new ArrayList<>();
             for (Class<? extends Permission> permissionClass : permissionClasses)
             {
@@ -645,10 +645,10 @@ public class WorkflowController extends SpringActionController
             User currentUser = getUser();
             boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
             List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
-            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            List<Map<String, Object>> userResponseList = new ArrayList<>();
             for (User user : users)
             {
-                Map<String,Object> userInfo = new HashMap<>();
+                Map<String, Object> userInfo = new HashMap<>();
                 userInfo.put(PROP_USER_ID, user.getUserId());
 
                 //force sanitize of the display name, even for logged-in users
@@ -764,7 +764,8 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
-            if (form.getProcessVariables() != null) {
+            if (form.getProcessVariables() != null)
+            {
                 WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
             }
             WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId(), getUser(), getContainer());
@@ -1042,7 +1043,8 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    public static class ProcessVariablesForm {
+    public static class ProcessVariablesForm
+    {
         private String _taskId;
         private Map<String, Object> _processVariables;
 
