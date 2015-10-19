@@ -144,7 +144,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return null;
     }
 
-    public boolean isAssigned(User user)
+    public boolean isAssigned(@NotNull User user)
     {
         return getAssigneeId() != null && getAssigneeId() == user.getUserId();
     }
