@@ -8,6 +8,7 @@ package org.labkey.workflow;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
 import org.activiti.engine.FormService;
+import org.activiti.engine.HistoryService;
 import org.activiti.engine.ManagementService;
 import org.activiti.engine.ProcessEngine;
 import org.activiti.engine.ProcessEngineConfiguration;
@@ -17,6 +18,10 @@ import org.activiti.engine.TaskService;
 import org.activiti.engine.form.FormProperty;
 import org.activiti.engine.form.StartFormData;
 import org.activiti.engine.form.TaskFormData;
+import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.history.HistoricProcessInstanceQuery;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.history.HistoricTaskInstanceQuery;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
@@ -52,8 +57,9 @@ import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.TaskFormFieldImpl;
+import org.labkey.workflow.model.WorkflowEngineTaskImpl;
+import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowJobImpl;
-import org.labkey.workflow.model.WorkflowTaskImpl;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -116,12 +122,24 @@ public class WorkflowManager
      */
     public WorkflowTask getTask(@NotNull String taskId, @Nullable Container container)
     {
-        return new WorkflowTaskImpl(getEngineTask(taskId, container));
+        Task engineTask = getEngineTask(taskId, container);
+        if (engineTask != null)
+            return new WorkflowEngineTaskImpl(engineTask);
+
+        return new WorkflowHistoricTaskImpl(taskId, container);
     }
 
     public Task getEngineTask(@NotNull String taskId, @Nullable Container container)
     {
         TaskQuery query = getTaskService().createTaskQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables();
+        if (container != null)
+            query.taskTenantId(container.getId());
+        return query.singleResult();
+    }
+
+    public HistoricTaskInstance getHistoricTask(@NotNull String taskId, @Nullable Container container)
+    {
+        HistoricTaskInstanceQuery query = getHistoryService().createHistoricTaskInstanceQuery().taskId(taskId).includeTaskLocalVariables().includeProcessVariables();
         if (container != null)
             query.taskTenantId(container.getId());
         return query.singleResult();
@@ -138,7 +156,7 @@ public class WorkflowManager
      */
     public void completeTask(@NotNull String taskId, User user, Container container) throws Exception
     {
-        WorkflowTask task = new WorkflowTaskImpl(getTaskService().createTaskQuery().taskId(taskId).singleResult());
+        WorkflowTask task = new WorkflowEngineTaskImpl(getTaskService().createTaskQuery().taskId(taskId).singleResult());
 
         if (!task.isActive())
             throw new Exception("No such task (id = " + taskId + ")");
@@ -298,12 +316,32 @@ public class WorkflowManager
         TaskQuery query =  getTaskService().createTaskQuery().processInstanceId(processInstanceId);
         if (container != null)
             query.taskTenantId(container.getId());
-        List<Task> engineTasks = query.list();
+
         List<WorkflowTask> tasks = new ArrayList<>();
-        for (Task engineTask : engineTasks)
-        {
-            tasks.add(new WorkflowTaskImpl(engineTask));
-        }
+        for (Task engineTask : query.list())
+            tasks.add(new WorkflowEngineTaskImpl(engineTask));
+
+        return tasks;
+    }
+
+    /**
+     * Gets the list of completed tasks for the given processInstanceId in the given container,
+     * or in all containers if container is null
+     * @param processInstanceId instance for which tasks are to be retrieved
+     * @param container container in which the process instance is active
+     * @return list of workflow tasks, or an empty list of there are none
+     */
+    @NotNull
+    public List<WorkflowTask> getCompletedProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
+    {
+        HistoricTaskInstanceQuery query =  getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(processInstanceId).finished();
+        if (container != null)
+            query.taskTenantId(container.getId());
+
+        List<WorkflowTask> tasks = new ArrayList<>();
+        for (HistoricTaskInstance historicTask : query.list())
+            tasks.add(new WorkflowHistoricTaskImpl(historicTask));
+
         return tasks;
     }
 
@@ -331,13 +369,66 @@ public class WorkflowManager
     }
 
     /**
+     * Given the process definition key, returns the corresponding list of process instances in the
+     * current container that were initiated by the given user
+     * @param processDefinitionKey identifier for the process definition
+     * @param user user making the request
+     * @param container container of context, or null for all containers
+     * @return the list of ProcessInstnace objects
+     */
+    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    {
+        ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
+        query.processInstanceTenantId(container.getId());
+        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
+        return query.list();
+    }
+
+    /**
      * Given the id of a process instance, returns the corresponding process instance
      * @param processInstanceId id of process instance to retrieve
-     * @return the ProcessInstnace corresponding to the given id.
+     * @return ProcessInstnace corresponding to the given id.
      */
     public ProcessInstance getProcessInstance(@NotNull String processInstanceId)
     {
         return getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
+    }
+
+    /**
+     * Given the process definition key, returns the corresponding list of historic process instances in the
+     * current container that were initiated by the given user (...)
+     * @param processDefinitionKey identifier for the process definition
+     * @param user user making the request
+     * @param container container of context, or null for all containers
+     * @return the list of HistoricProcessInstance objects
+     */
+    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    {
+        HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
+        query.processInstanceTenantId(container.getId());
+        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
+        return query.list();
+    }
+
+    /**
+     * Given the id of a process instance, returns the corresponding historic process instance
+     * @param processInstanceId id of process instance to retrieve
+     * @return HistoricProcessInstance corresponding to the given id.
+     */
+    public HistoricProcessInstance getHistoricProcessInstance(@NotNull String processInstanceId)
+    {
+        return getHistoryService().createHistoricProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
+    }
+
+    /**
+     * Returns the set of variables associated with the given historicProcessInstance
+     * @param processInstanceId id of the historic process instance in question
+     * @return the set of process instance variables for this historic process instance
+     */
+    public Map<String, Object> getHistoricProcessInstanceVariables(@NotNull String processInstanceId)
+    {
+        HistoricProcessInstance processInstance  = getHistoryService().createHistoricProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
+        return processInstance.getProcessVariables();
     }
 
     /**
@@ -576,6 +667,11 @@ public class WorkflowManager
     protected RuntimeService getRuntimeService()
     {
         return getProcessEngine().getRuntimeService();
+    }
+
+    protected HistoryService getHistoryService()
+    {
+        return getProcessEngine().getHistoryService();
     }
 
     protected ManagementService getManagementService()

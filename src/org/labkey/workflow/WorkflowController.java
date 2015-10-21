@@ -5,14 +5,18 @@
 
 package org.labkey.workflow;
 
+import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.repository.ProcessDefinition;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -33,9 +37,9 @@ import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
+import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
-import org.labkey.workflow.model.WorkflowTaskImpl;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -66,6 +70,7 @@ public class WorkflowController extends SpringActionController
     private static final String MODULE_NAME_MISSING = "Module name is required";
     private static final String NO_SUCH_TASK_ERROR = "No active task with the given id";
     private static final String NO_SUCH_INSTANCE_ERROR = "No active process instance with the given id";
+    private static final String NO_SUCH_DEFINITION_ERROR = "No process definition with the given key";
 
     private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
 
@@ -241,7 +246,8 @@ public class WorkflowController extends SpringActionController
                 return new SimpleErrorView(errors);
             }
 
-            form.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer()).getName());
+            ProcessDefinition processDefinition = WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer());
+            form.setProcessDefinitionName(processDefinition.getName());
             JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", form);
             jsp.setTitle("Active Processes");
 
@@ -256,15 +262,14 @@ public class WorkflowController extends SpringActionController
         @Override
         public void validate(WorkflowRequestForm form, BindException errors)
         {
-            if (form.getProcessDefinitionKey() == null)
-                errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
-            else
+            String errorMessage = validateProcessDefinitionKey(form);
+            if (errorMessage != null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, errorMessage);
+
+            _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
+            if (_schema == null)
             {
-                _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
-                if (_schema == null)
-                {
-                    errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
-                }
+                errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
             }
         }
 
@@ -274,6 +279,22 @@ public class WorkflowController extends SpringActionController
             return null;
         }
 
+    }
+
+    private String validateProcessDefinitionKey(WorkflowRequestForm form)
+    {
+        if (form.getProcessDefinitionKey() == null)
+        {
+            return PROCESS_DEFINITION_KEY_MISSING;
+        }
+        else
+        {
+            ProcessDefinition processDefinition = WorkflowManager.get().getProcessDefinition(form.getProcessDefinitionKey(), getContainer());
+            if (processDefinition == null)
+                return NO_SUCH_DEFINITION_ERROR;
+        }
+
+        return null;
     }
 
 
@@ -289,7 +310,7 @@ public class WorkflowController extends SpringActionController
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
-            WorkflowTask task = new WorkflowTaskImpl(form.getTaskId(), getContainer());
+            WorkflowTask task = new WorkflowEngineTaskImpl(form.getTaskId(), getContainer());
             if (task.getName() != null)
                 _navLabel = "'" + task.getName() + "' task details";
 
@@ -352,6 +373,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _processInstanceId;
         private String _processDefinitionKey;
+        private boolean _includeCompletedTasks;
 
         public String getProcessInstanceId()
         {
@@ -371,6 +393,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionKey(String processDefinitionKey)
         {
             _processDefinitionKey = processDefinitionKey;
+        }
+
+        public boolean includeCompletedTasks()
+        {
+            return _includeCompletedTasks;
+        }
+
+        public void setIncludeCompletedTasks(boolean includeCompletedTasks)
+        {
+            _includeCompletedTasks = includeCompletedTasks;
         }
     }
 
@@ -436,28 +468,75 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
             else
             {
-                _processInstance = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
-                if (!_processInstance.isActive())
+                HistoricProcessInstance historicProcessInstance = WorkflowManager.get().getHistoricProcessInstance(form.getProcessInstanceId());
+                if (historicProcessInstance == null)
+                {
                     errors.reject(ERROR_MSG, NO_SUCH_INSTANCE_ERROR);
-                else if (!_processInstance.canView(getUser(), getContainer()))
-                    errors.reject(ERROR_MSG, "User does not have permission to view process instance data for this process");
-
+                }
+                else
+                {
+                    _processInstance = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
+                    if (!_processInstance.canView(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "User does not have permission to view process instance data for this process");
+                }
             }
         }
 
         @Override
-        public Object execute(ProcessInstanceDetailsForm processInstanceDetailsForm, BindException errors) throws Exception
+        public SimpleResponse execute(ProcessInstanceDetailsForm processInstanceDetailsForm, BindException errors) throws Exception
         {
-            // remove the data access parameters if the user does not have permission to data access the data
-            if (!_processInstance.canAccessData(getUser(), getContainer()))
-            {
-                Map<String, Object> variables = _processInstance.getProcessVariables();
-                variables.remove(WorkflowProcess.DATA_ACCESS_KEY);
-            }
+            ensureProcessUserAccessData(_processInstance, getUser(), getContainer());
             return success(_processInstance);
         }
-
     }
+
+    private void ensureProcessUserAccessData(WorkflowProcess process, User user, Container container)
+    {
+        // remove the data access parameters if the user does not have permission to data access the data or if it is inactive
+        if (!process.isActive() || !process.canAccessData(user, container))
+        {
+            Map<String, Object> variables = process.getProcessVariables();
+            variables.remove(WorkflowProcess.DATA_ACCESS_KEY);
+        }
+    }
+
+
+    /**
+     * Shows the data about the list of process instances the user has permissions to see for a given process definition
+     */
+    @RequiresPermission(ReadPermission.class)
+    public class ProcessInstanceListDataAction extends ApiAction<WorkflowRequestForm>
+    {
+        @Override
+        public void validateForm(WorkflowRequestForm form, Errors errors)
+        {
+            String errorMessage = validateProcessDefinitionKey(form);
+            if (errorMessage != null)
+                errors.rejectValue("processDefinitionKey", ERROR_MSG, errorMessage);
+        }
+
+        @Override
+        public ApiResponse execute(WorkflowRequestForm form, BindException errors) throws Exception
+        {
+            List<WorkflowProcess> workflowProcessList = new ArrayList<>();
+
+            // use the historical process instance query so we get all process instances (active and inactive)
+            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
+            for (HistoricProcessInstance historicProcessInstance : processInstanceList)
+            {
+                WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
+                ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
+                workflowProcessList.add(workflowProcess);
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("processes", workflowProcessList);
+            resp.put("success", true);
+            return resp;
+
+        }
+    }
+
 
     /**
      * Shows the data about a task if the user has permissions to see this task
@@ -628,6 +707,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _processDefinitionKey;
         private String _processDefinitionName;
+        private boolean _includeCompletedTasks;
 
         public String getProcessDefinitionKey()
         {
@@ -647,6 +727,16 @@ public class WorkflowController extends SpringActionController
         public void setProcessDefinitionName(String processDefinitionName)
         {
             _processDefinitionName = processDefinitionName;
+        }
+
+        public boolean includeCompletedTasks()
+        {
+            return _includeCompletedTasks;
+        }
+
+        public void setIncludeCompletedTasks(boolean includeCompletedTasks)
+        {
+            _includeCompletedTasks = includeCompletedTasks;
         }
     }
 

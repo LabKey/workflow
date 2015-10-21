@@ -71,5 +71,6 @@
     </orderEntry>
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module" module-name="Workflow-API" />
+    <orderEntry type="module" module-name="Core-API" />
   </component>
 </module>
