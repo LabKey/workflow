@@ -5,6 +5,7 @@
 package org.labkey.workflow.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.labkey.api.action.HasViewContext;
@@ -45,6 +46,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private ViewContext _viewContext;
     private String _name; // the name for this process instance
     private List<WorkflowTask> _currentTasks;
+    private List<WorkflowTask> _completedTasks;
     private Container _container;
     private String _moduleName;
     private PermissionsHandler _permissionsHandler;
@@ -64,17 +66,31 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
 
     public WorkflowProcessImpl(ProcessInstance engineProcessInstance)
     {
-
         _engineProcessInstance = engineProcessInstance;
         if (_engineProcessInstance != null)
         {
-            _processVariables = WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId());
-            if (_processVariables.get(CONTAINER_ID) != null)
-                _container = ContainerManager.getForId((String) _processVariables.get(CONTAINER_ID));
-            if (_processVariables.get(INITIATOR_ID) != null)
-                setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
+            setProcessVariables(WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId()));
             setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), _container));
             setCurrentJobs(WorkflowManager.get().getCurrentProcessJobs(engineProcessInstance.getProcessInstanceId(), _container));
+        }
+    }
+
+    public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance, boolean includeCompletedTasks)
+    {
+        this(WorkflowManager.get().getProcessInstance(historicProcessInstance.getId()));
+        setId(historicProcessInstance.getId());
+
+        if (includeCompletedTasks)
+            setCompletedTasks(WorkflowManager.get().getCompletedProcessTasks(historicProcessInstance.getId(), _container));
+
+        if (!isActive())
+        {
+            setProcessInstanceId(historicProcessInstance.getId());
+            // TODO set name, processDefinitionKey, processDefinitionModule, processDefinitionName
+
+            Map<String, Object> variables = WorkflowManager.get().getHistoricProcessInstanceVariables(historicProcessInstance.getId());
+            variables.put("endDate", historicProcessInstance.getEndTime());
+            setProcessVariables(variables);
         }
     }
 
@@ -145,6 +161,10 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     public void setProcessVariables(Map<String, Object> processVariables)
     {
         _processVariables = processVariables;
+        if (_processVariables.get(CONTAINER_ID) != null)
+            _container = ContainerManager.getForId((String) _processVariables.get(CONTAINER_ID));
+        if (_processVariables.get(INITIATOR_ID) != null)
+            setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
     }
 
     @Override
@@ -218,6 +238,16 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     public void setCurrentTasks(List<WorkflowTask> currentTasks)
     {
         _currentTasks = currentTasks;
+    }
+
+    public List<WorkflowTask> getCompletedTasks()
+    {
+        return _completedTasks;
+    }
+
+    public void setCompletedTasks(List<WorkflowTask> completedTasks)
+    {
+        _completedTasks = completedTasks;
     }
 
     public List<WorkflowJob> getCurrentJobs()

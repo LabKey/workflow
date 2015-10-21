@@ -58,4 +58,13 @@ public class WorkflowDelegateActionBase
         }
     }
 
+    public boolean shouldAddUINotification()
+    {
+        return false;
+    }
+
+    public String getUINotificationType()
+    {
+        return null;
+    }
 }
