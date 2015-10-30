@@ -1,6 +1,8 @@
 /*
- * Copyright 2010-2014 Alfresco Software, Ltd.. All rights reserved. No portion of this work may be reproduced in
- * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
+ * Activiti BPM Platform
+ * Copyright 2010-2014 Alfresco Software, Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0- http://www.apache.org/licenses/LICENSE-2.0
  */
 -- @SkipLabKeySyntaxCheck
 -- Create schema, tables, indexes, and constraints used for Workflow module here
