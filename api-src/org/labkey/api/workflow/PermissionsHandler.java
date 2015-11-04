@@ -5,12 +5,15 @@
 package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.Map;
 import java.util.Set;
@@ -23,34 +26,68 @@ public abstract class PermissionsHandler
 {
     protected final User _user;
     protected final Container _container;
+    protected final boolean _hasAdmin;
 
     public PermissionsHandler(User user, Container container)
     {
         _user = user;
         _container = container;
+        _hasAdmin = _container.hasPermission(_user, AdminPermission.class);
     }
 
-    public abstract boolean canStartProcess(@NotNull String processDefinitionKey);
+    public boolean canStartProcess(@NotNull String processDefinitionKey)
+    {
+        return _container.hasPermission(_user, ReadPermission.class);
+    }
 
-    public abstract boolean canDeployProcess(@NotNull String processDefinitionKey);
+    public boolean canDeployProcess(@NotNull String processDefinitionKey) { return _hasAdmin; }
 
-    public abstract boolean canView(@NotNull WorkflowProcess process);
 
-    public abstract boolean canAccessData(@NotNull WorkflowProcess process);
+    public boolean canView(@NotNull WorkflowProcess process)
+    {
+        return (process.getInitiatorId() == _user.getUserId()) || _hasAdmin;
+    }
 
-    public abstract boolean canDelete(@NotNull WorkflowProcess process);
+    public boolean canAccessData(@NotNull WorkflowProcess process)
+    {
+        return _hasAdmin;
+    }
 
-    public abstract boolean canClaim(@NotNull WorkflowTask task);
 
-    public abstract boolean canDelegate(@NotNull WorkflowTask task);
+    public boolean canDelete(@NotNull WorkflowProcess process)
+    {
+        return process.getInitiatorId() == _user.getUserId() || _hasAdmin;
+    }
 
-    public abstract boolean canAssign(@NotNull WorkflowTask task);
+    public boolean canClaim(@NotNull WorkflowTask task)
+    {
+        return _hasAdmin || task.isInCandidateGroups(_user);
+    }
 
-    public abstract boolean canView(@NotNull WorkflowTask task);
+    public boolean canDelegate(@NotNull WorkflowTask task)
+    {
+        return _hasAdmin;
+    }
 
-    public abstract boolean canAccessData(@NotNull WorkflowTask task);
+    public boolean canAssign(@NotNull WorkflowTask task)
+    {
+        return _hasAdmin;
+    }
 
-    public abstract boolean canComplete(@NotNull WorkflowTask task);
+    public boolean canView(@NotNull WorkflowTask task)
+    {
+        return ((task.getAssignee() != null && task.getAssignee().getUserId() == _user.getUserId())) || canClaim(task) || canDelegate(task);
+    }
+
+    public boolean canAccessData(@Nullable WorkflowTask task)
+    {
+        return _hasAdmin;
+    }
+
+    public boolean canComplete(@NotNull WorkflowTask task)
+    {
+        return task.isAssigned(_user);
+    }
 
     public SimpleFilter getProcessListFilter()
     {
