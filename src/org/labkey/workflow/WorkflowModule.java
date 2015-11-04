@@ -13,8 +13,10 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 public class WorkflowModule extends DefaultModule
@@ -66,5 +68,14 @@ public class WorkflowModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return Collections.singleton(WorkflowSchema.NAME);
+    }
+
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        return new HashSet<>(Arrays.asList(
+                WorkflowManager.TestCase.class
+        ));
     }
 }

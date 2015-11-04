@@ -5,7 +5,6 @@
 package org.labkey.workflow.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.TaskInfo;
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -19,6 +18,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.workflow.PermissionsHandler;
 import org.labkey.api.workflow.TaskFormField;
+import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
@@ -40,7 +40,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     protected String _id;
     protected List<Integer> _groupIds = null;
     private Map<String, TaskFormField> _formFields = null;
-    private ProcessInstance _processInstance = null;
+    private WorkflowProcess _processInstance = null;
     private PermissionsHandler _permissionsHandler = null;
 
     protected WorkflowTaskImpl()
@@ -67,23 +67,24 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     }
 
     @JsonIgnore
-    private ProcessInstance getProcessInstance()
+    private WorkflowProcess getProcessInstance()
     {
         if (_processInstance == null && _taskInfo != null)
         {
-            _processInstance = WorkflowManager.get().getProcessInstance(_taskInfo.getProcessInstanceId());
+            _processInstance = new WorkflowProcessImpl(_taskInfo.getProcessInstanceId());
         }
         return _processInstance;
     }
 
     public String getProcessDefinitionKey(Container container)
     {
-        return _taskInfo == null ? null : getProcessInstance().getProcessDefinitionKey();
+        return _taskInfo == null || !isActive() ? null : getProcessInstance().getProcessDefinitionKey();
     }
 
     public String getProcessDefinitionName(Container container)
     {
-        return _taskInfo == null ? null : WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(container), container).getName();
+        String key = getProcessDefinitionKey(container);
+        return _taskInfo == null || key == null ? null : WorkflowManager.get().getProcessDefinition(key, container).getName();
     }
 
     public String getProcessDefinitionModule(Container container)
@@ -94,6 +95,11 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         {
             return WorkflowManager.get().getProcessDefinitionModule(getProcessDefinitionId(), container);
         }
+    }
+
+    public boolean isActive()
+    {
+        return getProcessInstance().isActive();
     }
 
     @Nullable
@@ -116,7 +122,18 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return Integer.valueOf(_taskInfo.getOwner());
     }
 
-    public boolean isAssigned(User user)
+    @Nullable
+    public String getOwnerName()
+    {
+        User owner = getOwner();
+        if (owner != null)
+        {
+            return owner.getDisplayName(null);
+        }
+        return null;
+    }
+
+    public boolean isAssigned(@NotNull User user)
     {
         return getAssigneeId() != null && getAssigneeId() == user.getUserId();
     }
@@ -139,6 +156,15 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return null;
         else
             return Integer.valueOf(_taskInfo.getAssignee());
+    }
+
+    @Nullable
+    public String getAssigneeName()
+    {
+        User user = getAssignee();
+        if (user != null)
+            return user.getDisplayName(null);
+        return null;
     }
 
     public String getProcessInstanceId()
@@ -240,7 +266,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
 
     public boolean canView(User user, Container container)
     {
-        return isActive() && getPermissionsHandler(user, container).canView(this);
+        return getPermissionsHandler(user, container).canView(this);
     }
 
     public boolean canAccessData(User user, Container container)
@@ -251,6 +277,11 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     public boolean canComplete(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canComplete(this);
+    }
+
+    public boolean canUpdate(User user, Container container)
+    {
+        return isActive() && getPermissionsHandler(user, container).canUpdate(this);
     }
 
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)

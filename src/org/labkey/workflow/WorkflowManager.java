@@ -35,10 +35,16 @@ import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.exceptions.PersistenceException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
@@ -49,7 +55,9 @@ import org.labkey.api.resource.FileResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.TaskFormField;
@@ -278,7 +286,7 @@ public class WorkflowManager
             builder.addVariable(variable.getKey(), variable.getValue());
         }
         builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
-        builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // TODO this could be retrieved from the corresponding entry in the History table
+        builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // CONSIDER this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
         return instance.getId();
     }
@@ -370,24 +378,22 @@ public class WorkflowManager
 
     /**
      * Given the process definition key, returns the corresponding list of process instances in the
-     * current container that were initiated by the given user
+     * current container
      * @param processDefinitionKey identifier for the process definition
-     * @param user user making the request
      * @param container container of context, or null for all containers
-     * @return the list of ProcessInstnace objects
+     * @return the list of ProcessInstance objects
      */
-    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    public List<ProcessInstance> getProcessInstanceList(String processDefinitionKey, @NotNull Container container)
     {
         ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
-        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
         return query.list();
     }
 
     /**
      * Given the id of a process instance, returns the corresponding process instance
      * @param processInstanceId id of process instance to retrieve
-     * @return ProcessInstnace corresponding to the given id.
+     * @return ProcessInstance corresponding to the given id.
      */
     public ProcessInstance getProcessInstance(@NotNull String processInstanceId)
     {
@@ -396,17 +402,18 @@ public class WorkflowManager
 
     /**
      * Given the process definition key, returns the corresponding list of historic process instances in the
-     * current container that were initiated by the given user (...)
+     * current container
      * @param processDefinitionKey identifier for the process definition
-     * @param user user making the request
      * @param container container of context, or null for all containers
+     * @param finishedOnly include data for only finished process instances
      * @return the list of HistoricProcessInstance objects
      */
-    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull User user, @NotNull Container container)
+    public List<HistoricProcessInstance> getHistoricProcessInstanceList(String processDefinitionKey, @NotNull Container container, Boolean finishedOnly)
     {
         HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
-        query.variableValueEquals("initiatorId", String.valueOf(user.getUserId()));
+        if (finishedOnly)
+            query.finished();
         return query.list();
     }
 
@@ -427,8 +434,15 @@ public class WorkflowManager
      */
     public Map<String, Object> getHistoricProcessInstanceVariables(@NotNull String processInstanceId)
     {
-        HistoricProcessInstance processInstance  = getHistoryService().createHistoricProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-        return processInstance.getProcessVariables();
+        try
+        {
+            HistoricProcessInstance processInstance = getHistoryService().createHistoricProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
+            return processInstance.getProcessVariables();
+        }
+        catch (PersistenceException e)
+        {
+            return new HashMap<>();
+        }
     }
 
     /**
@@ -444,26 +458,6 @@ public class WorkflowManager
     public void updateProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
     {
         Task task = getTaskService().createTaskQuery().includeProcessVariables().taskId(taskId).singleResult();
-        Map<String, Object> currentVariables = task.getProcessVariables();
-        if (currentVariables == null)
-            currentVariables = variables;
-        else if (variables != null)
-            currentVariables.putAll(variables);
-        getRuntimeService().setVariables(task.getProcessInstanceId(), currentVariables);
-    }
-
-    /**
-     * Given the id of a particular task, will replace the process instance variables (not the task variables)
-     * for the instance that contains this task with the provided variables.  Task variables are left alone.
-     * @param taskId -
-     *               id of the task whose process variables should be updated
-     * @param variables -
-     *                  variables that will replace the existing set of variables
-     *
-     */
-    public void replaceProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
-    {
-        Task task = getTaskService().createTaskQuery().taskId(taskId).singleResult();
         getRuntimeService().setVariables(task.getProcessInstanceId(), variables);
     }
 
@@ -484,8 +478,15 @@ public class WorkflowManager
      */
     public Map<String, Object> getProcessInstanceVariables(@NotNull String processInstanceId)
     {
-        ProcessInstance processInstance  = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-        return processInstance.getProcessVariables();
+        try
+        {
+            ProcessInstance processInstance = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
+            return processInstance.getProcessVariables();
+        }
+        catch (PersistenceException e)
+        {
+            return new HashMap<>();
+        }
     }
 
     /**
@@ -582,7 +583,10 @@ public class WorkflowManager
     public String getProcessDefinitionKey(@NotNull String processDefinitionId)
     {
         ProcessDefinition definition =  getRepositoryService().createProcessDefinitionQuery().processDefinitionId(processDefinitionId).singleResult();
-        return definition.getKey();
+        if (definition != null)
+            return definition.getKey();
+        else
+            return null;
     }
 
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
@@ -790,5 +794,157 @@ public class WorkflowManager
 
     }
 
+    //
+    //JUnit TestCase
+    //
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        private static final String _testDirName = "/_jUnitWorkflow";
+        private static final String PROCESS_DEF_KEY = "submitForApprovalWithoutRetry";
+        private static User _user;
+        private static Container _container;
+        private static WorkflowManager _manager;
+        private static Map<String, Object> _processVariables = new HashMap<>();
+
+
+        @BeforeClass
+        public static void setup()
+        {
+            _manager = WorkflowManager.get();
+            _user = TestContext.get().getUser();
+            assertNotNull("Should have access to a user", _user);
+            _processVariables.put(WorkflowProcess.INITIATOR_ID, _user.getUserId());
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(_testDirName);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            deleteTestContainer();
+        }
+
+        @Test
+        public void testStartWorkflow() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testStartWorkflow", _processVariables, _container);
+            assertNotNull(processId);
+            ProcessInstance instance =  _manager.getProcessInstance(processId);
+            assertNotNull("Should have an active process instance", instance);
+            assertEquals("testStartWorkflow", instance.getName());
+            Map<String, Object> instanceVars = _manager.getProcessInstanceVariables(processId);
+            assertNotNull("Should have added a process instance URL", instanceVars.get(WorkflowProcess.PROCESS_INSTANCE_URL));
+            assertNotNull("Should have added a created date", instanceVars.get(WorkflowProcess.CREATED_DATE));
+            assertEquals("Should have retained the initiator id", instanceVars.get(WorkflowProcess.INITIATOR_ID), _processVariables.get(WorkflowProcess.INITIATOR_ID));
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, tasks.size());
+            List<WorkflowTask> completedTasks = _manager.getCompletedProcessTasks(processId, _container);
+            assertEquals("Number of completed tasks not as expected", 0, completedTasks.size());
+        }
+
+        @Test
+        public void testUpdateVariables() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskClaiming", _processVariables, _container);
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            WorkflowTask task = tasks.get(0);
+            Map<String, Object> newVariables = new HashMap<>();
+            newVariables.put("adding", "this");
+            newVariables.put(WorkflowProcess.PROCESS_INSTANCE_URL, "updated");
+            _manager.updateProcessVariables(task.getId(), newVariables);
+            WorkflowTask updatedTask = _manager.getTask(task.getId(), _container);
+            Map<String, Object> updatedVars = updatedTask.getProcessVariables();
+            assertEquals("New variable not present in updated variables list", "this", updatedVars.get("adding"));
+            assertEquals("Updated variable not updated", "updated", updatedVars.get(WorkflowProcess.PROCESS_INSTANCE_URL));
+        }
+
+        @Test
+        public void testTaskClaiming() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskClaiming", _processVariables, _container);
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, tasks.size());
+            WorkflowTask task = tasks.get(0);
+            _manager.claimTask(task.getId(), _user.getUserId(), _container);
+            WorkflowTask claimedTask = _manager.getTask(task.getId(), _container);
+            assertEquals("Claimed task should be owned by current user", (Integer) _user.getUserId(), claimedTask.getOwnerId());
+            assertEquals("Claimed task should be assigned to current user", (Integer) _user.getUserId(), claimedTask.getAssigneeId());
+        }
+
+        @Test
+        public void testTaskAssignment() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskAssignment", _processVariables, _container);
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, tasks.size());
+            WorkflowTask task = tasks.get(0);
+            _manager.assignTask(task.getId(), _user.getUserId(), _user, _container);
+            WorkflowTask assignedTask = _manager.getTask(task.getId(), _container);
+            assertEquals("Assigned task should also be owned", _user.getUserId(), (int) assignedTask.getOwnerId());
+            assertEquals("Assigned task should be assigned to new user", _user.getUserId(), (int) assignedTask.getAssigneeId());
+        }
+
+        @Test
+        public void testTaskDelegation() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskAssignment", _processVariables, _container);
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, tasks.size());
+            WorkflowTask task = tasks.get(0);
+            _manager.delegateTask(task.getId(), _user, _user.getUserId(), _container);
+            WorkflowTask delegatedTask = _manager.getTask(task.getId(), _container);
+            assertEquals("Delegated task should be owned by the current user", _user.getUserId(), (int) delegatedTask.getOwnerId());
+            assertEquals("Assigned task should be assigned to new user", _user.getUserId(), (int) delegatedTask.getAssigneeId());
+        }
+
+        @Test
+        public void testCompleteTask() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskClaiming", _processVariables, _container);
+            List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, tasks.size());
+            WorkflowTask task = tasks.get(0);
+            _manager.claimTask(task.getId(), _user.getUserId(), _container);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("approved", true);
+            _manager.updateProcessVariables(task.getId(), variables);
+            _manager.completeTask(task.getId(), _user, _container);
+            List<WorkflowTask> completedTasks = _manager.getCompletedProcessTasks(processId, _container);
+            assertEquals("Number of completed tasks not as expected", 1, completedTasks.size());
+            List<WorkflowTask> currentTasks = _manager.getCurrentProcessTasks(processId, _container);
+            assertEquals("Number of current tasks not as expected", 1, currentTasks.size());
+        }
+
+        @Test
+        public void testDeleteProcessInstance() throws Exception
+        {
+            String processId = _manager.startWorkflow(WorkflowModule.NAME, PROCESS_DEF_KEY, "testTaskClaiming", _processVariables, _container);
+            _manager.deleteProcessInstance(processId, "testDeleteProcessInstance");
+            assertNull("Should not be able to retrieve a deleted process instance as an active process", _manager.getProcessInstance(processId));
+            HistoricProcessInstance instance = _manager.getHistoricProcessInstance(processId);
+            assertNotNull(instance);
+            assertEquals("Delete reason not as expected for historic instance", "testDeleteProcessInstance", instance.getDeleteReason());
+            List<HistoricProcessInstance> instances = _manager.getHistoricProcessInstanceList(PROCESS_DEF_KEY, _container, true);
+            assertEquals("Number of historic process instances not as expected", 1, instances.size());
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container container = ContainerManager.getForPath(_testDirName);
+            if (null != container)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), _user);
+                List<Deployment> deployments = _manager.getDeployments(_container);
+                assertEquals("Number of deployments after deletion of container not as expected", 0, deployments.size());
+                List<ProcessInstance> active = _manager.getProcessInstanceList(PROCESS_DEF_KEY, _container);
+                assertEquals("Number of active process instances after deletion of container not as expected", 0, active.size());
+                List<HistoricProcessInstance> inactive = _manager.getHistoricProcessInstanceList(PROCESS_DEF_KEY, _container, false);
+                assertEquals("Number of inactive process instances after deletion of container not as expected", 0, inactive.size());
+
+            }
+        }
+    }
 
 }

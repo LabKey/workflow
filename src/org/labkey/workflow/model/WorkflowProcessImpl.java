@@ -37,6 +37,7 @@ import java.util.Map;
 public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
 {
     private ProcessInstance _engineProcessInstance;
+    private HistoricProcessInstance _historicEngineProcessInstance;
 
     private String _processDefinitionKey;
     private String _id = null;
@@ -45,12 +46,12 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     private String _processInstanceId;
     private ViewContext _viewContext;
     private String _name; // the name for this process instance
-    private List<WorkflowTask> _currentTasks;
-    private List<WorkflowTask> _completedTasks;
+    private List<WorkflowTask> _currentTasks = Collections.EMPTY_LIST;
+    private List<WorkflowTask> _completedTasks = Collections.EMPTY_LIST;
     private Container _container;
     private String _moduleName;
     private PermissionsHandler _permissionsHandler;
-    private List<WorkflowJob> _currentJobs;
+    private List<WorkflowJob> _currentJobs = Collections.EMPTY_LIST;
 
     public WorkflowProcessImpl(String processDefinitionKey, String moduleName)
     {
@@ -58,38 +59,53 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _moduleName = moduleName;
     }
 
-    public WorkflowProcessImpl(String id, Container container)
+    public WorkflowProcessImpl(String id)
     {
-        this(WorkflowManager.get().getProcessInstance(id));
+        ProcessInstance instance = WorkflowManager.get().getProcessInstance(id);
+        if (instance != null)
+            setActiveEngineInstance(instance, true);
+        else
+            setHistoricEngineProcessInstance(WorkflowManager.get().getHistoricProcessInstance(id));
         _id = id;
     }
 
     public WorkflowProcessImpl(ProcessInstance engineProcessInstance)
     {
-        _engineProcessInstance = engineProcessInstance;
-        if (_engineProcessInstance != null)
-        {
-            setProcessVariables(WorkflowManager.get().getProcessInstanceVariables(engineProcessInstance.getProcessInstanceId()));
-            setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(engineProcessInstance.getProcessInstanceId(), _container));
-            setCurrentJobs(WorkflowManager.get().getCurrentProcessJobs(engineProcessInstance.getProcessInstanceId(), _container));
-        }
+        setActiveEngineInstance(engineProcessInstance, true);
     }
 
     public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance, boolean includeCompletedTasks)
     {
-        this(WorkflowManager.get().getProcessInstance(historicProcessInstance.getId()));
-        setId(historicProcessInstance.getId());
+        ProcessInstance instance = WorkflowManager.get().getProcessInstance(historicProcessInstance.getId());
+        if (instance != null)
+            setActiveEngineInstance(instance, includeCompletedTasks);
+        else
+            setHistoricEngineProcessInstance(historicProcessInstance);
+    }
 
-        if (includeCompletedTasks)
-            setCompletedTasks(WorkflowManager.get().getCompletedProcessTasks(historicProcessInstance.getId(), _container));
-
-        if (!isActive())
+    private void setActiveEngineInstance(ProcessInstance instance, boolean includeCompletedTasks)
+    {
+        _engineProcessInstance = instance;
+        if (_engineProcessInstance != null)
         {
-            setProcessInstanceId(historicProcessInstance.getId());
-            // TODO set name, processDefinitionKey, processDefinitionModule, processDefinitionName
+            setProcessVariables(WorkflowManager.get().getProcessInstanceVariables(_engineProcessInstance.getProcessInstanceId()));
+            setCurrentTasks(WorkflowManager.get().getCurrentProcessTasks(_engineProcessInstance.getProcessInstanceId(), _container));
+            setCurrentJobs(WorkflowManager.get().getCurrentProcessJobs(_engineProcessInstance.getProcessInstanceId(), _container));
+            if (includeCompletedTasks)
+                setCompletedTasks(WorkflowManager.get().getCompletedProcessTasks(_engineProcessInstance.getId(), _container));
+        }
+    }
 
-            Map<String, Object> variables = WorkflowManager.get().getHistoricProcessInstanceVariables(historicProcessInstance.getId());
-            variables.put("endDate", historicProcessInstance.getEndTime());
+    private void setHistoricEngineProcessInstance(HistoricProcessInstance instance)
+    {
+        _historicEngineProcessInstance = instance;
+
+        if (_historicEngineProcessInstance != null)
+        {
+            setCompletedTasks(WorkflowManager.get().getCompletedProcessTasks(_historicEngineProcessInstance.getId(), _container));
+
+            Map<String, Object> variables = WorkflowManager.get().getHistoricProcessInstanceVariables(_historicEngineProcessInstance.getId());
+            variables.put("endDate", _historicEngineProcessInstance.getEndTime());
             setProcessVariables(variables);
         }
     }
@@ -104,6 +120,8 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     {
         if (_engineProcessInstance != null)
             return _engineProcessInstance.getId();
+        if (_historicEngineProcessInstance != null)
+            return _historicEngineProcessInstance.getId();
         return _id;
     }
 
@@ -114,12 +132,19 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
 
     public String getProcessDefinitionKey()
     {
-        if (_engineProcessInstance != null)
+        if (_processDefinitionKey == null)
         {
-            if (_engineProcessInstance.getProcessDefinitionKey() == null)
-                _processDefinitionKey = WorkflowManager.get().getProcessDefinitionKey(_engineProcessInstance.getProcessDefinitionId());
-            else
-                return _engineProcessInstance.getProcessDefinitionKey();
+            if (_engineProcessInstance != null)
+            {
+                if (_engineProcessInstance.getProcessDefinitionKey() == null)
+                    _processDefinitionKey = WorkflowManager.get().getProcessDefinitionKey(_engineProcessInstance.getProcessDefinitionId());
+                else
+                    return _engineProcessInstance.getProcessDefinitionKey();
+            }
+            else if (_historicEngineProcessInstance != null)
+            {
+                _processDefinitionKey = WorkflowManager.get().getProcessDefinitionKey(_historicEngineProcessInstance.getProcessDefinitionId());
+            }
         }
         return _processDefinitionKey;
     }
@@ -137,7 +162,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
 
     public String getProcessDefinitionModule()
     {
-        if (_engineProcessInstance == null)
+        if (_engineProcessInstance == null && _historicEngineProcessInstance == null)
             return _moduleName;
         if (_moduleName == null)
         {
@@ -167,6 +192,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
             setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
     }
 
+    @JsonIgnore
     @Override
     public Map<String, Object> getVariables()
     {
@@ -191,6 +217,14 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _initiatorId;
     }
 
+    public String getInitiatorName()
+    {
+        User initiator = getInitiator();
+        if (initiator != null)
+            return initiator.getDisplayName(null);
+        return null;
+    }
+
     public void setInitiatorId(Integer initiatorId)
     {
         _initiatorId = initiatorId;
@@ -200,6 +234,8 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     {
         if (_engineProcessInstance != null)
             return _engineProcessInstance.getProcessInstanceId();
+        else if (_historicEngineProcessInstance != null)
+            return _historicEngineProcessInstance.getId();
         return _processInstanceId;
     }
 
@@ -212,6 +248,8 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
     {
         if (_engineProcessInstance != null)
             return _engineProcessInstance.getName();
+        else if (_historicEngineProcessInstance != null)
+            return _historicEngineProcessInstance.getName();
         return _name;
     }
 

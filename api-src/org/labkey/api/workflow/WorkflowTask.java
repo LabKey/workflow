@@ -85,6 +85,8 @@ public interface WorkflowTask
 
     boolean canComplete(User user, Container container);
 
+    boolean canUpdate(User user, Container container);
+
     void setName(String name);
 
     void setDescription(String description);

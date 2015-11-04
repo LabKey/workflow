@@ -83,6 +83,10 @@ There is no active process with id <%= h(bean.getId()) %>
 <br><br>
 <table class="labkey-proj">
     <tr>
+        <td>Status</td>
+        <td><strong><%= bean.isActive() ? "Active" : "Inactive"%></strong></td>
+    </tr>
+    <tr>
         <td>Initiator</td>
         <td><%= h(bean.getInitiator().getDisplayName(getUser())) %></td>
     </tr>
@@ -156,6 +160,54 @@ There is no active process with id <%= h(bean.getId()) %>
         %>
     </td>
 </tr>
+<%
+        }
+    }
+%>
+<tr>
+    <td>Completed Task(s)</td>
+<%
+    if (bean.getCompletedTasks().isEmpty())
+    {
+        out.println("<td>None</td></tr>");
+    }
+    else
+    {
+        out.println("<td></td></tr>");
+        for (WorkflowTask completedTask: bean.getCompletedTasks())
+        {
+%>
+    <tr>
+        <td></td>
+        <td>
+            <%
+                if (completedTask.canView(getUser(), getContainer()))
+                {
+            %>
+            <%= PageFlowUtil.textLink(h(completedTask.getName()), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", completedTask.getId())) %>
+            <%
+            }
+            else
+            {
+            %>
+            <%= h(completedTask.getName()) %>
+            <%
+                }
+                if (completedTask.getAssignee() != null)
+                {
+            %>
+            (completed by <%= h(completedTask.getAssignee().getDisplayName(getUser())) %>)
+            <%
+            }
+            else
+            {
+            %>
+            (unassigned)
+            <%
+                }
+            %>
+        </td>
+    </tr>
 </table>
 <%
         }
