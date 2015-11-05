@@ -30,11 +30,6 @@ public class PermissionsHandlerImpl extends PermissionsHandler
         super (user, container);
     }
 
-    @Override
-    public boolean canUpdate(@NotNull WorkflowTask task)
-    {
-        return _hasAdmin;
-    }
 
     @Override
     public SimpleFilter getProcessListFilter()

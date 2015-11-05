@@ -89,7 +89,10 @@ public abstract class PermissionsHandler
         return task.isAssigned(_user);
     }
 
-    public abstract boolean canUpdate(@NotNull WorkflowTask task);
+    public boolean canUpdate(@NotNull WorkflowTask task)
+    {
+        return _hasAdmin;
+    }
 
     public SimpleFilter getProcessListFilter()
     {
