@@ -96,6 +96,12 @@ public class PermissionsHandlerImpl extends PermissionsHandler
     }
 
     @Override
+    public boolean canUpdate(@NotNull WorkflowTask task)
+    {
+        return _hasAdmin;
+    }
+
+    @Override
     public SimpleFilter getProcessListFilter()
     {
         SimpleFilter filter = new SimpleFilter();

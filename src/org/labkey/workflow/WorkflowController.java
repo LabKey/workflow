@@ -38,6 +38,7 @@ import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.WorkflowEngineTaskImpl;
+import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
 import org.labkey.workflow.query.WorkflowQuerySchema;
@@ -311,8 +312,11 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
             WorkflowTask task = new WorkflowEngineTaskImpl(form.getTaskId(), getContainer());
+            if (!task.isActive())
+                task = new WorkflowHistoricTaskImpl(form.getTaskId(), getContainer());
+
             if (task.getName() != null)
-                _navLabel = "'" + task.getName() + "' task details";
+                _navLabel = "'" + task.getName() + "' " + (task.isActive() ? "active" : " inactive ") + " task details";
 
             return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", task, errors);
         }
@@ -350,13 +354,13 @@ public class WorkflowController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
 
-            WorkflowProcessImpl bean = new WorkflowProcessImpl(form.getProcessInstanceId(), getContainer());
+            WorkflowProcessImpl bean = new WorkflowProcessImpl(form.getProcessInstanceId());
             if (form.getProcessDefinitionKey() != null && bean.getProcessDefinitionKey() == null)
             {
                 bean.setProcessDefinitionKey(form.getProcessDefinitionKey());
             }
             if (bean.getProcessDefinitionName() != null)
-                _navLabel = "'" + bean.getProcessDefinitionName() + "' process instance details";
+                _navLabel = "'" + bean.getProcessDefinitionName() + "' " + (bean.isActive() ? "active" : "inactive") + " process instance details";
 
             return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
@@ -431,7 +435,7 @@ public class WorkflowController extends SpringActionController
             if (stream == null)
             {
                 contentType = "text/plain";
-                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes());
+                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes("UTF-8"));
             }
             byte[] imageBytes = IOUtils.toByteArray(stream);
             HttpServletResponse response = getViewContext().getResponse();
@@ -492,7 +496,7 @@ public class WorkflowController extends SpringActionController
 
     private void ensureProcessUserAccessData(WorkflowProcess process, User user, Container container)
     {
-        // remove the data access parameters if the user does not have permission to data access the data or if it is inactive
+        // remove the data access parameters if the user does not have permission to access the data or if it is inactive
         if (!process.isActive() || !process.canAccessData(user, container))
         {
             Map<String, Object> variables = process.getProcessVariables();
@@ -521,12 +525,15 @@ public class WorkflowController extends SpringActionController
             List<WorkflowProcess> workflowProcessList = new ArrayList<>();
 
             // use the historical process instance query so we get all process instances (active and inactive)
-            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getUser(), getContainer());
+            List<HistoricProcessInstance> processInstanceList = WorkflowManager.get().getHistoricProcessInstanceList(form.getProcessDefinitionKey(), getContainer(), false);
             for (HistoricProcessInstance historicProcessInstance : processInstanceList)
             {
                 WorkflowProcess workflowProcess = new WorkflowProcessImpl(historicProcessInstance, form.includeCompletedTasks());
-                ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
-                workflowProcessList.add(workflowProcess);
+                if (workflowProcess.canView(getUser(), getContainer()))
+                {
+                    ensureProcessUserAccessData(workflowProcess, getUser(), getContainer());
+                    workflowProcessList.add(workflowProcess);
+                }
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -566,9 +573,7 @@ public class WorkflowController extends SpringActionController
             else
             {
                 _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
-                if (!_task.isActive())
-                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
-                else if (!_task.canView(getUser(), getContainer()))
+                if (!_task.canView(getUser(), getContainer()))
                     errors.reject(ERROR_MSG, "User does not have permission to view task data for this task");
             }
         }
@@ -584,7 +589,7 @@ public class WorkflowController extends SpringActionController
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Set<Class<?  extends Permission>> permissionClasses = _task.getReassignPermissions(getUser(), getContainer());
+            Set<Class<? extends Permission>> permissionClasses = _task.getReassignPermissions(getUser(), getContainer());
             List<Map<String, String>> names = new ArrayList<>();
             for (Class<? extends Permission> permissionClass : permissionClasses)
             {
@@ -628,12 +633,11 @@ public class WorkflowController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             User currentUser = getUser();
             boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
-            // TODO should this be one of the permissions set or all in the permissions set?
             List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
-            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            List<Map<String, Object>> userResponseList = new ArrayList<>();
             for (User user : users)
             {
-                Map<String,Object> userInfo = new HashMap<>();
+                Map<String, Object> userInfo = new HashMap<>();
                 userInfo.put(PROP_USER_ID, user.getUserId());
 
                 //force sanitize of the display name, even for logged-in users
@@ -749,6 +753,10 @@ public class WorkflowController extends SpringActionController
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
         {
+            if (form.getProcessVariables() != null)
+            {
+                WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
+            }
             WorkflowManager.get().assignTask(form.getTaskId(), form.getAssigneeId(), getUser(), getContainer());
             return success();
         }
@@ -765,6 +773,7 @@ public class WorkflowController extends SpringActionController
         private String _taskId;
         private Integer _ownerId;
         private Integer _assigneeId;
+        private Map<String, Object> _processVariables;
 
         public String getTaskId()
         {
@@ -794,6 +803,16 @@ public class WorkflowController extends SpringActionController
         public void setOwnerId(int ownerId)
         {
             _ownerId = ownerId;
+        }
+
+        public Map<String, Object> getProcessVariables()
+        {
+            return _processVariables;
+        }
+
+        public void setProcessVariables(Map<String, Object> processVariables)
+        {
+            _processVariables = processVariables;
         }
 
         public void validate(Errors errors)
@@ -980,9 +999,73 @@ public class WorkflowController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class UpdateVariablesAction extends ApiAction<ProcessVariablesForm>
+    {
+        private WorkflowTask _task;
+
+        @Override
+        public Object execute(ProcessVariablesForm form, BindException errors) throws Exception
+        {
+            _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+            if (_task.canUpdate(getUser(), getContainer()))
+            {
+                WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
+            }
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            return success();
+        }
+
+        @Override
+        public void validateForm(ProcessVariablesForm form, Errors errors)
+        {
+            form.validate(errors);
+            if (!errors.hasErrors())
+            {
+                _task = WorkflowManager.get().getTask(form.getTaskId(), getContainer());
+                if (_task == null || !_task.isActive())
+                    errors.reject(ERROR_MSG, NO_SUCH_TASK_ERROR);
+                if (!_task.canUpdate(getUser(), getContainer()))
+                    throw new UnauthorizedException("User does not have permission to update task " + form.getTaskId());
+
+            }
+        }
+    }
+
+    public static class ProcessVariablesForm
+    {
+        private String _taskId;
+        private Map<String, Object> _processVariables;
+
+        public String getTaskId()
+        {
+            return _taskId;
+        }
+
+        public void setTaskId(String taskId)
+        {
+            _taskId = taskId;
+        }
+
+        public Map<String, Object> getProcessVariables()
+        {
+            return _processVariables;
+        }
+
+        public void setProcessVariables(Map<String, Object> processVariables)
+        {
+            _processVariables = processVariables;
+        }
+
+        public void validate(Errors errors)
+        {
+            if (getTaskId() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+        }
+    }
+
     /**
-     * Complete a task in a workflow.  This is allowed only if the task is currently assigned
-     * to the current user.
+     * Complete a task in a workflow.  If the task is currently unassigned, it will be assigned to the current user.
      */
     @RequiresPermission(ReadPermission.class)
     public class CompleteTaskAction extends ApiAction<TaskCompletionForm>
@@ -1001,6 +1084,11 @@ public class WorkflowController extends SpringActionController
             if (!task.canComplete(getUser(), getContainer()))
             {
                 throw new Exception("User " + getUser() + " does not have permission to complete this task (id: " + form.getTaskId() + ")");
+            }
+            if (!task.isAssigned(getUser())) // if user can complete it but it is not assigned to this user, we should change that.
+            {
+                WorkflowManager.get().assignTask(form.getTaskId(), getUser().getUserId(), getUser(), getContainer());
+                task.setAssignee(getUser());
             }
             WorkflowManager.get().updateProcessVariables(form.getTaskId(), form.getProcessVariables());
             WorkflowManager.get().completeTask(form.getTaskId(), getUser(), getContainer());
@@ -1021,7 +1109,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _taskId;
         private String _processInstanceId;
-        private String _processDefintionKey;
+        private String _processDefinitionKey;
         private Map<String, Object> _processVariables;
 
         public String getTaskId()
@@ -1054,14 +1142,14 @@ public class WorkflowController extends SpringActionController
             _processVariables = processVariables;
         }
 
-        public String getProcessDefintionKey()
+        public String getProcessDefinitionKey()
         {
-            return _processDefintionKey;
+            return _processDefinitionKey;
         }
 
-        public void setProcessDefintionKey(String processDefintionKey)
+        public void setProcessDefinitionKey(String processDefinitionKey)
         {
-            _processDefintionKey = processDefintionKey;
+            _processDefinitionKey = processDefinitionKey;
         }
     }
 

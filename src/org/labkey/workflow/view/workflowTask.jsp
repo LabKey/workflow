@@ -30,13 +30,7 @@
 <%
     HttpView me = HttpView.currentView();
     WorkflowTask bean = (WorkflowTask) me.getModelBean();
-    if (!bean.isActive())
-    {
-%>
-There is no active task with id <%= bean.getId() %>
-<%
-    }
-    else if (!bean.canView(getUser(), getContainer()))
+    if (!bean.canView(getUser(), getContainer()))
     {
 %>
 <%= h(getUser().getDisplayName(getUser())) %> does not have permission to view this task.
@@ -85,6 +79,10 @@ There is no active task with id <%= bean.getId() %>
 <strong>Task Details</strong>
 <br><br>
 <table class="labkey-proj">
+    <tr>
+        <td>Status</td>
+        <td><strong><%= bean.isActive() ? "Active" : "Inactive" %></strong></td>
+    </tr>
     <%
         if (bean.getOwner() != null)
         {

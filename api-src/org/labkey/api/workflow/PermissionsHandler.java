@@ -52,6 +52,8 @@ public abstract class PermissionsHandler
 
     public abstract boolean canComplete(@NotNull WorkflowTask task);
 
+    public abstract boolean canUpdate(@NotNull WorkflowTask task);
+
     public SimpleFilter getProcessListFilter()
     {
         return new SimpleFilter();
