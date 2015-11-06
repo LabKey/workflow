@@ -9,8 +9,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.workflow.WorkflowRegistry;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 
 import java.util.Arrays;
@@ -54,6 +56,7 @@ public class WorkflowModule extends DefaultModule
         addController(WorkflowController.NAME, WorkflowController.class);
         WorkflowQuerySchema.register(this);
         WorkflowRegistry.registerPermissionsHandler(this, PermissionsHandlerImpl.class, true);
+        ServiceRegistry.get().registerService(WorkflowService.class, WorkflowManager.get());
     }
 
     @Override

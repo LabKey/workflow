@@ -63,6 +63,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.model.TaskFormFieldImpl;
 import org.labkey.workflow.model.WorkflowEngineTaskImpl;
@@ -80,7 +81,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WorkflowManager
+public class WorkflowManager implements WorkflowService
 {
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";

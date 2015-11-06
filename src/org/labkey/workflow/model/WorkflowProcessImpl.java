@@ -189,7 +189,10 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         if (_processVariables.get(CONTAINER_ID) != null)
             _container = ContainerManager.getForId((String) _processVariables.get(CONTAINER_ID));
         if (_processVariables.get(INITIATOR_ID) != null)
-            setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
+            if (_processVariables.get(INITIATOR_ID) instanceof Integer)
+                setInitiatorId((Integer) _processVariables.get(INITIATOR_ID));
+            else
+                setInitiatorId(Integer.valueOf((String) _processVariables.get(INITIATOR_ID)));
     }
 
     @JsonIgnore
