@@ -47,6 +47,8 @@ public interface WorkflowTask
     @Nullable
     Integer getAssigneeId();
 
+    void assign(@NotNull Integer assigneeId, User user, Container container) throws Exception;
+
     String getProcessInstanceId();
 
     String getProcessDefinitionId();

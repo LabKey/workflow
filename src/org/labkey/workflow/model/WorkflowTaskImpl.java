@@ -133,6 +133,12 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return null;
     }
 
+    public void assign(@NotNull Integer assigneeId, User user, Container container) throws Exception
+    {
+        WorkflowManager.get().assignTask(getId(), assigneeId, user, container);
+        this.setAssignee(UserManager.getUser(assigneeId));
+    }
+
     public boolean isAssigned(@NotNull User user)
     {
         return getAssigneeId() != null && getAssigneeId() == user.getUserId();

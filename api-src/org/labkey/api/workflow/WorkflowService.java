@@ -77,16 +77,36 @@ public interface WorkflowService
      * @param processDefinitionKey - the unique key for this process definition
      * @param name - the human-readable name for the process
      * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
-     * @param container the container in which this process is being created  @return the id of the new process instance for this workflow
+     * @param container the container in which this process is being created
+     * @return the id of the new process instance for this workflow
      */
     String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException;
 
 
     /**
+     * Find the workflow process corresponding to the given process instance id.  It will find either an acitve
+     * or inactive process instance.
+     * @param processInstanceId identifier for the process instance to retrieve.
+     * @return null if no such process instance exists
+     */
+    WorkflowProcess getWorkflowProcess(@NotNull String processInstanceId);
+
+    /**
+     * Given a key and value that correspond to a process variable that uniquely identifies a process instance within
+     * a container, returns the corresponding workflow process
+     * @param key - the process variable name
+     * @param value - the string value for the unique identifier for the process instance
+     * @param container - the container context
+     * @return the workflow identified by the given key and value
+     * @throws Exception if the key-value pair does not uniquely identify a single workflow process
+     */
+    WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception;
+
+    /**
      * Gets the list of jobs taht are currently active for the given processInstanceId in the given container,
      * or in all containers if container is null
      * @param processInstanceId instance for which tasks are to be retrieved
-     * @param container container in which the process instnace is active
+     * @param container container in which the process instance is active
      * @return list of workflow jobs, or an empty list of there are none
      */
     List<WorkflowJob> getCurrentProcessJobs(@NotNull String processInstanceId, @Nullable Container container);
