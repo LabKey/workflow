@@ -69,6 +69,7 @@ import org.labkey.workflow.model.TaskFormFieldImpl;
 import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowJobImpl;
+import org.labkey.workflow.model.WorkflowProcessImpl;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -121,6 +122,27 @@ public class WorkflowManager implements WorkflowService
             }
         }
         return groupIds;
+    }
+
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
+    {
+        return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
+    }
+
+    private WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
+    {
+        // TODO use a join here instead
+        String sql = "SELECT * FROM workflow.act_hi_procinst WHERE proc_inst_id_ IN " +
+                "(SELECT proc_inst_id_ FROM workflow.act_hi_varinst WHERE name_ ='" + key + "' AND " + valueField + " = " + sqlValue + ")" +
+                " AND tenant_id_ = '" + container.getId() + "'";
+        try
+        {
+            return new WorkflowProcessImpl(getRuntimeService().createNativeProcessInstanceQuery().sql(sql).singleResult());
+        }
+        catch (ActivitiException e)
+        {
+            throw new Exception("More than one process identified by the given key-value pair: " + key + "= " + sqlValue + " in this container");
+        }
     }
 
     /**
@@ -389,6 +411,15 @@ public class WorkflowManager implements WorkflowService
         ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
         return query.list();
+    }
+
+    public WorkflowProcess getWorkflowProcess(@NotNull String processInstanceId)
+    {
+        ProcessInstance instance = getProcessInstance(processInstanceId);
+        if (instance != null)
+            return new WorkflowProcessImpl(instance);
+        else
+            return new WorkflowProcessImpl(getHistoricProcessInstance(processInstanceId));
     }
 
     /**

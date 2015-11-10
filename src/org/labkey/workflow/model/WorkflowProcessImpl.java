@@ -74,6 +74,11 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         setActiveEngineInstance(engineProcessInstance, true);
     }
 
+    public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance)
+    {
+        this(historicProcessInstance, false);
+    }
+
     public WorkflowProcessImpl(HistoricProcessInstance historicProcessInstance, boolean includeCompletedTasks)
     {
         ProcessInstance instance = WorkflowManager.get().getProcessInstance(historicProcessInstance.getId());

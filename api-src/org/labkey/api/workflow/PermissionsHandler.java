@@ -56,7 +56,7 @@ public abstract class PermissionsHandler
 
     public boolean canDelete(@NotNull WorkflowProcess process)
     {
-        return process.getInitiatorId() == _user.getUserId() || _hasAdmin;
+        return _hasAdmin || process.getInitiatorId() == _user.getUserId();
     }
 
     public boolean canClaim(@NotNull WorkflowTask task)
