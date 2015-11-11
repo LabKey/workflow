@@ -212,13 +212,15 @@ There is no active process with id <%= h(bean.getId()) %>
             %>
             (unassigned)
             <%
-                }
+            }
             %>
         </td>
     </tr>
+    <%
+        }
+    %>
 </table>
 <%
-        }
     }
 %>
 <%= dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer())) %>
