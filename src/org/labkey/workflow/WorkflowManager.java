@@ -131,13 +131,12 @@ public class WorkflowManager implements WorkflowService
 
     private WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
     {
-        // TODO use a join here instead
-        String sql = "SELECT * FROM workflow.act_hi_procinst WHERE proc_inst_id_ IN " +
-                "(SELECT proc_inst_id_ FROM workflow.act_hi_varinst WHERE name_ ='" + key + "' AND " + valueField + " = " + sqlValue + ")" +
-                " AND tenant_id_ = '" + container.getId() + "'";
+        String sql = "SELECT * from workflow.act_hi_procinst pi JOIN workflow.act_hi_varinst vi ON pi.proc_inst_id_ = vi.proc_inst_id_" +
+                " WHERE pi.tenant_id_ = '" + container.getId() + "'" +
+                " AND vi.name_ ='" + key + "' AND vi." + valueField + " = " + sqlValue;
         try
         {
-            return new WorkflowProcessImpl(getRuntimeService().createNativeProcessInstanceQuery().sql(sql).singleResult());
+            return new WorkflowProcessImpl(getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql).singleResult());
         }
         catch (ActivitiException e)
         {
