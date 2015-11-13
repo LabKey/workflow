@@ -82,6 +82,17 @@ public interface WorkflowService
      */
     String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException;
 
+    /**
+     * Creates a new process instance for a given workflow starting at the message start event provided
+     * @param moduleName - name of the module in which the workflow is defined
+     * @param processDefinitionKey - the unique key for this process definition (also the prefix of the bpmn.xml file)
+     * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
+     * @param container - the container in which this process is being created
+     * @param startMessage - the id of the message element defined for the start event
+     * @return id of the process instance created
+     * @throws FileNotFoundException if the bpmn.xml file that defines the process does not exist and it is necessary to deploy a new instance of this model in this container
+     */
+    String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Map<String, Object> processVariables, @NotNull Container container, @NotNull String startMessage) throws FileNotFoundException;
 
     /**
      * Find the workflow process corresponding to the given process instance id.  It will find either an acitve
