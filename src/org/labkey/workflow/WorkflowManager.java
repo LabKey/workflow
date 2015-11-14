@@ -130,14 +130,26 @@ public class WorkflowManager implements WorkflowService
         return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
     }
 
-    private WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
+    /**
+     * Given a key, valueField and sqlValue that correspond to a process variable for a set of processes within a container,
+     * finds the workflow process with that process variable value that was started last.
+     * @param key the name of the process variable
+     * @param valueField the field in the act_hi_varinst table in which the value is stored
+     * @param sqlValue the string representation of the comparison value to be used in the SQL statement (e.g., for a string
+     *                 value, this should contain the single quotes ('string'), but for an integer value it should not (123))
+     * @param container the container context
+     * @return the lates workflow instance with a variable with the given name and value
+     * @throws Exception if the key-value pair does not uniquely identify a single latest workflow process
+     * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
+     */
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
         sql.append("    (SELECT MAX(start_time_) startTime, v.").append(valueField).append(" FROM workflow.act_hi_procinst p ");
         sql.append("        JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
         sql.append("        WHERE v.name_ = '").append(key).append("'");
         sql.append("        GROUP BY v.").append(valueField).append(") AS sub ");
-        sql.append("    WHERE pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
+        sql.append("    WHERE pi.tenant_id_ = '").append(container.getId()).append("' AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
         try
         {
             return new WorkflowProcessImpl(getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult());
@@ -333,6 +345,7 @@ public class WorkflowManager implements WorkflowService
         builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // CONSIDER this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
+
         return instance.getId();
     }
 

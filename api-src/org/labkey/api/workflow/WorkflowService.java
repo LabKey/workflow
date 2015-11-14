@@ -103,13 +103,14 @@ public interface WorkflowService
     WorkflowProcess getWorkflowProcess(@NotNull String processInstanceId);
 
     /**
-     * Given a key and value that correspond to a process variable that uniquely identifies a process instance within
-     * a container, returns the corresponding workflow process
+     * Given a key and value that correspond to a process variable for a set of processes within a container, finds the
+     * workflow process with that process variable value that was started last.  This can be used for variables of
+     * type string as well as integer.
      * @param key - the process variable name
      * @param value - the string value for the unique identifier for the process instance
      * @param container - the container context
      * @return the workflow identified by the given key and value
-     * @throws Exception if the key-value pair does not uniquely identify a single workflow process
+     * @throws Exception if the key-value pair does not uniquely identify a single latest workflow process
      */
     WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception;
 
