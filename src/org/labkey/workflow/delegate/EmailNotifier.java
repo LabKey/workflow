@@ -69,6 +69,17 @@ public class EmailNotifier implements JavaDelegate
         final List<User> allAddresses = notificationConfig.getUsers();
         for (User user : allAddresses)
         {
+            // give the config a chance to add a UI notification to the system for this email message
+            if (notificationConfig.shouldAddUINotification())
+            {
+                Notification notification = new Notification();
+                notification.setUserId(user.getUserId());
+                notification.setObjectId(execution.getProcessInstanceId());
+                notification.setType(notificationConfig.getUINotificationType());
+
+                NotificationService.get().addNotification(container, notificationConfig.getLogUser(), notification);
+            }
+
             String to = user.getEmail();
             try
             {
@@ -81,17 +92,6 @@ public class EmailNotifier implements JavaDelegate
                     m.setText(body);
 
                     MailHelper.send(m, notificationConfig.getLogUser(), container);
-
-                    // give the config a chance to add a UI notification to the system for this email message
-                    if (notificationConfig.shouldAddUINotification())
-                    {
-                        Notification notification = new Notification();
-                        notification.setUserId(user.getUserId());
-                        notification.setObjectId(execution.getProcessInstanceId());
-                        notification.setType(notificationConfig.getUINotificationType());
-
-                        NotificationService.get().addNotification(container, notificationConfig.getLogUser(), notification);
-                    }
                 }
             }
             catch (ConfigurationException | AddressException e)
