@@ -45,6 +45,7 @@ import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
@@ -69,6 +70,7 @@ import org.labkey.workflow.model.TaskFormFieldImpl;
 import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowJobImpl;
+import org.labkey.workflow.model.WorkflowProcessImpl;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -121,6 +123,41 @@ public class WorkflowManager implements WorkflowService
             }
         }
         return groupIds;
+    }
+
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
+    {
+        return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
+    }
+
+    /**
+     * Given a key, valueField and sqlValue that correspond to a process variable for a set of processes within a container,
+     * finds the workflow process with that process variable value that was started last.
+     * @param key the name of the process variable
+     * @param valueField the field in the act_hi_varinst table in which the value is stored
+     * @param sqlValue the string representation of the comparison value to be used in the SQL statement (e.g., for a string
+     *                 value, this should contain the single quotes ('string'), but for an integer value it should not (123))
+     * @param container the container context
+     * @return the lates workflow instance with a variable with the given name and value
+     * @throws Exception if the key-value pair does not uniquely identify a single latest workflow process
+     * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
+     */
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
+        sql.append("    (SELECT MAX(start_time_) startTime, v.").append(valueField).append(" FROM workflow.act_hi_procinst p ");
+        sql.append("        JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append("        WHERE v.name_ = '").append(key).append("'");
+        sql.append("        GROUP BY v.").append(valueField).append(") AS sub ");
+        sql.append("    WHERE pi.tenant_id_ = '").append(container.getId()).append("' AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
+        try
+        {
+            return new WorkflowProcessImpl(getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult());
+        }
+        catch (ActivitiException e)
+        {
+            throw new Exception("More than one process identified by the given key-value pair: " + key + "= " + sqlValue + " in this container");
+        }
     }
 
     /**
@@ -264,13 +301,32 @@ public class WorkflowManager implements WorkflowService
     }
 
     /**
+     * Creates a new process instance for a given workflow starting at the message start event provided
+     * @param moduleName - name of the module in which the workflow is defined
+     * @param processDefinitionKey - the unique key for this process definition (also the prefix of the bpmn.xml file)
+     * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
+     * @param container - the container in which this process is being created
+     * @param startMessage - the id of the message element defined for the start event
+     * @return id of the process instance created
+     * @throws FileNotFoundException if the bpmn.xml file that defines the process does not exist and it is necessary to deploy a new instance of this model in this container
+     */
+    public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Map<String, Object> processVariables, @NotNull Container container, @NotNull String startMessage) throws FileNotFoundException
+    {
+        makeContainerDeployment(moduleName, processDefinitionKey, container);
+
+        ProcessInstance instance = getRuntimeService().startProcessInstanceByMessageAndTenantId(startMessage, processVariables, container.getId());
+        return instance.getId();
+    }
+
+    /**
      * Creates a new process instance for the given workflow and returns the id for this new instance.
      * @param moduleName - the name of the module in which the process definition key is defined
      * @param processDefinitionKey - the unique key for this process definition
      * @param name - the human-readable name for the process
      * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
-     * @param container the container in which this process is being created  @return the id of the new process instance for this workflow
-     */
+     * @param container the container in which this process is being created
+     * @return the id of the new process instance for this workflow
+    */
     public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException
     {
 
@@ -289,6 +345,7 @@ public class WorkflowManager implements WorkflowService
         builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // CONSIDER this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
+
         return instance.getId();
     }
 
@@ -389,6 +446,15 @@ public class WorkflowManager implements WorkflowService
         ProcessInstanceQuery query = getRuntimeService().createProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
         query.processInstanceTenantId(container.getId());
         return query.list();
+    }
+
+    public WorkflowProcess getWorkflowProcess(@NotNull String processInstanceId)
+    {
+        ProcessInstance instance = getProcessInstance(processInstanceId);
+        if (instance != null)
+            return new WorkflowProcessImpl(instance);
+        else
+            return new WorkflowProcessImpl(getHistoricProcessInstance(processInstanceId));
     }
 
     /**
@@ -616,7 +682,7 @@ public class WorkflowManager implements WorkflowService
         return moduleName + "/" + workflowDefinitionKey + WORKFLOW_FILE_NAME_EXTENSION;
     }
 
-    public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Container container) throws FileNotFoundException
+    public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable Container container) throws FileNotFoundException
     {
         // get the deployment in the global scope, referencing the cache
         Deployment globalDeployment = DEPLOYMENT_CACHE.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));

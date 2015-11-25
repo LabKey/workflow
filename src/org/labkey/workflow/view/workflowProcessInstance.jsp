@@ -86,10 +86,18 @@ There is no active process with id <%= h(bean.getId()) %>
         <td>Status</td>
         <td><strong><%= bean.isActive() ? "Active" : "Inactive"%></strong></td>
     </tr>
+    <%
+        if (bean.getInitiator() != null)
+        {
+    %>
+
     <tr>
         <td>Initiator</td>
         <td><%= h(bean.getInitiator().getDisplayName(getUser())) %></td>
     </tr>
+    <%
+        }
+    %>
 
 <%= variablesTableRows(bean.getVariables()) %>
 <tr>
@@ -204,13 +212,15 @@ There is no active process with id <%= h(bean.getId()) %>
             %>
             (unassigned)
             <%
-                }
+            }
             %>
         </td>
     </tr>
+    <%
+        }
+    %>
 </table>
 <%
-        }
     }
 %>
 <%= dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer())) %>
