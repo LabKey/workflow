@@ -152,7 +152,10 @@ public class WorkflowManager implements WorkflowService
         sql.append("    WHERE pi.tenant_id_ = '").append(container.getId()).append("' AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
         try
         {
-            return new WorkflowProcessImpl(getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult());
+            HistoricProcessInstance instance = getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult();
+            if (instance == null)
+                return null;
+            return new WorkflowProcessImpl(instance);
         }
         catch (ActivitiException e)
         {
