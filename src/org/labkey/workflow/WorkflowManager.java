@@ -125,6 +125,7 @@ public class WorkflowManager implements WorkflowService
         return groupIds;
     }
 
+    @Nullable
     public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
     {
         return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
@@ -142,6 +143,7 @@ public class WorkflowManager implements WorkflowService
      * @throws Exception if the key-value pair does not uniquely identify a single latest workflow process
      * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
      */
+    @Nullable
     public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
@@ -152,7 +154,10 @@ public class WorkflowManager implements WorkflowService
         sql.append("    WHERE pi.tenant_id_ = '").append(container.getId()).append("' AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
         try
         {
-            return new WorkflowProcessImpl(getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult());
+            HistoricProcessInstance instance = getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult();
+            if (instance == null)
+                return null;
+            return new WorkflowProcessImpl(instance);
         }
         catch (ActivitiException e)
         {

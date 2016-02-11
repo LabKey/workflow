@@ -46,9 +46,9 @@ public class WorkflowRegistry
 
     public static void registerPermissionsHandler(Module module, Class<? extends PermissionsHandler> handler, Boolean isDefault)
     {
-        _permissionsRegistry.put(module.getName(), handler);
+        _permissionsRegistry.put(module.getName().toLowerCase(), handler);
         if (isDefault)
-            _defaultHandler = module.getName();
+            _defaultHandler = module.getName().toLowerCase();
 
     }
 
@@ -60,7 +60,7 @@ public class WorkflowRegistry
             handlerClass = _permissionsRegistry.get(_defaultHandler);
         else
         {
-            handlerClass = _permissionsRegistry.get(moduleName);
+            handlerClass = _permissionsRegistry.get(moduleName.toLowerCase());
             if (null == handlerClass)
                 handlerClass = _permissionsRegistry.get(_defaultHandler);
         }
@@ -108,7 +108,7 @@ public class WorkflowRegistry
 
     private static String getProcessListenerKey(String moduleName, String processDefinitionKey)
     {
-        return moduleName + ":" + processDefinitionKey;
+        return moduleName.toLowerCase() + ":" + processDefinitionKey;
     }
 
     public static void registerWorkflowProcessEventListener(Module module, String processDefinitionKey, Class<? extends WorkflowProcessEventListener> listener)
