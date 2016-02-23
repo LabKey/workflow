@@ -30,6 +30,7 @@ public class DataManager implements JavaDelegate
         return _dataManagerClassName;
     }
 
+    @SuppressWarnings({"unused"})
     public void setDataManagerClassName(Expression dataManagerClassName)
     {
         _dataManagerClassName = dataManagerClassName;

@@ -30,7 +30,7 @@ import java.util.Map;
  * A Java delegate that can be used within a workflow to send email to a set of users using an email template.
  *
  * N.B. There is a single instance of this class created for the serviceTask it is defined on. All process instances share
- * the smae class instance that will be used to all the execute method.
+ * the same class instance that will be used to all the execute method.
  * See http://activiti.org/userguide/index.html#bpmnJavaServiceTaskXML
  *
  * Created by susanh on 6/8/15.
@@ -45,11 +45,13 @@ public class EmailNotifier implements JavaDelegate
         return _notificationClassName;
     }
 
+    @SuppressWarnings({"unused"})
     public void setNotificationClassName(Expression notificationClassName)
     {
         _notificationClassName = notificationClassName;
     }
 
+    @SuppressWarnings({"unchecked"})
     private Class<NotificationConfig> getNotificationClass(DelegateExecution execution) throws ClassNotFoundException
     {
         return (Class<NotificationConfig>) Class.forName((String) getNotificationClassName().getValue(execution));
