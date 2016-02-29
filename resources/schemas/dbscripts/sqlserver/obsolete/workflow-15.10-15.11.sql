@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
+ * This is a fake comment to touch the file so that the copyright will be updated.
  */
 EXEC core.fn_dropifexists 'ACT_GE_BYTEARRAY', 'workflow', 'CONSTRAINT', 'ACT_FK_BYTEARR_DEPL' ;
 
