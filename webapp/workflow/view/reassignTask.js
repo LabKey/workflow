@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
- * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
- * This is a fake comment to touch the file so that the copyright will be updated.
+ * Copyright (c) 2015-2016 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
  * Created by susanh on 5/19/15.
