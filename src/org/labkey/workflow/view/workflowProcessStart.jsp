@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.workflow.TaskFormField" %>
 <%@ page import="org.labkey.api.workflow.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.WorkflowManager" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
