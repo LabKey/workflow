@@ -19,22 +19,18 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.workflow.TaskFormField" %>
 <%@ page import="org.labkey.api.workflow.WorkflowTask" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("workflow/view/reassignTask.js"));
-        resources.add(ClientDependency.fromPath("workflow/view/completeTask.js"));
-
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("workflow/view/reassignTask.js");
+        dependencies.add("workflow/view/completeTask.js");
     }
 %>
 <labkey:errors></labkey:errors>
