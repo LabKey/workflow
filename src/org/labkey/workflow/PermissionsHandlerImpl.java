@@ -67,6 +67,6 @@ public class PermissionsHandlerImpl extends PermissionsHandler
     @Override
     public Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task)
     {
-        return Collections.<Class<? extends Permission>>singleton(AdminPermission.class);
+        return Collections.singleton(AdminPermission.class);
     }
 }
