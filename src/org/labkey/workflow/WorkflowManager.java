@@ -357,7 +357,6 @@ public class WorkflowManager implements WorkflowService
         {
             builder.addVariable(variable.getKey(), variable.getValue());
         }
-//        builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container).toString());
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // CONSIDER this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
 
