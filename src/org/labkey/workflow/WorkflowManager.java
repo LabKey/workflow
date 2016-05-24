@@ -357,7 +357,6 @@ public class WorkflowManager implements WorkflowService
         {
             builder.addVariable(variable.getKey(), variable.getValue());
         }
-        builder.addVariable(WorkflowProcess.PROCESS_INSTANCE_URL, new ActionURL(WorkflowController.ProcessInstanceAction.class, container));
         builder.addVariable(WorkflowProcess.CREATED_DATE, new Date()); // CONSIDER this could be retrieved from the corresponding entry in the History table
         ProcessInstance instance = builder.start();
 
@@ -917,7 +916,6 @@ public class WorkflowManager implements WorkflowService
             assertNotNull("Should have an active process instance", instance);
             assertEquals("testStartWorkflow", instance.getName());
             Map<String, Object> instanceVars = _manager.getProcessInstanceVariables(processId);
-            assertNotNull("Should have added a process instance URL", instanceVars.get(WorkflowProcess.PROCESS_INSTANCE_URL));
             assertNotNull("Should have added a created date", instanceVars.get(WorkflowProcess.CREATED_DATE));
             assertEquals("Should have retained the initiator id", instanceVars.get(WorkflowProcess.INITIATOR_ID), _processVariables.get(WorkflowProcess.INITIATOR_ID));
             List<WorkflowTask> tasks = _manager.getCurrentProcessTasks(processId, _container);
@@ -934,12 +932,12 @@ public class WorkflowManager implements WorkflowService
             WorkflowTask task = tasks.get(0);
             Map<String, Object> newVariables = new HashMap<>();
             newVariables.put("adding", "this");
-            newVariables.put(WorkflowProcess.PROCESS_INSTANCE_URL, "updated");
+            newVariables.put(WorkflowProcess.DATA_ACCESS_KEY, "updated");
             _manager.updateProcessVariables(task.getId(), newVariables);
             WorkflowTask updatedTask = _manager.getTask(task.getId(), _container);
             Map<String, Object> updatedVars = updatedTask.getProcessVariables();
             assertEquals("New variable not present in updated variables list", "this", updatedVars.get("adding"));
-            assertEquals("Updated variable not updated", "updated", updatedVars.get(WorkflowProcess.PROCESS_INSTANCE_URL));
+            assertEquals("Updated variable not updated", "updated", updatedVars.get(WorkflowProcess.DATA_ACCESS_KEY));
         }
 
         @Test
