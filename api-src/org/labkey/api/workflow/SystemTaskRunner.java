@@ -46,14 +46,6 @@ public abstract class SystemTaskRunner extends WorkflowDelegateActionBase
 
     public abstract void doAction() throws Exception;
 
-    /**
-     * Called after the execution variables have been set with any updates made in the doAction() method
-     * @throws Exception
-     */
-    public void afterVariablesUpdated() throws Exception
-    {
-
-    }
 
     @NotNull
     protected List<User> getUsers(Set<Class<? extends Permission>> permissions)

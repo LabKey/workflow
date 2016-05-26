@@ -60,6 +60,5 @@ public class SystemTaskManager implements JavaDelegate
         SystemTaskRunner runner = getTaskRunnerInstance(execution);
         runner.doAction();
         execution.setVariables(runner.getVariables());
-        runner.afterVariablesUpdated();
     }
 }
