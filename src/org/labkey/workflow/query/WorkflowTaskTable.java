@@ -85,7 +85,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         {
             sql.append(" AND (I.group_id_ IS NULL OR ");
             SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), SecurityManager.getGroups(container, user));
-            sql.append(clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect()));
+            sql.append(clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect()));
             sql.append(")");
         }
         sql.append(")");

@@ -31,7 +31,6 @@ public interface WorkflowProcess
     String INITIATOR_ID = "initiatorId";
     String CONTAINER_ID = "container";
     String CREATED_DATE = "created";
-    String PROCESS_INSTANCE_URL = "processInstanceUrl";
 
     String DATA_ACCESS_KEY = "dataAccess";
     String DATA_ACCESS_PARAMETERS_KEY = "parameters";
