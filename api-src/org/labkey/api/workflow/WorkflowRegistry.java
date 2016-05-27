@@ -15,14 +15,13 @@
  */
 package org.labkey.api.workflow;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -37,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class WorkflowRegistry
 {
-    private static final Logger _log = LoggerFactory.getLogger(WorkflowRegistry.class);
+    private static final Logger _log = Logger.getLogger(WorkflowRegistry.class);
     private static String _defaultHandler = null;
     private static final WorkflowRegistry _instance = new WorkflowRegistry();
     private static final Map<String, Class<? extends PermissionsHandler>> _permissionsRegistry = new ConcurrentHashMap<>();
