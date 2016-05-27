@@ -18,11 +18,10 @@ package org.labkey.workflow.delegate;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
+import org.apache.log4j.Logger;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.workflow.DataManagerConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -33,7 +32,7 @@ import java.util.Map;
  */
 public class DataManager implements JavaDelegate
 {
-    private static final Logger _log = LoggerFactory.getLogger(DataManager.class);
+    private static final Logger _log = Logger.getLogger(DataManager.class);
     private Expression _dataManagerClassName;
 
     public Expression getDataManagerClassName()
