@@ -69,7 +69,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowJob;
@@ -388,7 +387,7 @@ public class WorkflowManager implements WorkflowService
      * or in all containers if container is null
      * @param processInstanceId instance for which tasks are to be retrieved
      * @param container container in which the process instance is active
-     * @return list of workflow tasks, or an empty list of there are none
+     * @return list of workflow tasks, or an empty list if there are none
      */
     @NotNull
     public List<WorkflowTask> getCurrentProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
@@ -538,8 +537,21 @@ public class WorkflowManager implements WorkflowService
      */
     public void updateProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
     {
-        Task task = getTaskService().createTaskQuery().includeProcessVariables().taskId(taskId).singleResult();
-        getRuntimeService().setVariables(task.getProcessInstanceId(), variables);
+        getTaskService().setVariables(taskId, variables);
+    }
+
+    /**
+     * Given the id of a particular task, will update the variables for this task (not the process instance)
+     * New variables will be added; existing variables will be replaced.  Process variables are left alone.
+     * @param taskId -
+     *               id of the task whose variables should be updated
+     * @param variables -
+     *                  variables that will be merged into the existing set of variables
+     *
+     */
+    public void updateTaskVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
+    {
+        getTaskService().setVariablesLocal(taskId, variables);
     }
 
     /**
@@ -568,6 +580,17 @@ public class WorkflowManager implements WorkflowService
         {
             return new HashMap<>();
         }
+    }
+
+    /**
+     * Returns the set of variables associated with the given taskId.
+     * Does not include the process instance variables for the corresponding process instance.
+     * @param taskId id of the task in question
+     * @return the set of task variables for this task
+     */
+    public Map<String, Object> getTaskVariables(@NotNull String taskId)
+    {
+        return getTaskService().getVariablesLocal(taskId);
     }
 
     /**
