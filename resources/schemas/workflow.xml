@@ -962,4 +962,26 @@
       </column>
     </columns>
   </table>
+  <table tableName="act_procdef_info" tableDbType="TABLE">
+    <columns>
+      <column columnName="id_">
+        <columnTitle>Id</columnTitle>
+      </column>
+      <column columnName="proc_def_id_">
+        <columnTitle>Process Definition Id</columnTitle>
+        <fk>
+          <fkColumnName>id_</fkColumnName>
+          <fkTable>ACT_RE_PROCDEF</fkTable>
+          <fkDbSchema>workflow</fkDbSchema>
+          <fkDisplayColumnName>key_</fkDisplayColumnName>
+        </fk>
+      </column>
+      <column columnName="rev_">
+        <columnTitle>Revision</columnTitle>
+      </column>
+      <column columnName="info_json_id_">
+        <columnTitle>Info JSON Id</columnTitle>
+      </column>
+    </columns>
+  </table>
 </tables>
