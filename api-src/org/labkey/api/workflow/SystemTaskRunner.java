@@ -46,6 +46,7 @@ public abstract class SystemTaskRunner extends WorkflowDelegateActionBase
 
     public abstract void doAction() throws Exception;
 
+
     @NotNull
     protected List<User> getUsers(Set<Class<? extends Permission>> permissions)
     {

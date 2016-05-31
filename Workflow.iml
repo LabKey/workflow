@@ -12,18 +12,18 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-bpmn-model-5.17.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-bpmn-model-5.20.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-bpmn-model-5.17.0-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-bpmn-model-5.20.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/mybatis-3.2.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/mybatis-3.3.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -41,32 +41,34 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.17.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.20.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.17.0-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-image-generator-5.20.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-engine-5.17.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-engine-5.20.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-engine-5.17.0-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activiti-engine-5.20.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activiti-process-validation-5.17.0.jar!/" />
+            <root url="jar://$MODULE_DIR$/lib/activiti-process-validation-5.20.0.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+            <root url="jar://$MODULE_DIR$/lib/activiti-process-validation-5.20.0-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="Internal" />
