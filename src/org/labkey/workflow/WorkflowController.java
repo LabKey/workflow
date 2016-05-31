@@ -203,9 +203,17 @@ public class WorkflowController extends SpringActionController
 
             JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowList.jsp", bean, errors);
 
-            bean.setProcessDefinitionName(WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer()).getName());
+            ProcessDefinition definition = WorkflowManager.get().getProcessDefinition(bean.getProcessDefinitionKey(), getContainer());
+            if (definition != null)
+            {
+                bean.setProcessDefinitionName(definition.getName());
 
-            jsp.setTitle("Task List for '" + bean.getProcessDefinitionName() + "' workflow instances ");
+                jsp.setTitle("Task List for '" + bean.getProcessDefinitionName() + "' workflow instances ");
+            }
+            else
+            {
+                jsp.setTitle("Task List for workflow instances");
+            }
 
             if (_schema != null)
             {
