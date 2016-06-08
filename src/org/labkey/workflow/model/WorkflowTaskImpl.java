@@ -17,7 +17,7 @@ package org.labkey.workflow.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.activiti.engine.task.TaskInfo;
-import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
