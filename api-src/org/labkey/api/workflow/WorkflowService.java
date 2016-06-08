@@ -191,6 +191,17 @@ public interface WorkflowService
     void updateProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables);
 
     /**
+     * Given the id of a particular task, will update the variables for this task (not the process instance)
+     * New variables will be added; existing variables will be replaced.  Process variables are left alone.
+     * @param taskId -
+     *               id of the task whose variables should be updated
+     * @param variables -
+     *                  variables that will be merged into the existing set of variables
+     *
+     */
+     void updateTaskVariables(@NotNull String taskId, @Nullable Map<String, Object> variables);
+
+    /**
      * Remove the process instance whose id is supplied, logging the reason for the deletion if provided
      * @param processInstanceId id of the process instance to be removed
      * @param reason reason for deletion (may be null)
@@ -203,6 +214,14 @@ public interface WorkflowService
      * @return the set of process instance variables for this process instance
      */
     Map<String, Object> getProcessInstanceVariables(@NotNull String processInstanceId);
+
+    /**
+     * Returns the set of variables associated with a given task.
+     * Does not include any variables associated with the corresponding process instance.
+     * @param taskId id of the task in question
+     * @return  the set of variables associated with this task, or an empty map if there are none
+     */
+    Map<String, Object> getTaskVariables(@NotNull String taskId);
 
     /**
      * @param processDefinitionId unique id of a process definition
