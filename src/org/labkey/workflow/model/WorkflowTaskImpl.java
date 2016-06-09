@@ -36,6 +36,7 @@ import org.labkey.workflow.WorkflowManager;
 import org.labkey.workflow.WorkflowModule;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     protected TaskInfo _taskInfo;
     protected String _id;
     protected List<Integer> _groupIds = null;
-    private Map<String, TaskFormField> _formFields = null;
+    private Map<String, TaskFormField> _formFields = Collections.emptyMap();
     private WorkflowProcess _processInstance = null;
     private PermissionsHandler _permissionsHandler = null;
 
@@ -186,42 +187,42 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
 
     public String getProcessInstanceId()
     {
-        return _taskInfo.getProcessInstanceId();
+        return _taskInfo == null ? null : _taskInfo.getProcessInstanceId();
     }
 
     public String getProcessDefinitionId()
     {
-        return _taskInfo.getProcessDefinitionId();
+        return _taskInfo == null ? null : _taskInfo.getProcessDefinitionId();
     }
 
     public Date getCreateTime()
     {
-        return _taskInfo.getCreateTime();
+        return _taskInfo == null ? null : _taskInfo.getCreateTime();
     }
 
     public String getTaskDefinitionKey()
     {
-        return _taskInfo.getTaskDefinitionKey();
+        return _taskInfo == null ? null : _taskInfo.getTaskDefinitionKey();
     }
 
     public Date getDueDate()
     {
-        return _taskInfo.getDueDate();
+        return _taskInfo == null ? null : _taskInfo.getDueDate();
     }
 
     public String getParentTaskId()
     {
-        return _taskInfo.getParentTaskId();
+        return _taskInfo == null ? null : _taskInfo.getParentTaskId();
     }
 
     public Map<String, Object> getTaskLocalVariables()
     {
-        return _taskInfo.getTaskLocalVariables();
+        return _taskInfo == null ? Collections.emptyMap() : _taskInfo.getTaskLocalVariables();
     }
 
     public Map<String, Object> getProcessVariables()
     {
-        return _taskInfo.getProcessVariables();
+        return _taskInfo == null ? Collections.emptyMap() : _taskInfo.getProcessVariables();
     }
 
     @JsonIgnore
@@ -241,10 +242,9 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     }
 
     @JsonIgnore // for some reason this comes back as the empty string, but it is also available as one of the process variables
-    @NotNull
     public String getContainer()
     {
-        return _taskInfo.getTenantId();
+        return _taskInfo == null ? null : _taskInfo.getTenantId();
     }
 
     public boolean isInCandidateGroups(User user)

@@ -76,6 +76,7 @@ public class WorkflowController extends SpringActionController
 
     private static final String PROCESS_DEFINITION_KEY_MISSING = "Process definition key is required";
     private static final String TASK_ID_MISSING = "Task id is required";
+    private static final String TASK_ID_UNKNOWN = "Task id is unknown";
     private static final String PROCESS_INSTANCE_ID_MISSING = "Process instance id is required";
     private static final String ASSIGNEE_ID_MISSING = "Assignee id is required";
     private static final String MODULE_NAME_MISSING = "Module name is required";
@@ -324,19 +325,17 @@ public class WorkflowController extends SpringActionController
     public class TaskAction extends SimpleViewAction<WorkflowTaskForm>
     {
         private String _navLabel = "Task details";
+        private WorkflowTask _task;
 
         public ModelAndView getView(WorkflowTaskForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
-            WorkflowTask task = new WorkflowEngineTaskImpl(form.getTaskId(), getContainer());
-            if (!task.isActive())
-                task = new WorkflowHistoricTaskImpl(form.getTaskId(), getContainer());
 
-            if (task.getName() != null)
-                _navLabel = "'" + task.getName() + "' " + (task.isActive() ? "active" : " inactive ") + " task details";
+            if (_task.getName() != null)
+                _navLabel = "'" + _task.getName() + "' " + (_task.isActive() ? "active" : " inactive ") + " task details";
 
-            return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", task, errors);
+            return new JspView<>("/org/labkey/workflow/view/workflowTask.jsp", _task, errors);
         }
 
         @Override
@@ -344,6 +343,11 @@ public class WorkflowController extends SpringActionController
         {
             if (workflowTaskForm.getTaskId() == null)
                 errors.rejectValue("taskId", ERROR_MSG, TASK_ID_MISSING);
+            _task = new WorkflowEngineTaskImpl(workflowTaskForm.getTaskId(), getContainer());
+            if (!_task.isActive())
+                _task = new WorkflowHistoricTaskImpl(workflowTaskForm.getTaskId(), getContainer());
+            if (_task.getName() == null)
+                errors.rejectValue("taskId", ERROR_MSG, TASK_ID_UNKNOWN);
         }
 
         public NavTree appendNavTrail(NavTree root)
