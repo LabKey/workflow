@@ -735,8 +735,12 @@ public class WorkflowManager implements WorkflowService
 
 
         ProcessDefinition globalDefinition = getProcessDefinition(processDefinitionKey, null);
+
         // deploy a (newer) version in this container
-        deployWorkflow(new File(globalDefinition.getResourceName()), container);
+        if (globalDefinition != null)
+            deployWorkflow(new File(globalDefinition.getResourceName()), container);
+        else
+            throw new FileNotFoundException("No process definition for key " + processDefinitionKey);
     }
 
     private Deployment getDeployment(@NotNull String deploymentId)
@@ -848,7 +852,7 @@ public class WorkflowManager implements WorkflowService
                     ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
                     Module module = id.getModule();
                     String filename = id.getName();
-                    String processDefinitionKey = filename.substring(0, filename.indexOf("."));
+                    String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
                     Path path = WORKFLOW_MODEL_PATH.append(filename);
                     FileResource resource  = (FileResource) module.getModuleResolver().lookup(path);
                     if (resource != null)

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.workflow.TaskFormField" %>
 <%@ page import="org.labkey.api.workflow.WorkflowProcess" %>
 <%@ page import="org.labkey.workflow.WorkflowManager" %>
+<%@ page import="java.io.FileNotFoundException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
@@ -48,8 +49,17 @@
     {
         if (bean.canDeploy(getUser(), getContainer()))
         {
-            WorkflowManager.get().makeContainerDeployment(bean.getProcessDefinitionModule(), bean.getProcessDefinitionKey(), getContainer());
-            fields = WorkflowManager.get().getStartFormFields(bean.getProcessDefinitionKey());
+            try
+            {
+                WorkflowManager.get().makeContainerDeployment(bean.getProcessDefinitionModule(), bean.getProcessDefinitionKey(), getContainer());
+                fields = WorkflowManager.get().getStartFormFields(bean.getProcessDefinitionKey());
+            }
+            catch (FileNotFoundException e)
+            {
+%>
+No process deployed with key <%= h(bean.getProcessDefinitionKey()) %>
+<%
+            }
         }
         else
         {
