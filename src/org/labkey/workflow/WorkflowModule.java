@@ -44,7 +44,7 @@ public class WorkflowModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 16.13;
+        return 16.20;
     }
 
     @Override
