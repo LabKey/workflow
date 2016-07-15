@@ -84,7 +84,6 @@ public class WorkflowController extends SpringActionController
     private static final String NO_SUCH_INSTANCE_ERROR = "No active process instance with the given id";
     private static final String NO_SUCH_DEFINITION_ERROR = "No process definition with the given key";
 
-    private static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
 
     public WorkflowController()
     {
@@ -237,7 +236,7 @@ public class WorkflowController extends SpringActionController
                 _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
                 if (_schema == null)
                 {
-                    errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
+                    errors.reject(ERROR_MSG, WorkflowQuerySchema.SCHEMA_NOT_DEFINED_ERROR);
                 }
             }
         }
@@ -289,7 +288,7 @@ public class WorkflowController extends SpringActionController
             _schema = QueryService.get().getUserSchema(getUser(), getContainer(), WorkflowQuerySchema.NAME);
             if (_schema == null)
             {
-                errors.reject(ERROR_MSG, SCHEMA_NOT_DEFINED_ERROR);
+                errors.reject(ERROR_MSG, WorkflowQuerySchema.SCHEMA_NOT_DEFINED_ERROR);
             }
         }
 

@@ -33,7 +33,7 @@
 %>
 
 <labkey:errors></labkey:errors>
-<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 <br>
 <br>
 
@@ -48,5 +48,5 @@
 <%
     }
 %>
-<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 

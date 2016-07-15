@@ -53,15 +53,27 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -70,6 +82,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
@@ -80,6 +93,7 @@ import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowJobImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
+import org.labkey.workflow.query.WorkflowQuerySchema;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -87,6 +101,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -134,10 +149,120 @@ public class WorkflowManager implements WorkflowService
         return groupIds;
     }
 
+
+    /**
+     * Retrieves the count of the tasks associated with a particular processDefinitionKey that are assigned to a particular user
+     * @param processDefinitionKey identifier for the process definition
+     * @param filter a filter over the task variables for the assigned tasks
+     * @param assignee the user the tasks are assigned to
+     * @param container the container in which the tasks are defined   @return count of the workflow tasks
+     */
+    public long getTaskCount(@NotNull String processDefinitionKey, @Nullable SimpleFilter filter, @Nullable User assignee, @Nullable Container container)
+    {
+        TaskQuery query = getTaskService().createTaskQuery().processDefinitionKey(processDefinitionKey);
+        if (assignee != null)
+            query.taskAssignee(String.valueOf(assignee.getUserId()));
+        if (container != null)
+            query.taskTenantId(container.getId());
+        if (filter != null)
+        {
+            for (SimpleFilter.FilterClause clause : filter.getClauses())
+            {
+                List<FieldKey> fieldKeys = clause.getFieldKeys();
+                for (int i = 0; i < fieldKeys.size(); i++)
+                {
+                    FieldKey fieldKey = fieldKeys.get(i);
+                    if (fieldKey.getName().equals(WorkflowService.TASK_KEY))
+                        query.taskDefinitionKey(String.valueOf(clause.getParamVals()[i]));
+                    else
+                    {
+                        // TODO other comparators are also supported
+                        query.taskVariableValueEquals(fieldKey.getName(), clause.getParamVals()[i]);
+                    }
+                }
+            }
+        }
+        return query.count();
+    }
+
     @Nullable
     public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
     {
         return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
+    }
+
+    /**
+     * Creates a column containing the assignee with a given key for a process instance identified by a process variable of a given name.
+     * Note that this assumes the identifier is a long value.
+     * @param tableInfo the table the column will be attached to
+     * @param colName name to give the column being created
+     * @param assigneeVarName the name of the process variable that contains the assigneeId (as an integer)
+     * @param identifierVarName the name of the variable that has the identifier for the workflow object in this table
+     * @param identifierColName the name of the column in the current table in which the identifier is located.
+     *@param user the current user
+     * @param container the container context for this table   @return column that will display the assignee
+     * TODO this assumes the key is a long_, which may not always be true
+     */
+    public ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeVarName, String identifierVarName, String identifierColName, User user, Container container)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT text_ FROM workflow.act_hi_varinst WHERE name_ = '" + assigneeVarName  + "' AND proc_inst_id_ IN ");
+        sql.append(" (SELECT pi.proc_inst_id_ FROM workflow.act_hi_procinst pi, (SELECT MAX(start_time_) startTime, v.long_ FROM workflow.act_hi_procinst p ");
+        sql.append(" JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'");
+        sql.append(" GROUP BY v.long_) AS sub WHERE pi.start_time_ = sub.startTime AND sub.long_ = ").append(identifierColName).append(")");
+        sql.append(")");
+        ExprColumn ret = new ExprColumn(tableInfo, colName, sql, JdbcType.VARCHAR);
+
+        ret.setFk(new UserIdQueryForeignKey(user, container, true));
+
+        return ret;
+    }
+
+    /**
+     * Creates a column with the current taskId for a given identifier variable.  Note that this
+     * will not work if there is more than one active task for a particular process instance.
+     * @param tableInfo the table to which the column will be added
+     * @param colLabel the name to be given to the column
+     * @param identifierVarName the name of the process variable that contains the identifier
+     * @param identifierColumnName the name of the column in the table that contains the identifier
+     * @return a column with the id of the current task.
+     */
+    public ColumnInfo getTaskIdColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT t.id_ FROM ");
+        sql.append(" workflow.act_ru_task t ");
+        sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" AND v.long_ = ").append(identifierColumnName);
+        sql.append(")");
+
+        ExprColumn col = new ExprColumn(tableInfo, WorkflowService.TASK_KEY, sql, JdbcType.VARCHAR);
+        col.setLabel(colLabel);
+        return col;
+    }
+
+    /**
+     * Creates a column with the current taskType (task definition key) for a given identifier variable.  Note that this
+     * will not work if there is more than one active task for a particular process instance and it currently assumes the
+     * identifier is a long_ value.
+     * @param tableInfo the table to which the column will be added
+     * @param colLabel the name to be given to the column
+     * @param identifierVarName the name of the process variable that contains the identifier
+     * @param identifierColumnName the name of the column in the table that contains the identifier
+     * @return a column with the id of the current task.
+     */
+    public ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT t.task_def_key_ FROM ");
+        sql.append(" workflow.act_ru_task t ");
+        sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" AND v.long_ = ").append(identifierColumnName);
+        sql.append(")");
+
+        ExprColumn col = new ExprColumn(tableInfo, WorkflowService.TASK_KEY, sql, JdbcType.VARCHAR);
+        col.setLabel(colLabel);
+        return col;
     }
 
     /**
@@ -205,6 +330,23 @@ public class WorkflowManager implements WorkflowService
         return query.singleResult();
     }
 
+    @Nullable
+    public QueryView getTaskListQueryView(ViewContext context, @Nullable SimpleFilter filter)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), WorkflowQuerySchema.NAME);
+        if (schema == null)
+        {
+            return null;
+        }
+        else
+        {
+            QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
+            settings.setMaxRows(Table.ALL_ROWS);
+            if (filter != null)
+                settings.setBaseFilter(filter);
+            return new QueryView(schema, settings, null);
+        }
+    }
 
     /**
      * Completes a task in a workflow given the id of the task
@@ -574,11 +716,14 @@ public class WorkflowManager implements WorkflowService
         try
         {
             ProcessInstance processInstance = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-            return processInstance.getProcessVariables();
+            if (processInstance != null)
+                return processInstance.getProcessVariables();
+            else
+                return Collections.emptyMap();
         }
         catch (PersistenceException e)
         {
-            return new HashMap<>();
+            return Collections.emptyMap();
         }
     }
 

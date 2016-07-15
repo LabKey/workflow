@@ -80,6 +80,9 @@ public class WorkflowQuerySchema extends UserSchema
     public static final String TABLE_HISTORY_TASK_INSTANCE = "act_hi_taskinst";
     public static final String TABLE_HISTORY_VARIABLE_INSTANCE = "act_hi_varinst";
 
+    public static final String SCHEMA_NOT_DEFINED_ERROR = "No schema defined for this view.  Check that the Workflow module is available in this container";
+
+
     public WorkflowQuerySchema(User user, Container container)
     {
         super(NAME, DESCRIPTION, user, container, DbSchema.get(NAME, DbSchemaType.Module));
