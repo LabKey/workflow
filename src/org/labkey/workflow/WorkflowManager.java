@@ -46,6 +46,7 @@ import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -109,6 +110,8 @@ import java.util.Map;
 
 public class WorkflowManager implements WorkflowService
 {
+    private static final Logger logger = Logger.getLogger(WorkflowManager.class);
+
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
@@ -186,7 +189,7 @@ public class WorkflowManager implements WorkflowService
     }
 
     @Nullable
-    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, @NotNull Container container) throws Exception
     {
         return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
     }
@@ -278,7 +281,7 @@ public class WorkflowManager implements WorkflowService
      * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
      */
     @Nullable
-    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, @NotNull Container container) throws Exception
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
         sql.append("    (SELECT MAX(start_time_) startTime, v.").append(valueField).append(" FROM workflow.act_hi_procinst p ");
@@ -703,7 +706,50 @@ public class WorkflowManager implements WorkflowService
      */
     public void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason)
     {
+        logger.info("Deleting process instance for processInstanceId " + processInstanceId);
         getRuntimeService().deleteProcessInstance(processInstanceId, reason);
+    }
+
+    /**
+     * Deletes an active process instance given a key and value that uniquely identify it within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param value the value for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws RuntimeException if there are problems retrieving the process instance using the given variable data or deleting it
+     */
+    public void deleteProcessInstance(String key, String value, @Nullable String reason, @NotNull Container container) throws RuntimeException
+    {
+        try
+        {
+            WorkflowProcess process = getWorkflowProcessForVariable(key, value, container);
+            if (process != null && process.isActive())
+            {
+                deleteProcessInstance(process.getProcessInstanceId(), reason);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unable to delete process instance for key '" + key + "' and value '" + value + "'", e);
+        }
+    }
+
+    /**
+     * Deletes a set of process instances given a key and set of values that each uniquely identify a process within a particular container
+     * @param key the key for the variable identifier
+     * @param values the values for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws RuntimeException if there are problems retrieving a process instance using the given variable data or deleting one
+     */
+    public void deleteProcessInstances(String key, List<Object> values, @Nullable String reason, @NotNull Container container)  throws RuntimeException
+    {
+        for (Object value : values)
+        {
+            logger.info("Deleting process instance for key " + key + " and value " + value);
+            deleteProcessInstance(key, value.toString(), reason, container);
+        }
     }
 
     /**

@@ -260,6 +260,29 @@ public interface WorkflowService
     void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason);
 
     /**
+     * Deletes an active process instance given a key and value that uniquely identify it within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param value the value for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws Exception if there are problems retrieving the process instance using the given variable data
+     */
+    void deleteProcessInstance(String key, String value, @Nullable String reason, @NotNull Container container) throws RuntimeException;
+
+    /**
+     * Deletes active process instances given a key and set of values value that each uniquely identify a process within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param values the set of values for the given variable identifier that identify the process instance to be deleted
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws Exception if there are problems retrieving the process instance using the given variable data
+     */
+    void deleteProcessInstances(String key, List<Object> values, @Nullable String reason, @NotNull Container container) throws RuntimeException;
+
+
+    /**
      * Returns the set of variables associated with the given processInstance as well as a list of the current active tasks for that instance
      * @param processInstanceId id of the process instance in question
      * @return the set of process instance variables for this process instance
