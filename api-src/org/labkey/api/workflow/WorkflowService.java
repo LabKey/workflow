@@ -214,6 +214,15 @@ public interface WorkflowService
     Long getProcessInstanceCount(String processDefinitionKey, @NotNull User user, @Nullable Container container);
 
     /**
+     * Count of the number of process instances, both active an inactive, but not including deleted ones, in the given container for a given definiiton key
+     * @param processDefinitionKey identifier of the process definition
+     * @param container container of context, or null for all containers
+     * @return number of active and inactive process instances, excluding deleted instances
+     */
+    @NotNull
+    public Long getProcessInstanceCount(String processDefinitionKey, @Nullable Container container);
+
+    /**
      * Returns the set of variables associated with the given historicProcessInstance
      * @param processInstanceId id of the historic process instance in question
      * @return the set of process instance variables for this historic process instance

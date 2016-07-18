@@ -593,6 +593,23 @@ public class WorkflowManager implements WorkflowService
     }
 
     /**
+     * Count of the number of process instances, both active an inactive, but not including deleted ones, in the given container for a given definiiton key
+     * @param processDefinitionKey identifier of the process definition
+     * @param container container of context, or null for all containers
+     * @return number of active and inactive process instances, excluding deleted instances
+     */
+    @NotNull
+    public Long getProcessInstanceCount(String processDefinitionKey, @Nullable Container container)
+    {
+        HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
+        if (container != null)
+            query.processInstanceTenantId(container.getId());
+        // deleted instances should not be counted
+        query.notDeleted();
+        return query.count();
+    }
+
+    /**
      * Given the process definition key, returns the corresponding list of process instances in the
      * current container
      * @param processDefinitionKey identifier for the process definition
