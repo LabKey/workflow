@@ -17,8 +17,13 @@ package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,10 +32,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Service for accessing workflow objects including WorkflowTasks and WorkflowProcesses
  * Created by susanh on 11/5/15.
  */
 public interface WorkflowService
 {
+    String TASK_KEY = "taskKey"; // the key/name for the column containing the current task description, also an indicator for filtering on a particular type of task.
+
     /**
      * Gets the list of candidate group ids for a task given its id, or an empty list if there are no candidate groups
      * @param taskId id of the task to get groups for
@@ -160,6 +168,40 @@ public interface WorkflowService
     List<WorkflowTask> getCompletedProcessTasks(@NotNull String processInstanceId, @Nullable Container container);
 
     /**
+     * Retrieves the count of the tasks associated with a particular processDefinitionKey that are assigned to a particular user
+     * @param processDefinitionKey identifier for the process definition
+     * @param filter a filter over the task variables for the assigned tasks
+     * @param assignee the user the tasks are assigned to
+     * @param container the container in which the tasks are defined, null for all containers   @return count of the workflow tasks
+     * */
+    long getTaskCount(@NotNull String processDefinitionKey, @Nullable SimpleFilter filter, @Nullable User assignee, @Nullable Container container);
+
+    /**
+     * Creates a column containing the assignee with a given key for a process instance identified by a process variable of a given name
+     * @param tableInfo the table the column will be attached to
+     * @param colName name to give the column being created
+     * @param assigneeKey the name of the process variable that contains the assigneeId (as an integer)
+     * @param identifierKey the name of the variable that has the identifier for the workflow object in this table
+     * @param identifierColName
+     *@param user the current user
+     * @param container the container context for this table   @return column that will display the assignee
+     */
+    ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeKey, String identifierKey, String identifierColName, User user, Container container);
+
+    /**
+     * Creates a column with the current taskType (task definition key) for a given identifier variable.  Note that this
+     * will not work if there is more than one active task for a particular process instance and it currently assumes the
+     * identifier is a long_ value.
+     * @param tableInfo the table to which the column will be added
+     * @param colLabel the name to be given to the column
+     * @param identifierVarName the name of the process variable that contains the identifier
+     * @param identifierColumnName the name of the column in the table that contains the identifier
+     * @return a column with the id of the current task.
+     */
+    public ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName);
+
+
+    /**
      * Count of the number of process instances in the current container that were initiated by the given user,
      * or by any user if this user has administrative permissions.  If the container is null, all process instances
      * for the given definition key will be returned.
@@ -170,6 +212,15 @@ public interface WorkflowService
      */
     @NotNull
     Long getProcessInstanceCount(String processDefinitionKey, @NotNull User user, @Nullable Container container);
+
+    /**
+     * Count of the number of process instances, both active an inactive, but not including deleted ones, in the given container for a given definiiton key
+     * @param processDefinitionKey identifier of the process definition
+     * @param container container of context, or null for all containers
+     * @return number of active and inactive process instances, excluding deleted instances
+     */
+    @NotNull
+    public Long getProcessInstanceCount(String processDefinitionKey, @Nullable Container container);
 
     /**
      * Returns the set of variables associated with the given historicProcessInstance
@@ -199,7 +250,16 @@ public interface WorkflowService
      *                  variables that will be merged into the existing set of variables
      *
      */
-     void updateTaskVariables(@NotNull String taskId, @Nullable Map<String, Object> variables);
+    void updateTaskVariables(@NotNull String taskId, @Nullable Map<String, Object> variables);
+
+    /**
+     * Provides a query view of the task list for a given context
+     * @param context the context of the query view
+     * @param filter
+     * @return a query view or null if one cannot be shown
+     */
+    @Nullable
+    QueryView getTaskListQueryView(ViewContext context, SimpleFilter filter);
 
     /**
      * Remove the process instance whose id is supplied, logging the reason for the deletion if provided
@@ -207,6 +267,29 @@ public interface WorkflowService
      * @param reason reason for deletion (may be null)
      */
     void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason);
+
+    /**
+     * Deletes an active process instance given a key and value that uniquely identify it within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param value the value for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws Exception if there are problems retrieving the process instance using the given variable data
+     */
+    void deleteProcessInstance(String key, String value, @Nullable String reason, @NotNull Container container) throws RuntimeException;
+
+    /**
+     * Deletes active process instances given a key and set of values value that each uniquely identify a process within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param values the set of values for the given variable identifier that identify the process instance to be deleted
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws Exception if there are problems retrieving the process instance using the given variable data
+     */
+    void deleteProcessInstances(String key, List<Object> values, @Nullable String reason, @NotNull Container container) throws RuntimeException;
+
 
     /**
      * Returns the set of variables associated with the given processInstance as well as a list of the current active tasks for that instance

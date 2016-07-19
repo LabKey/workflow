@@ -46,6 +46,7 @@ import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -53,15 +54,27 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -70,6 +83,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowJob;
 import org.labkey.api.workflow.WorkflowProcess;
@@ -80,6 +94,7 @@ import org.labkey.workflow.model.WorkflowEngineTaskImpl;
 import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowJobImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
+import org.labkey.workflow.query.WorkflowQuerySchema;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -87,6 +102,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +110,8 @@ import java.util.Map;
 
 public class WorkflowManager implements WorkflowService
 {
+    private static final Logger logger = Logger.getLogger(WorkflowManager.class);
+
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
     private static final Path WORKFLOW_MODEL_PATH = new Path("workflow", "model");
@@ -134,10 +152,120 @@ public class WorkflowManager implements WorkflowService
         return groupIds;
     }
 
+
+    /**
+     * Retrieves the count of the tasks associated with a particular processDefinitionKey that are assigned to a particular user
+     * @param processDefinitionKey identifier for the process definition
+     * @param filter a filter over the task variables for the assigned tasks
+     * @param assignee the user the tasks are assigned to
+     * @param container the container in which the tasks are defined   @return count of the workflow tasks
+     */
+    public long getTaskCount(@NotNull String processDefinitionKey, @Nullable SimpleFilter filter, @Nullable User assignee, @Nullable Container container)
+    {
+        TaskQuery query = getTaskService().createTaskQuery().processDefinitionKey(processDefinitionKey);
+        if (assignee != null)
+            query.taskAssignee(String.valueOf(assignee.getUserId()));
+        if (container != null)
+            query.taskTenantId(container.getId());
+        if (filter != null)
+        {
+            for (SimpleFilter.FilterClause clause : filter.getClauses())
+            {
+                List<FieldKey> fieldKeys = clause.getFieldKeys();
+                for (int i = 0; i < fieldKeys.size(); i++)
+                {
+                    FieldKey fieldKey = fieldKeys.get(i);
+                    if (fieldKey.getName().equals(WorkflowService.TASK_KEY))
+                        query.taskDefinitionKey(String.valueOf(clause.getParamVals()[i]));
+                    else
+                    {
+                        // TODO other comparators are also supported
+                        query.taskVariableValueEquals(fieldKey.getName(), clause.getParamVals()[i]);
+                    }
+                }
+            }
+        }
+        return query.count();
+    }
+
     @Nullable
-    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String value, @NotNull Container container) throws Exception
     {
         return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
+    }
+
+    /**
+     * Creates a column containing the assignee with a given key for a process instance identified by a process variable of a given name.
+     * Note that this assumes the identifier is a long value.
+     * @param tableInfo the table the column will be attached to
+     * @param colName name to give the column being created
+     * @param assigneeVarName the name of the process variable that contains the assigneeId (as an integer)
+     * @param identifierVarName the name of the variable that has the identifier for the workflow object in this table
+     * @param identifierColName the name of the column in the current table in which the identifier is located.
+     *@param user the current user
+     * @param container the container context for this table   @return column that will display the assignee
+     * TODO this assumes the key is a long_, which may not always be true
+     */
+    public ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeVarName, String identifierVarName, String identifierColName, User user, Container container)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT text_ FROM workflow.act_hi_varinst WHERE name_ = '" + assigneeVarName  + "' AND proc_inst_id_ IN ");
+        sql.append(" (SELECT pi.proc_inst_id_ FROM workflow.act_hi_procinst pi, (SELECT MAX(start_time_) startTime, v.long_ FROM workflow.act_hi_procinst p ");
+        sql.append(" JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'");
+        sql.append(" GROUP BY v.long_) AS sub WHERE pi.start_time_ = sub.startTime AND sub.long_ = ").append(identifierColName).append(")");
+        sql.append(")");
+        ExprColumn ret = new ExprColumn(tableInfo, colName, sql, JdbcType.VARCHAR);
+
+        ret.setFk(new UserIdQueryForeignKey(user, container, true));
+
+        return ret;
+    }
+
+    /**
+     * Creates a column with the current taskId for a given identifier variable.  Note that this
+     * will not work if there is more than one active task for a particular process instance.
+     * @param tableInfo the table to which the column will be added
+     * @param colLabel the name to be given to the column
+     * @param identifierVarName the name of the process variable that contains the identifier
+     * @param identifierColumnName the name of the column in the table that contains the identifier
+     * @return a column with the id of the current task.
+     */
+    public ColumnInfo getTaskIdColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT t.id_ FROM ");
+        sql.append(" workflow.act_ru_task t ");
+        sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" AND v.long_ = ").append(identifierColumnName);
+        sql.append(")");
+
+        ExprColumn col = new ExprColumn(tableInfo, WorkflowService.TASK_KEY, sql, JdbcType.VARCHAR);
+        col.setLabel(colLabel);
+        return col;
+    }
+
+    /**
+     * Creates a column with the current taskType (task definition key) for a given identifier variable.  Note that this
+     * will not work if there is more than one active task for a particular process instance and it currently assumes the
+     * identifier is a long_ value.
+     * @param tableInfo the table to which the column will be added
+     * @param colLabel the name to be given to the column
+     * @param identifierVarName the name of the process variable that contains the identifier
+     * @param identifierColumnName the name of the column in the table that contains the identifier
+     * @return a column with the id of the current task.
+     */
+    public ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT t.task_def_key_ FROM ");
+        sql.append(" workflow.act_ru_task t ");
+        sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
+        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" AND v.long_ = ").append(identifierColumnName);
+        sql.append(")");
+
+        ExprColumn col = new ExprColumn(tableInfo, WorkflowService.TASK_KEY, sql, JdbcType.VARCHAR);
+        col.setLabel(colLabel);
+        return col;
     }
 
     /**
@@ -153,7 +281,7 @@ public class WorkflowManager implements WorkflowService
      * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
      */
     @Nullable
-    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, Container container) throws Exception
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, @NotNull Container container) throws Exception
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
         sql.append("    (SELECT MAX(start_time_) startTime, v.").append(valueField).append(" FROM workflow.act_hi_procinst p ");
@@ -205,6 +333,23 @@ public class WorkflowManager implements WorkflowService
         return query.singleResult();
     }
 
+    @Nullable
+    public QueryView getTaskListQueryView(ViewContext context, @Nullable SimpleFilter filter)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), WorkflowQuerySchema.NAME);
+        if (schema == null)
+        {
+            return null;
+        }
+        else
+        {
+            QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, WorkflowQuerySchema.TABLE_TASK);
+            settings.setMaxRows(Table.ALL_ROWS);
+            if (filter != null)
+                settings.setBaseFilter(filter);
+            return new QueryView(schema, settings, null);
+        }
+    }
 
     /**
      * Completes a task in a workflow given the id of the task
@@ -448,6 +593,23 @@ public class WorkflowManager implements WorkflowService
     }
 
     /**
+     * Count of the number of process instances, both active an inactive, but not including deleted ones, in the given container for a given definiiton key
+     * @param processDefinitionKey identifier of the process definition
+     * @param container container of context, or null for all containers
+     * @return number of active and inactive process instances, excluding deleted instances
+     */
+    @NotNull
+    public Long getProcessInstanceCount(String processDefinitionKey, @Nullable Container container)
+    {
+        HistoricProcessInstanceQuery query = getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(processDefinitionKey);
+        if (container != null)
+            query.processInstanceTenantId(container.getId());
+        // deleted instances should not be counted
+        query.notDeleted();
+        return query.count();
+    }
+
+    /**
      * Given the process definition key, returns the corresponding list of process instances in the
      * current container
      * @param processDefinitionKey identifier for the process definition
@@ -561,7 +723,50 @@ public class WorkflowManager implements WorkflowService
      */
     public void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason)
     {
+        logger.info("Deleting process instance for processInstanceId " + processInstanceId);
         getRuntimeService().deleteProcessInstance(processInstanceId, reason);
+    }
+
+    /**
+     * Deletes an active process instance given a key and value that uniquely identify it within a particular container.
+     * Historic process instances with no active counterparts will not be deleted.
+     * @param key the key for the variable identifier
+     * @param value the value for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws RuntimeException if there are problems retrieving the process instance using the given variable data or deleting it
+     */
+    public void deleteProcessInstance(String key, String value, @Nullable String reason, @NotNull Container container) throws RuntimeException
+    {
+        try
+        {
+            WorkflowProcess process = getWorkflowProcessForVariable(key, value, container);
+            if (process != null && process.isActive())
+            {
+                deleteProcessInstance(process.getProcessInstanceId(), reason);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unable to delete process instance for key '" + key + "' and value '" + value + "'", e);
+        }
+    }
+
+    /**
+     * Deletes a set of process instances given a key and set of values that each uniquely identify a process within a particular container
+     * @param key the key for the variable identifier
+     * @param values the values for the variable identifier
+     * @param reason (optional) reason for deletion
+     * @param container the container context
+     * @throws RuntimeException if there are problems retrieving a process instance using the given variable data or deleting one
+     */
+    public void deleteProcessInstances(String key, List<Object> values, @Nullable String reason, @NotNull Container container)  throws RuntimeException
+    {
+        for (Object value : values)
+        {
+            logger.info("Deleting process instance for key " + key + " and value " + value);
+            deleteProcessInstance(key, value.toString(), reason, container);
+        }
     }
 
     /**
@@ -574,11 +779,14 @@ public class WorkflowManager implements WorkflowService
         try
         {
             ProcessInstance processInstance = getRuntimeService().createProcessInstanceQuery().includeProcessVariables().processInstanceId(processInstanceId).singleResult();
-            return processInstance.getProcessVariables();
+            if (processInstance != null)
+                return processInstance.getProcessVariables();
+            else
+                return Collections.emptyMap();
         }
         catch (PersistenceException e)
         {
-            return new HashMap<>();
+            return Collections.emptyMap();
         }
     }
 
