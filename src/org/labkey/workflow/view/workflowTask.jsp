@@ -26,6 +26,7 @@
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");

@@ -21,6 +21,7 @@
 <%@ page extends="org.labkey.workflow.view.WorkflowViewBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
@@ -33,7 +34,7 @@
 %>
 
 <labkey:errors></labkey:errors>
-<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 <br>
 <br>
 
@@ -48,5 +49,5 @@
 <%
     }
 %>
-<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 
