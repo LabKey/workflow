@@ -26,7 +26,6 @@
 <%
     HttpView me = HttpView.currentView();
     WorkflowSummary bean = (WorkflowSummary) me.getModelBean();
-
 %>
 <labkey:errors></labkey:errors>
 <%
