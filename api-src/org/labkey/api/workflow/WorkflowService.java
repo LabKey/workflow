@@ -117,6 +117,16 @@ public interface WorkflowService
      */
     String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Map<String, Object> processVariables, @NotNull Container container, @NotNull String startMessage) throws FileNotFoundException;
 
+
+    /**
+     * Sends the message indicated by the message name to the provided executionId (usually a processInstanceId for us)
+     * setting the processVariables as provided.
+     * @param messageName - name of the message to send
+     * @param executionId - identifier for the execution receiving the message (e.g., a process instance id)
+     * @param processVariables - variables that represent the payload of this message
+     */
+    public void sendMessage(String messageName, String executionId, @Nullable Map<String, Object> processVariables);
+
     /**
      * Find the workflow process corresponding to the given process instance id.  It will find either an acitve
      * or inactive process instance.

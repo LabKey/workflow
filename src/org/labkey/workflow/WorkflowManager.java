@@ -352,6 +352,21 @@ public class WorkflowManager implements WorkflowService
     }
 
     /**
+     * Sends the message indicated by the message name to the provided executionId (usually a processInstanceId for us)
+     * setting the processVariables as provided.
+     * @param messageName - name of the message to send
+     * @param executionId - identifier for the execution receiving the message (e.g., a process instance id)
+     * @param processVariables - variables that represent the payload of this message
+     */
+    public void sendMessage(String messageName, String executionId, @Nullable Map<String, Object> processVariables)
+    {
+        if (processVariables != null)
+            getRuntimeService().messageEventReceived(messageName, executionId, processVariables);
+        else
+            getRuntimeService().messageEventReceived(messageName, executionId);
+    }
+
+    /**
      * Completes a task in a workflow given the id of the task
      * @param taskId the id of an active task
      * @param user the user completing the task
