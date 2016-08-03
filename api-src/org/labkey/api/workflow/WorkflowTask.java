@@ -36,6 +36,8 @@ public interface WorkflowTask
 {
     String getId();
 
+    String getExecutionId();
+
     String getName();
 
     String getDescription();

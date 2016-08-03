@@ -119,10 +119,10 @@ public interface WorkflowService
 
 
     /**
-     * Sends the message indicated by the message name to the provided executionId (usually a processInstanceId for us)
+     * Sends the message indicated by the message name to the provided executionId
      * setting the processVariables as provided.
      * @param messageName - name of the message to send
-     * @param executionId - identifier for the execution receiving the message (e.g., a process instance id)
+     * @param executionId - identifier for the execution receiving the message (the id of the execution to deliver the message to)
      * @param processVariables - variables that represent the payload of this message
      */
     public void sendMessage(String messageName, String executionId, @Nullable Map<String, Object> processVariables);
