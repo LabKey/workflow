@@ -94,4 +94,10 @@ public class WorkflowHistoricTaskImpl extends WorkflowTaskImpl
     {
         return _historicTask.getEndTime();
     }
+
+    @Override
+    public String getDeleteReason()
+    {
+        return _historicTask.getDeleteReason();
+    }
 }

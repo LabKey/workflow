@@ -141,4 +141,6 @@ public interface WorkflowTask
     @Nullable
     Map<String, Object> getVariables();
 
+    String getDeleteReason();
+
 }
