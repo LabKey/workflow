@@ -130,10 +130,4 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
     {
         return null;
     }
-
-    @Override
-    public String getDeleteReason()
-    {
-        return null;
-    }
 }
