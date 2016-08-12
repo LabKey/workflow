@@ -1,0 +1,9 @@
+dependencies {
+   compile "org.mybatis:mybatis:3.3.0"
+   compile "joda-time:joda-time:2.6"
+   compile "org.activiti:activiti-bpmn-model:5.20.0"
+   compile "org.activiti:activiti-image-generator:5.20.0"
+   compile "org.activiti:activiti-engine:5.20.0"
+   compile "org.activiti:activiti-process-validation:5.20.0"
+   project(path: ":server:modules:core", configuration: 'apiCompile')
+}
