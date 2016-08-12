@@ -81,4 +81,6 @@ public interface WorkflowProcess
 
     @Nullable
     Map<String, TaskFormField> getStartFormFields(Container container);
+
+    String getProcessExecutionId();
 }
