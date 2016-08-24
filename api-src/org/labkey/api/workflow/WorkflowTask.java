@@ -36,6 +36,8 @@ public interface WorkflowTask
 {
     String getId();
 
+    String getExecutionId();
+
     String getName();
 
     String getDescription();
@@ -138,5 +140,4 @@ public interface WorkflowTask
 
     @Nullable
     Map<String, Object> getVariables();
-
 }

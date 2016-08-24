@@ -50,6 +50,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
 {
     protected TaskInfo _taskInfo;
     protected String _id;
+    protected String _executionId;
     protected List<Integer> _groupIds = null;
     private Map<String, TaskFormField> _formFields = Collections.emptyMap();
     private WorkflowProcess _processInstance = null;
@@ -66,6 +67,11 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     public String getId()
     {
         return _taskInfo == null ? _id : _taskInfo.getId();
+    }
+
+    public String getExecutionId()
+    {
+        return _taskInfo == null ? _executionId : _taskInfo.getExecutionId();
     }
 
     public String getName()

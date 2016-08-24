@@ -376,4 +376,13 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         else
             return Collections.emptyMap();
     }
+
+    @Override
+    public String getProcessExecutionId()
+    {
+        List<WorkflowTask> tasks = getCurrentTasks();
+        if (tasks.isEmpty())
+            return null;
+        return tasks.get(0).getExecutionId();
+    }
 }
