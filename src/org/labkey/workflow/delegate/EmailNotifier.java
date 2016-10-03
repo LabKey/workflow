@@ -78,45 +78,47 @@ public class EmailNotifier implements JavaDelegate
         NotificationConfig notificationConfig = getNotificationConfig(execution);
         Container container = notificationConfig.getContainer();
         EmailTemplate template = notificationConfig.getEmailTemplate(execution.getProcessInstanceId(), execution.getVariables());
-        final List<User> allAddresses = notificationConfig.getUsers();
-        for (User user : allAddresses)
+        if (template != null)
         {
-            // give the config a chance to add a UI notification to the system for this email message
-            if (notificationConfig.shouldAddUINotification())
+            final List<User> allAddresses = notificationConfig.getUsers();
+            for (User user : allAddresses)
             {
-                Notification notification = new Notification();
-                notification.setUserId(user.getUserId());
-                notification.setObjectId(execution.getProcessInstanceId());
-                notification.setType(notificationConfig.getUINotificationType());
-
-                NotificationService.get().addNotification(container, notificationConfig.getLogUser(), notification);
-            }
-
-            String to = user.getEmail();
-            try
-            {
-                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(container).getSystemEmailAddress(), to);
-                Address[] addresses = m.getAllRecipients();
-                if (addresses != null && addresses.length > 0)
+                // give the config a chance to add a UI notification to the system for this email message
+                if (notificationConfig.shouldAddUINotification())
                 {
-                    m.setSubject(template.renderSubject(container));
-                    String body = template.renderBody(container);
-                    m.setText(body);
+                    Notification notification = new Notification();
+                    notification.setUserId(user.getUserId());
+                    notification.setObjectId(execution.getProcessInstanceId());
+                    notification.setType(notificationConfig.getUINotificationType());
 
-                    MailHelper.send(m, notificationConfig.getLogUser(), container);
+                    NotificationService.get().addNotification(container, notificationConfig.getLogUser(), notification);
+                }
+
+                String to = user.getEmail();
+                try
+                {
+                    MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(container).getSystemEmailAddress(), to);
+                    Address[] addresses = m.getAllRecipients();
+                    if (addresses != null && addresses.length > 0)
+                    {
+                        m.setSubject(template.renderSubject(container));
+                        String body = template.renderBody(container);
+                        m.setText(body);
+
+                        MailHelper.send(m, notificationConfig.getLogUser(), container);
+                    }
+                }
+                catch (ConfigurationException | AddressException e)
+                {
+                    _log.error("error sending service task notification email to " + to, e);
+                }
+                catch (Exception e)
+                {
+                    _log.error("error sending service task notification email to " + to, e);
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
             }
-            catch (ConfigurationException | AddressException e)
-            {
-                _log.error("error sending service task notification email to " + to, e);
-            }
-            catch (Exception e)
-            {
-                _log.error("error sending service task notification email to " + to, e);
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
         }
-
     }
 
 }
