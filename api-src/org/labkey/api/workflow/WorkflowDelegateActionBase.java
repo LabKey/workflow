@@ -15,6 +15,11 @@
  */
 package org.labkey.api.workflow;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+
 import java.util.Map;
 
 /**
@@ -23,15 +28,41 @@ import java.util.Map;
 public class WorkflowDelegateActionBase
 {
     protected final Map<String, Object> _variables;
+    protected WorkflowProcess _process;
+    protected final Container _container;
+    protected final User _initiator;
 
     public WorkflowDelegateActionBase(Map<String, Object> variables)
     {
         _variables = variables;
+        _container = ContainerManager.getForId((String) _variables.get(WorkflowProcess.CONTAINER_ID));
+        _initiator = UserManager.getUser(Integer.valueOf((String) _variables.get(WorkflowProcess.INITIATOR_ID)));
+    }
+
+    public WorkflowDelegateActionBase(WorkflowProcess process)
+    {
+        this(process.getVariables());
+        _process = process;
+    }
+
+    public WorkflowProcess getProcess()
+    {
+        return _process;
     }
 
     public Map<String, Object> getVariables()
     {
         return _variables;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public User getInitiator()
+    {
+        return _initiator;
     }
 
     public Object getVariable(String key)

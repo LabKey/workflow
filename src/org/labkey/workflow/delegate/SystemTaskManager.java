@@ -19,6 +19,8 @@ import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
 import org.labkey.api.workflow.SystemTaskRunner;
+import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.workflow.WorkflowManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -51,7 +53,16 @@ public class SystemTaskManager implements JavaDelegate
 
     private SystemTaskRunner getTaskRunnerInstance(DelegateExecution execution) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException
     {
-        return getTaskRunnerClass(execution).getDeclaredConstructor(Map.class).newInstance(execution.getVariables());
+        Class<SystemTaskRunner> taskRunnerClass = getTaskRunnerClass(execution);
+        try
+        {
+            WorkflowProcess process = WorkflowManager.get().getWorkflowProcess(execution.getProcessInstanceId());
+            return taskRunnerClass.getDeclaredConstructor(WorkflowProcess.class).newInstance(process);
+        }
+        catch (NoSuchMethodException e)
+        {
+            return taskRunnerClass.getDeclaredConstructor(Map.class).newInstance(execution.getVariables());
+        }
     }
 
     @Override

@@ -49,6 +49,7 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by susanh on 5/11/15.
@@ -84,7 +85,8 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         if (!container.hasPermission(user, AdminPermission.class))
         {
             sql.append(" AND (I.group_id_ IS NULL OR ");
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"), SecurityManager.getGroups(container, user));
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts("I","group_id_"),
+                    SecurityManager.getGroups(container, user).stream().map(g -> String.valueOf(g.getUserId())).collect(Collectors.toList()));
             sql.append(clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect()));
             sql.append(")");
         }
