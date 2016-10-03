@@ -20,11 +20,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.api.workflow.WorkflowService;
 import org.labkey.workflow.query.WorkflowQuerySchema;
+import org.labkey.workflow.view.WorkflowWebPart;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,13 +54,6 @@ public class WorkflowModule extends DefaultModule
     public boolean hasScripts()
     {
         return true;
-    }
-
-    @Override
-    @NotNull
-    protected Collection<WebPartFactory> createWebPartFactories()
-    {
-        return Collections.emptyList();
     }
 
     @Override
@@ -90,5 +86,15 @@ public class WorkflowModule extends DefaultModule
         return new HashSet<>(Arrays.asList(
                 WorkflowManager.TestCase.class
         ));
+    }
+
+    @NotNull
+    @Override
+    protected Collection<WebPartFactory> createWebPartFactories()
+    {
+        ArrayList<WebPartFactory> list = new ArrayList<>();
+        SimpleWebPartFactory factory = new SimpleWebPartFactory("Workflow List", WebPartFactory.LOCATION_BODY, WorkflowWebPart.class, null);
+        list.add(factory);
+        return list;
     }
 }

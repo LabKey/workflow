@@ -40,6 +40,14 @@ import java.util.Map;
 public abstract class WorkflowViewBase extends JspBase
 {
 
+    protected String rowClass = "labkey-row";
+
+    public String nextRowClass()
+    {
+        rowClass = rowClass.equals("labkey-row")? "labkey-alternate-row" : "labkey-row";
+        return rowClass;
+    }
+
     public String variablesTableRows(Map<String, Object> variables)
     {
         StringBuilder builder = new StringBuilder();
@@ -51,7 +59,7 @@ public abstract class WorkflowViewBase extends JspBase
             {
                 if (variable.getKey().equalsIgnoreCase("Data Access"))
                     continue;
-                builder.append("<tr>\n");
+                builder.append("<tr class=\"" + nextRowClass() + "\">\n");
                 builder.append("<td>").append(h(variable.getKey())).append("</td>\n");
                 builder.append("<td>").append(h(variable.getValue())).append("</td>\n");
                 builder.append("</tr>\n");
@@ -202,4 +210,6 @@ public abstract class WorkflowViewBase extends JspBase
 
         return builder.toString();
     }
+
+
 }

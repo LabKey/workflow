@@ -878,7 +878,7 @@ public class WorkflowManager implements WorkflowService
         List<ProcessDefinition> definitions = WorkflowManager.get().getProcessDefinitionList(container);
         for (ProcessDefinition definition : definitions)
         {
-            keyToNameMap.put(definition.getKey(), definition.getName());
+            keyToNameMap.put(definition.getKey(), definition.getName() == null ? definition.getKey() : definition.getName());
         }
         return keyToNameMap;
     }
