@@ -21,7 +21,6 @@ package org.labkey.api.workflow;
  */
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 
@@ -38,8 +37,6 @@ public abstract class NotificationConfig extends WorkflowDelegateActionBase
     public abstract List<User> getUsers();
 
     public abstract EmailTemplate getEmailTemplate(String processInstanceId, Map<String, Object> variables);
-
-    public abstract Container getContainer();
 
     @Nullable
     public abstract User getLogUser();
