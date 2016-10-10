@@ -56,9 +56,9 @@ public class SystemTaskManager implements JavaDelegate
         Class<SystemTaskRunner> taskRunnerClass = getTaskRunnerClass(execution);
         try
         {
-            if (WorkflowManager.get().getProcessInstance(execution.getProcessInstanceId()) != null)
+            WorkflowProcess process = WorkflowManager.get().getWorkflowProcess(execution.getProcessInstanceId());
+            if (process != null)
             {
-                WorkflowProcess process = WorkflowManager.get().getWorkflowProcess(execution.getProcessInstanceId());
                 return taskRunnerClass.getDeclaredConstructor(WorkflowProcess.class).newInstance(process);
             }
             else
