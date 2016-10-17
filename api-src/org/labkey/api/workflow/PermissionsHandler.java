@@ -130,6 +130,12 @@ public abstract class PermissionsHandler
         return new SimpleFilter.SQLClause("(" + sql.getSQL() + ")", sql.getParams().toArray(), new FieldKey(null, "id_"));
     }
 
+    /**
+     * For a particular task, return the set of permissions a user must have in order to perform this task.
+     * This is used when displaying the list of candidate users to assign a task to.
+     * @param task the task that is to be assigned
+     * @return a set of permissions classes
+     */
     public abstract Set<Class<? extends Permission>> getCandidateUserPermissions(@NotNull WorkflowTask task);
 
     @SuppressWarnings("unchecked")

@@ -16,11 +16,8 @@
 package org.labkey.api.workflow;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 
 import java.util.Collections;
@@ -34,14 +31,14 @@ import java.util.Set;
  */
 public abstract class SystemTaskRunner extends WorkflowDelegateActionBase
 {
-    private final Container _container;
-    private final User _initiator;
-
     public SystemTaskRunner(Map<String, Object> variables)
     {
         super(variables);
-        _container = ContainerManager.getForId((String) _variables.get(WorkflowProcess.CONTAINER_ID));
-        _initiator = UserManager.getUser(Integer.valueOf((String) _variables.get(WorkflowProcess.INITIATOR_ID)));
+    }
+
+    public SystemTaskRunner(WorkflowProcess process)
+    {
+       super(process);
     }
 
     public abstract void doAction() throws Exception;
@@ -53,13 +50,4 @@ public abstract class SystemTaskRunner extends WorkflowDelegateActionBase
         return _container != null ? SecurityManager.getUsersWithPermissions(_container, permissions) : Collections.emptyList();
     }
 
-    public Container getContainer()
-    {
-        return _container;
-    }
-
-    public User getInitiator()
-    {
-        return _initiator;
-    }
 }

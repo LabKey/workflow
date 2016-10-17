@@ -418,7 +418,7 @@ public class WorkflowManager implements WorkflowService
      * @param assigneeId id of the user to whom the task should be assigned
      * @param user principal doing the assignment
      * @param container container context for this assignment
-     * @throws Exception
+     * @throws Exception if there is no user or task specified
      */
     public void assignTask(@NotNull String taskId, @NotNull Integer assigneeId, User user, Container container) throws Exception
     {
@@ -454,7 +454,7 @@ public class WorkflowManager implements WorkflowService
      * @param user principal doing the delegation
      * @param designateeId id of the user to delegate to
      * @param container context in which the delegation is being made
-     * @throws Exception
+     * @throws Exception if there is no delegate or task specified or if the user cannot delegate the task
      */
     public void delegateTask(@NotNull String taskId, @NotNull User user, @NotNull Integer designateeId, Container container) throws Exception
     {
@@ -487,6 +487,26 @@ public class WorkflowManager implements WorkflowService
     {
         makeContainerDeployment(moduleName, processDefinitionKey, container);
 
+        ProcessInstance instance = getRuntimeService().startProcessInstanceByMessageAndTenantId(startMessage, processVariables, container.getId());
+        return instance.getId();
+    }
+
+    /**
+     * Creates a new process instance for a given workflow starting at the message start event provided
+     * @param moduleName - name of the module in which the workflow is defined
+     * @param processDefinitionKey - the unique key for this process definition (also the prefix of the bpmn.xml file)
+     * @param processVariables - the set of variables to associate with this process instance (should contain at least the INITIATOR_ID variable)
+     * @param container - the container in which this process is being created
+     * @param startMessage - the id of the message element defined for the start event
+     * @return id of the process instance created
+     * @throws FileNotFoundException if the bpmn.xml file that defines the process does not exist and it is necessary to deploy a new instance of this model in this container
+     */
+    public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Map<String, Object> processVariables, @NotNull User initiator, @NotNull Container container, @NotNull String startMessage) throws FileNotFoundException
+    {
+        makeContainerDeployment(moduleName, processDefinitionKey, container);
+
+        processVariables.put(WorkflowProcess.INITIATOR_ID, String.valueOf(initiator.getUserId()));
+        processVariables.put(WorkflowProcess.CONTAINER_ID, String.valueOf(container.getId()));
         ProcessInstance instance = getRuntimeService().startProcessInstanceByMessageAndTenantId(startMessage, processVariables, container.getId());
         return instance.getId();
     }
@@ -877,7 +897,7 @@ public class WorkflowManager implements WorkflowService
         List<ProcessDefinition> definitions = WorkflowManager.get().getProcessDefinitionList(container);
         for (ProcessDefinition definition : definitions)
         {
-            keyToNameMap.put(definition.getKey(), definition.getName());
+            keyToNameMap.put(definition.getKey(), definition.getName() == null ? definition.getKey() : definition.getName());
         }
         return keyToNameMap;
     }
