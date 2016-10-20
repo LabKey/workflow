@@ -663,7 +663,13 @@ public class WorkflowManager implements WorkflowService
         if (instance != null)
             return new WorkflowProcessImpl(instance);
         else
-            return new WorkflowProcessImpl(getHistoricProcessInstance(processInstanceId));
+        {
+            HistoricProcessInstance historicInstance = getHistoricProcessInstance(processInstanceId);
+            if (historicInstance == null)
+                return null;
+            else
+                return new WorkflowProcessImpl(historicInstance);
+        }
     }
 
     /**
