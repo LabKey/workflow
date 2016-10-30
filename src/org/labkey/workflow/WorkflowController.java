@@ -52,6 +52,7 @@ import org.labkey.workflow.model.WorkflowHistoricTaskImpl;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 import org.labkey.workflow.model.WorkflowSummary;
 import org.labkey.workflow.query.WorkflowQuerySchema;
+import org.labkey.workflow.view.WorkflowWebPart;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -98,8 +99,9 @@ public class WorkflowController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            AllWorkflowsBean bean = new AllWorkflowsBean(getContainer());
-            return new JspView<>("/org/labkey/workflow/view/allWorkflows.jsp", bean);
+            setTitle("Workflows");
+            WorkflowWebPart wp = new WorkflowWebPart(getContainer());
+            return wp;
         }
 
         public NavTree appendNavTrail(NavTree root)

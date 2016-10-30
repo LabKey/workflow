@@ -50,14 +50,14 @@
         String changeAssigneeLabel = bean.getAssigneeId() == null ? "Assign" : "Reassign";
         Boolean canChangeAssignee = bean.canClaim(getUser(), getContainer()) || (bean.isDelegated() && bean.canDelegate(getUser(), getContainer())) || bean.canAssign(getUser(), getContainer());
 %>
-<%= navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId()) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId())) %>
 <br>
 <br>
 <table class="labkey-proj">
 
     <tr>
         <td>
-            <strong><%= bean.getName() %></strong>
+            <strong><%= h(bean.getName()) %></strong>
         </td>
     </tr>
     <%
@@ -65,18 +65,18 @@
         {
     %>
     <tr>
-        <td colspan="2"><%= bean.getDescription() %></td>
+        <td colspan="2"><%= h(bean.getDescription()) %></td>
     </tr>
     <%
         }
     %>
     <tr>
-    <td>Created: <%= DateUtil.formatDateTime(getContainer(), bean.getCreateTime()) %></td>
+    <td>Created: <%= h(DateUtil.formatDateTime(getContainer(), bean.getCreateTime())) %></td>
     <%
         if (bean.getDueDate() != null)
         {
     %>
-    <td><strong>   Due: </strong> <%= DateUtil.formatDateTime(getContainer(), bean.getDueDate()) %></td>
+    <td><strong>   Due: </strong> <%= h(DateUtil.formatDateTime(getContainer(), bean.getDueDate())) %></td>
     <%
         }
     %>
@@ -85,17 +85,26 @@
 
 
 <strong>Task Details</strong>
+<%
+    if (canChangeAssignee)
+    {
+%>
+
+        <%= button(changeAssigneeLabel).onClick("createReassignTaskWindow(" + q(bean.getId()) + ", " + bean.getAssigneeId() + "); return false;") %>
+<%
+    }
+%>
 <br><br>
 <table class="labkey-proj">
-    <tr>
+    <tr class="<%=h(nextRowClass())%>">
         <td>Status</td>
-        <td><strong><%= bean.isActive() ? "Active" : "Inactive" %></strong></td>
+        <td><strong><%= text(bean.isActive() ? "Active" : "Inactive") %></strong></td>
     </tr>
     <%
         if (bean.getOwner() != null)
         {
     %>
-    <tr>
+    <tr class="<%=h(nextRowClass())%>">
         <td>Owned by</td>
         <td><%= h(bean.getOwner().getDisplayName(getUser())) %></td>
     </tr>
@@ -106,28 +115,17 @@
         if (bean.getAssignee() != null)
         {
     %>
-    <tr>
-        <td><%= assigneeLabel %></td>
+    <tr class="<%=h(nextRowClass())%>">
+        <td><%= h(assigneeLabel) %></td>
         <td><%= h(bean.getAssignee().getDisplayName(getUser())) %></td>
-    </tr>
-    <tr></tr>
-    <%
-        }
-        if (canChangeAssignee)
-        {
-    %>
-    <tr>
-        <td colspan="2" height="40px">
-            <%= button(changeAssigneeLabel).onClick("createReassignTaskWindow(" + q(bean.getId()) + ", " + bean.getAssigneeId() + "); return false;") %>
-        </td>
     </tr>
     <%
         }
     %>
 
-<%= variablesTableRows(bean.getVariables()) %>
+<%= text(variablesTableRows(bean.getVariables())) %>
 </table>
-<%= dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))%>
+<%= text(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
 
 <br>
 <%
@@ -152,8 +150,8 @@
             else
             {
 %>
-<%= actionForm(bean.getName(), bean.getTaskDefinitionKey(),
-        "javascript:completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields, null) %>
+<%= text(actionForm(bean.getName(), bean.getTaskDefinitionKey(),
+        "javascript:completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields, null)) %>
 <br>
 <%
             }

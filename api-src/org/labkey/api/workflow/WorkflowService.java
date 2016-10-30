@@ -193,7 +193,7 @@ public interface WorkflowService
      * @param assigneeKey the name of the process variable that contains the assigneeId (as an integer)
      * @param identifierKey the name of the variable that has the identifier for the workflow object in this table
      * @param identifierColName
-     *@param user the current user
+     * @param user the current user
      * @param container the container context for this table   @return column that will display the assignee
      */
     ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeKey, String identifierKey, String identifierColName, User user, Container container);
@@ -208,7 +208,7 @@ public interface WorkflowService
      * @param identifierColumnName the name of the column in the table that contains the identifier
      * @return a column with the id of the current task.
      */
-    public ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName);
+    ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName);
 
 
     /**

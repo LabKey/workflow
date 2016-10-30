@@ -316,11 +316,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     @NotNull
     public Map<String, TaskFormField> getFormFields()
     {
-        if (_formFields == null)
-        {
-            _formFields = WorkflowManager.get().getFormFields(getId());
-        }
-        return _formFields;
+        return WorkflowManager.get().getFormFields(getId());
     }
 
 }

@@ -30,6 +30,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+        dependencies.add("workflow/view/workflow.css");
         dependencies.add("workflow/view/reassignTask.js");
         dependencies.add("workflow/view/completeTask.js");
         dependencies.add("workflow/view/deleteProcessInstance.js");
@@ -58,7 +59,7 @@ There is no active process with id <%= h(bean.getId()) %>
     else
     {
 %>
-<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
+<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 
 <br>
 <br>
@@ -89,16 +90,16 @@ There is no active process with id <%= h(bean.getId()) %>
 <strong>Process Instance Details</strong>
 <br><br>
 <table class="labkey-proj">
-    <tr>
+    <tr class="<%=h(nextRowClass())%>">
         <td>Status</td>
-        <td><strong><%= bean.isActive() ? "Active" : "Inactive"%></strong></td>
+        <td><strong><%= text(bean.isActive() ? "Active" : "Inactive")%></strong></td>
     </tr>
     <%
         if (bean.getInitiator() != null)
         {
     %>
 
-    <tr>
+    <tr class="<%=h(nextRowClass())%>">
         <td>Initiator</td>
         <td><%= h(bean.getInitiator().getDisplayName(getUser())) %></td>
     </tr>
@@ -106,9 +107,9 @@ There is no active process with id <%= h(bean.getId()) %>
         }
     %>
 
-<%= variablesTableRows(bean.getVariables()) %>
-<tr>
-    <td>Current Job(s)</td>
+<%= text(variablesTableRows(bean.getVariables())) %>
+<tr class="<%=h(nextRowClass())%>">
+    <td class="labkey-workflow-detail-label">Current Job(s)</td>
 
     <%
         if (bean.getCurrentJobs().isEmpty())
@@ -117,22 +118,19 @@ There is no active process with id <%= h(bean.getId()) %>
         }
         else
         {
-            out.println("<td></td></tr>");
+            out.println("<td>");
             for (WorkflowJob job: bean.getCurrentJobs())
             {
     %>
-    <tr>
-        <td></td>
-        <td>
             <%= h(job.getId()) %>: Due date <%= formatDateTime(job.getDueDate()) %>
-        </td>
-    </tr>
+            <br>
     <%
             }
+            out.println("</td></tr>");
         }
     %>
-<tr>
-    <td>Current Task(s)</td>
+<tr class="<%=h(nextRowClass())%>">
+    <td class="labkey-workflow-detail-label">Current Task(s)</td>
 <%
     if (bean.getCurrentTasks().isEmpty())
     {
@@ -140,13 +138,11 @@ There is no active process with id <%= h(bean.getId()) %>
     }
     else
     {
-        out.println("<td></td></tr>");
+
+        out.println("<td>");
         for (WorkflowTask task: bean.getCurrentTasks())
         {
 %>
-<tr>
-    <td></td>
-    <td>
     <%
             if (task.canView(getUser(), getContainer()))
             {
@@ -173,14 +169,14 @@ There is no active process with id <%= h(bean.getId()) %>
         <%
             }
         %>
-    </td>
-</tr>
+        <br>
 <%
         }
+        out.println("</td></tr>");
     }
 %>
-<tr>
-    <td>Completed Task(s)</td>
+<tr class="<%=h(nextRowClass())%>"">
+    <td class="labkey-workflow-detail-label">Completed Task(s)</td>
 <%
     if (bean.getCompletedTasks().isEmpty())
     {
@@ -188,13 +184,10 @@ There is no active process with id <%= h(bean.getId()) %>
     }
     else
     {
-        out.println("<td></td></tr>");
+        out.println("<td>");
         for (WorkflowTask completedTask: bean.getCompletedTasks())
         {
 %>
-    <tr>
-        <td></td>
-        <td>
             <%
                 if (completedTask.canView(getUser(), getContainer()))
                 {
@@ -221,16 +214,17 @@ There is no active process with id <%= h(bean.getId()) %>
             <%
             }
             %>
-        </td>
-    </tr>
+        <br>
     <%
         }
+        out.println("</td></tr>");
     %>
-</table>
+
 <%
     }
 %>
-<%= dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer())) %>
+</table>
+<%= text(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
 <%
         if (bean.hasDiagram(getContainer()))
         {
