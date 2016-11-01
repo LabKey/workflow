@@ -2,7 +2,7 @@ import org.labkey.gradle.util.BuildUtils;
 
 dependencies {
    external "org.mybatis:mybatis:3.3.0"
-   external "joda-time:joda-time:2.6"
+   external "joda-time:joda-time:${jodaTimeVersion}"
    external "org.activiti:activiti-bpmn-model:5.20.0"
    external "org.activiti:activiti-image-generator:5.20.0"
    external "org.activiti:activiti-engine:5.20.0"
