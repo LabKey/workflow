@@ -1,11 +1,11 @@
 import org.labkey.gradle.util.BuildUtils;
 
 dependencies {
-   external "org.mybatis:mybatis:3.3.0"
+   external "org.mybatis:mybatis:${mybatisVersion}"
    external "joda-time:joda-time:${jodaTimeVersion}"
-   external "org.activiti:activiti-bpmn-model:5.20.0"
-   external "org.activiti:activiti-image-generator:5.20.0"
-   external "org.activiti:activiti-engine:5.20.0"
-   external "org.activiti:activiti-process-validation:5.20.0"
+   external "org.activiti:activiti-bpmn-model:${activitiVersion}"
+   external "org.activiti:activiti-image-generator:${activitiVersion}"
+   external "org.activiti:activiti-engine:${activitiVersion}"
+   external "org.activiti:activiti-process-validation:${activitiVersion}"
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: "apiCompile")
 }
