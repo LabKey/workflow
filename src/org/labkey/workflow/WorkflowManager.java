@@ -69,6 +69,7 @@ import org.labkey.api.module.ModuleResourceCache2;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandler2;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -1093,7 +1094,7 @@ public class WorkflowManager implements WorkflowService
         @Override
         public String createCacheKey(Module module, String resourceName)
         {
-            return ModuleResourceCache.createCacheKey(module, resourceName);
+            return ModuleResourceCaches.createCacheKey(module, resourceName);
         }
 
         @Override
@@ -1104,7 +1105,7 @@ public class WorkflowManager implements WorkflowService
                 @Override
                 public Deployment load(String key, @Nullable Object argument)
                 {
-                    ModuleResourceCache.CacheId id = ModuleResourceCache.parseCacheKey(key);
+                    CacheId id = ModuleResourceCaches.parseCacheKey(key);
                     Module module = id.getModule();
                     String filename = id.getName();
                     String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
