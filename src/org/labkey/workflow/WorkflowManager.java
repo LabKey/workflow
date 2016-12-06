@@ -64,10 +64,10 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleResourceCacheOld;
 import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCache2;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheHandler2;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.ExprColumn;
@@ -123,9 +123,9 @@ public class WorkflowManager implements WorkflowService
     private ProcessEngine _processEngine = null;
 
     // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCache<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
+    private final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
     // A cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCache2<Map<String, Deployment>> DEPLOYMENT_CACHE_NEW = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler2(), "Workflow model definitions");
+    private final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE_NEW = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler2(), "Workflow model definitions");
 
     private WorkflowManager()
     {
@@ -1077,7 +1077,7 @@ public class WorkflowManager implements WorkflowService
     }
 
 
-    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<String, Deployment>
+    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandlerOld<String, Deployment>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -1150,7 +1150,7 @@ public class WorkflowManager implements WorkflowService
         }
     }
 
-    private static class WorkflowDeploymentCacheHandler2 implements ModuleResourceCacheHandler2<Map<String, Deployment>>
+    private static class WorkflowDeploymentCacheHandler2 implements ModuleResourceCacheHandler<Map<String, Deployment>>
     {
         @Override
         public Map<String, Deployment> load(@Nullable Resource dir, Module module)
