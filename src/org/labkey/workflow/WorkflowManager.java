@@ -123,9 +123,9 @@ public class WorkflowManager implements WorkflowService
     private ProcessEngine _processEngine = null;
 
     // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
+    private final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE_OLD = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandlerOld());
     // A cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE_NEW = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler2(), "Workflow model definitions");
+    private final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler(), "Workflow model definitions");
 
     private WorkflowManager()
     {
@@ -976,8 +976,8 @@ public class WorkflowManager implements WorkflowService
     public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable Container container) throws FileNotFoundException
     {
         // get the deployment in the global scope, referencing the cache
-        Deployment globalDeployment = DEPLOYMENT_CACHE.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
-//        Deployment globalDeployment = DEPLOYMENT_CACHE_NEW.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
+        Deployment globalDeployment = DEPLOYMENT_CACHE_OLD.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
+//        Deployment globalDeployment = DEPLOYMENT_CACHE.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
 
         // find the latest version for this container and compare deployment time to the time for the global version
         ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
@@ -1077,7 +1077,7 @@ public class WorkflowManager implements WorkflowService
     }
 
 
-    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandlerOld<String, Deployment>
+    private static class WorkflowDeploymentCacheHandlerOld implements ModuleResourceCacheHandlerOld<String, Deployment>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -1150,7 +1150,7 @@ public class WorkflowManager implements WorkflowService
         }
     }
 
-    private static class WorkflowDeploymentCacheHandler2 implements ModuleResourceCacheHandler<Map<String, Deployment>>
+    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<Map<String, Deployment>>
     {
         @Override
         public Map<String, Deployment> load(@Nullable Resource dir, Module module)
