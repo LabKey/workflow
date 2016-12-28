@@ -64,10 +64,11 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceCacheOld;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheHandlerOld;
+import org.labkey.api.module.ModuleResourceCacheOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.ExprColumn;
@@ -110,6 +111,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorkflowManager implements WorkflowService
 {
@@ -123,9 +125,9 @@ public class WorkflowManager implements WorkflowService
     private ProcessEngine _processEngine = null;
 
     // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandler());
+    private static final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE_OLD = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandlerOld());
     // A cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE_NEW = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler2(), "Workflow model definitions");
+    private static final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler(), "Workflow model definitions");
 
     private WorkflowManager()
     {
@@ -976,8 +978,8 @@ public class WorkflowManager implements WorkflowService
     public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable Container container) throws FileNotFoundException
     {
         // get the deployment in the global scope, referencing the cache
-        Deployment globalDeployment = DEPLOYMENT_CACHE.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
-//        Deployment globalDeployment = DEPLOYMENT_CACHE_NEW.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
+        Deployment globalDeployment = DEPLOYMENT_CACHE_OLD.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
+//        Deployment globalDeployment = DEPLOYMENT_CACHE.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
 
         // find the latest version for this container and compare deployment time to the time for the global version
         ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
@@ -1077,7 +1079,7 @@ public class WorkflowManager implements WorkflowService
     }
 
 
-    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandlerOld<String, Deployment>
+    private static class WorkflowDeploymentCacheHandlerOld implements ModuleResourceCacheHandlerOld<String, Deployment>
     {
         @Override
         public boolean isResourceFile(String filename)
@@ -1150,7 +1152,7 @@ public class WorkflowManager implements WorkflowService
         }
     }
 
-    private static class WorkflowDeploymentCacheHandler2 implements ModuleResourceCacheHandler<Map<String, Deployment>>
+    private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<Map<String, Deployment>>
     {
         @Override
         public Map<String, Deployment> load(@Nullable Resource dir, Module module)
@@ -1340,6 +1342,18 @@ public class WorkflowManager implements WorkflowService
             assertEquals("Delete reason not as expected for historic instance", "testDeleteProcessInstance", instance.getDeleteReason());
             List<HistoricProcessInstance> instances = _manager.getHistoricProcessInstanceList(PROCESS_DEF_KEY, _container, true);
             assertEquals("Number of historic process instances not as expected", 1, instances.size());
+        }
+
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the module-defined workflow models to ensure no exceptions
+            AtomicInteger oldCount = new AtomicInteger(0);
+            ModuleLoader.getInstance().getModules().forEach(module -> {oldCount.addAndGet(DEPLOYMENT_CACHE_OLD.getResources(module).size());});
+            AtomicInteger count = new AtomicInteger(0);
+            ModuleLoader.getInstance().getModules().forEach(module -> {count.addAndGet(DEPLOYMENT_CACHE.getResourceMap(module).size());});
+
+            assert oldCount.get() == count.get();
         }
 
         private static void deleteTestContainer()
