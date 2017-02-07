@@ -123,7 +123,7 @@ public class WorkflowQuerySchema extends UserSchema
 
     @Nullable
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         switch (name)
         {
