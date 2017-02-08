@@ -123,7 +123,7 @@ public class WorkflowQuerySchema extends UserSchema
 
     @Nullable
     @Override
-    protected TableInfo createTable(String name)
+    public TableInfo createTable(String name)
     {
         switch (name)
         {
@@ -170,7 +170,7 @@ public class WorkflowQuerySchema extends UserSchema
         }
 
 
-        if (settings.getQueryName().equalsIgnoreCase(TABLE_TASK))
+        if (settings.getQueryName() != null && settings.getQueryName().equalsIgnoreCase(TABLE_TASK))
         {
             String assigneeId = context.getRequest().getParameter("assignee");
             SimpleFilter baseFilter = settings.getBaseFilter();
