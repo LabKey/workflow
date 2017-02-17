@@ -978,8 +978,7 @@ public class WorkflowManager implements WorkflowService
     public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable Container container) throws FileNotFoundException
     {
         // get the deployment in the global scope, referencing the cache
-        Deployment globalDeployment = DEPLOYMENT_CACHE_OLD.getResource(getWorkflowDeploymentResourceName(moduleName, processDefinitionKey));
-//        Deployment globalDeployment = DEPLOYMENT_CACHE.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
+        Deployment globalDeployment = DEPLOYMENT_CACHE.getResourceMap(ModuleLoader.getInstance().getModule(moduleName)).get(processDefinitionKey);
 
         // find the latest version for this container and compare deployment time to the time for the global version
         ProcessDefinition containerDef = getProcessDefinition(processDefinitionKey, container);
