@@ -68,7 +68,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheHandlerOld;
-import org.labkey.api.module.ModuleResourceCacheOld;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.ExprColumn;
@@ -111,7 +110,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorkflowManager implements WorkflowService
 {
@@ -124,8 +122,6 @@ public class WorkflowManager implements WorkflowService
 
     private ProcessEngine _processEngine = null;
 
-    // a cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private static final ModuleResourceCacheOld<Deployment> DEPLOYMENT_CACHE_OLD = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, "Workflow model definitions", new WorkflowDeploymentCacheHandlerOld());
     // A cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
     private static final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler(), "Workflow model definitions");
 
@@ -1346,13 +1342,8 @@ public class WorkflowManager implements WorkflowService
         @Test
         public void testModuleResourceCache()
         {
-            // Load all the module-defined workflow models to ensure no exceptions
-            AtomicInteger oldCount = new AtomicInteger(0);
-            ModuleLoader.getInstance().getModules().forEach(module -> {oldCount.addAndGet(DEPLOYMENT_CACHE_OLD.getResources(module).size());});
-            AtomicInteger count = new AtomicInteger(0);
-            ModuleLoader.getInstance().getModules().forEach(module -> {count.addAndGet(DEPLOYMENT_CACHE.getResourceMap(module).size());});
-
-            assert oldCount.get() == count.get();
+            // Load all the module-defined workflow models just to ensure no exceptions
+            ModuleLoader.getInstance().getModules().forEach(DEPLOYMENT_CACHE::getResourceMap);
         }
 
         private static void deleteTestContainer()
