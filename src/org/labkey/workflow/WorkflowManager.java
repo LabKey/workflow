@@ -53,7 +53,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -67,9 +66,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheHandlerOld;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -1073,79 +1070,6 @@ public class WorkflowManager implements WorkflowService
         return _processEngine;
     }
 
-
-    private static class WorkflowDeploymentCacheHandlerOld implements ModuleResourceCacheHandlerOld<String, Deployment>
-    {
-        @Override
-        public boolean isResourceFile(String filename)
-        {
-            return StringUtils.endsWithIgnoreCase(filename, WORKFLOW_FILE_NAME_EXTENSION);
-        }
-
-        @Override
-        public String getResourceName(Module module, String filename)
-        {
-            return filename;
-        }
-
-        @Override
-        public String createCacheKey(Module module, String resourceName)
-        {
-            return ModuleResourceCaches.createCacheKey(module, resourceName);
-        }
-
-        @Override
-        public CacheLoader<String, Deployment> getResourceLoader()
-        {
-            return new CacheLoader<String, Deployment>()
-            {
-                @Override
-                public Deployment load(String key, @Nullable Object argument)
-                {
-                    CacheId id = ModuleResourceCaches.parseCacheKey(key);
-                    Module module = id.getModule();
-                    String filename = id.getName();
-                    String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
-                    Path path = WORKFLOW_MODEL_PATH.append(filename);
-                    FileResource resource  = (FileResource) module.getModuleResolver().lookup(path);
-                    if (resource != null)
-                    {
-                        try
-                        {
-                            // find the latest process definition without a container
-                            ProcessDefinition processDef = WorkflowManager.get().getProcessDefinition(processDefinitionKey, null);
-                            String deploymentId;
-                            if (processDef == null) // no such definition, we'll deploy one
-                            {
-                                deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
-                                return WorkflowManager.get().getDeployment(deploymentId);
-                            }
-                            else
-                            {
-                                deploymentId = processDef.getDeploymentId();
-                                Deployment deployment = WorkflowManager.get().getDeployment(deploymentId);
-                                // file is newer than deployment, so we'll deploy a new version
-                                if (deployment.getDeploymentTime().before(new Date(resource.getFile().lastModified())))
-                                {
-                                    deploymentId = WorkflowManager.get().deployWorkflow(resource.getFile(), null);
-                                    deployment = WorkflowManager.get().getDeployment(deploymentId);
-                                }
-                                return deployment;
-                            }
-                        }
-                        catch (FileNotFoundException e)
-                        {
-                            return null;
-                        }
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            };
-        }
-    }
 
     private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<Map<String, Deployment>>
     {
