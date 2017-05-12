@@ -44,7 +44,6 @@ import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +66,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -107,6 +107,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class WorkflowManager implements WorkflowService
 {
@@ -120,7 +121,7 @@ public class WorkflowManager implements WorkflowService
     private ProcessEngine _processEngine = null;
 
     // A cache of the deployments at the global scope. New deployments are created in the database when the workflow model files change.
-    private static final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE = ModuleResourceCaches.create(WORKFLOW_MODEL_PATH, new WorkflowDeploymentCacheHandler(), "Workflow model definitions");
+    private static final ModuleResourceCache<Map<String, Deployment>> DEPLOYMENT_CACHE = ModuleResourceCaches.create("Workflow model definitions", new WorkflowDeploymentCacheHandler(), ResourceRootProvider.getStandard(WORKFLOW_MODEL_PATH));
 
     private WorkflowManager()
     {
@@ -1074,27 +1075,24 @@ public class WorkflowManager implements WorkflowService
     private static class WorkflowDeploymentCacheHandler implements ModuleResourceCacheHandler<Map<String, Deployment>>
     {
         @Override
-        public Map<String, Deployment> load(@Nullable Resource dir, Module module)
+        public Map<String, Deployment> load(Stream<? extends Resource> resources, Module module)
         {
-            if (null == dir)
-                return Collections.emptyMap();
-
             Map<String, Deployment> map = new HashMap<>();
 
-            dir.list().stream()
-                .filter(resource -> resource.isFile() && StringUtils.endsWithIgnoreCase(resource.getName(), WORKFLOW_FILE_NAME_EXTENSION))
+            resources
+                .filter(getFilter(WORKFLOW_FILE_NAME_EXTENSION))
                 .forEach(resource ->
-                    {
-                        String filename = resource.getName();
-                        String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
+                {
+                    String filename = resource.getName();
+                    String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
 
-                        Deployment deployment = getDeployment(((FileResource)resource).getFile(), processDefinitionKey);
+                    Deployment deployment = getDeployment(((FileResource)resource).getFile(), processDefinitionKey);
 
-                        if (null != deployment)
-                            map.put(processDefinitionKey, deployment);
-                    });
+                    if (null != deployment)
+                        map.put(processDefinitionKey, deployment);
+                });
 
-            return Collections.unmodifiableMap(map);
+            return unmodifiable(map);
         }
 
         private Deployment getDeployment(File modelFile, String processDefinitionKey)
@@ -1266,8 +1264,19 @@ public class WorkflowManager implements WorkflowService
         @Test
         public void testModuleResourceCache()
         {
-            // Load all the module-defined workflow models just to ensure no exceptions
-            ModuleLoader.getInstance().getModules().forEach(DEPLOYMENT_CACHE::getResourceMap);
+            // Load all the module-defined workflow models to ensure no exceptions
+            int deploymentCount = ModuleLoader.getInstance().getModules().stream()
+                .map(DEPLOYMENT_CACHE::getResourceMap)
+                .mapToInt(Map::size)
+                .sum();
+
+            logger.info(deploymentCount + " workflow deployments defined in all modules");
+
+            // Make sure the cache retrieves the expected number of test models in this module
+
+            Module workflow = ModuleLoader.getInstance().getModule(WorkflowModule.NAME);
+
+            assertEquals("Workflow models from workflow module", 2, DEPLOYMENT_CACHE.getResourceMap(workflow).size());
         }
 
         private static void deleteTestContainer()
