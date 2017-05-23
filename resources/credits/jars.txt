@@ -1,6 +1,5 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-activiti-bpmn-converter-5.20.0.jar|Workflow|5.20|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 parser
 activiti-bpmn-model-5.20.0.jar|Workflow|5.20|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 modeling library
 activiti-engine-5.20.0.jar|Workflow|5.20|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN Engine
 activiti-image-generator-5.20.0.jar|Workflow|5.20|{link:Activiti|http://activiti.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|susanh|BPMN 2.0 model image library
