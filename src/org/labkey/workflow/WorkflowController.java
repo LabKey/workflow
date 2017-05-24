@@ -1192,7 +1192,7 @@ public class WorkflowController extends SpringActionController
             if (form.getFile() != null)
             {
                 File modelFile = new File(form.getFile());
-                response.put("deploymentId", WorkflowManager.get().deployWorkflow(modelFile, getContainer()));
+                response.put("deploymentId", WorkflowManager.get().deployWorkflow(form.getModuleName(), modelFile, getContainer()));
             }
             else
             {
@@ -1212,6 +1212,7 @@ public class WorkflowController extends SpringActionController
     public static class DeploymentForm
     {
         private String _file;
+        private String _moduleName;
 
         public String getFile()
         {
@@ -1221,6 +1222,16 @@ public class WorkflowController extends SpringActionController
         public void setFile(String file)
         {
             _file = file;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
         }
     }
 
