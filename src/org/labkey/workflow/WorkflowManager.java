@@ -44,6 +44,7 @@ import org.activiti.engine.runtime.ProcessInstanceQuery;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -74,7 +75,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -100,6 +100,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -964,9 +965,19 @@ public class WorkflowManager implements WorkflowService
             return null;
     }
 
-    public static String getWorkflowDeploymentResourceName(String moduleName, String workflowDefinitionKey)
+    public static String getDeploymentResourceNameFromDefinitionKey(String moduleName, String workflowDefinitionKey)
     {
-        return moduleName + "/" + workflowDefinitionKey + WORKFLOW_FILE_NAME_EXTENSION;
+        return getDeploymentResourceNameFromFilename(moduleName,workflowDefinitionKey + WORKFLOW_FILE_NAME_EXTENSION);
+    }
+
+    private static String getDeploymentResourceNameFromFilename(String moduleName, String filename)
+    {
+        return moduleName + ":" + filename;
+    }
+
+    private static Path getModelPathFromResourceName(String moduleName, String resourceName)
+    {
+        return WORKFLOW_MODEL_PATH.append(Path.parse(StringUtils.substringAfter(resourceName, moduleName + ":")));
     }
 
     public void makeContainerDeployment(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable Container container) throws FileNotFoundException
@@ -989,7 +1000,11 @@ public class WorkflowManager implements WorkflowService
 
         // deploy a (newer) version in this container
         if (globalDefinition != null)
-            deployWorkflow(new File(globalDefinition.getResourceName()), container);
+        {
+            Resource modelResource = ModuleLoader.getInstance()
+                    .getResource(moduleName, getModelPathFromResourceName(moduleName, globalDefinition.getResourceName()));
+            deployWorkflow(moduleName, modelResource, container);
+        }
         else
             throw new FileNotFoundException("No process definition for key " + processDefinitionKey);
     }
@@ -1012,10 +1027,26 @@ public class WorkflowManager implements WorkflowService
         }
     }
 
-    public String deployWorkflow(@NotNull File modelFile, @Nullable Container container) throws FileNotFoundException
+    public String deployWorkflow(@NotNull String moduleName, @NotNull File modelFile, @Nullable Container container) throws FileNotFoundException
     {
-        FileInputStream stream = new FileInputStream(modelFile);
-        DeploymentBuilder builder = getRepositoryService().createDeployment().addInputStream(modelFile.getAbsolutePath(), stream);
+        return deployWorkflow(moduleName, modelFile.getName(), new FileInputStream(modelFile), container);
+    }
+
+    public String deployWorkflow(@NotNull String moduleName, @NotNull Resource modelResource, @Nullable Container container) throws FileNotFoundException
+    {
+        try
+        {
+            return deployWorkflow(moduleName, modelResource.getName(), modelResource.getInputStream(), container);
+        }
+        catch (IOException e)
+        {
+            throw new FileNotFoundException(e.getMessage());
+        }
+    }
+
+    private String deployWorkflow(@NotNull String moduleName, @NotNull String filename, @NotNull InputStream stream, @Nullable Container container)
+    {
+        DeploymentBuilder builder = getRepositoryService().createDeployment().addInputStream(getDeploymentResourceNameFromFilename(moduleName, filename), stream);
         if (container != null)
             builder.tenantId(container.getId());
         Deployment deployment = builder.deploy();
@@ -1086,7 +1117,7 @@ public class WorkflowManager implements WorkflowService
                     String filename = resource.getName();
                     String processDefinitionKey =  filename.indexOf(".") > 0 ? filename.substring(0, filename.indexOf(".")) : filename;
 
-                    Deployment deployment = getDeployment(((FileResource)resource).getFile(), processDefinitionKey);
+                    Deployment deployment = getDeployment(resource, processDefinitionKey, module.getName());
 
                     if (null != deployment)
                         map.put(processDefinitionKey, deployment);
@@ -1095,7 +1126,7 @@ public class WorkflowManager implements WorkflowService
             return unmodifiable(map);
         }
 
-        private Deployment getDeployment(File modelFile, String processDefinitionKey)
+        private Deployment getDeployment(Resource modelResource, String processDefinitionKey, String moduleName)
         {
             try
             {
@@ -1104,7 +1135,7 @@ public class WorkflowManager implements WorkflowService
                 String deploymentId;
                 if (processDef == null) // no such definition, we'll deploy one
                 {
-                    deploymentId = WorkflowManager.get().deployWorkflow(modelFile, null);
+                    deploymentId = WorkflowManager.get().deployWorkflow(moduleName, modelResource, null);
                     return WorkflowManager.get().getDeployment(deploymentId);
                 }
                 else
@@ -1112,9 +1143,9 @@ public class WorkflowManager implements WorkflowService
                     deploymentId = processDef.getDeploymentId();
                     Deployment deployment = WorkflowManager.get().getDeployment(deploymentId);
                     // file is newer than deployment, so we'll deploy a new version
-                    if (deployment.getDeploymentTime().before(new Date(modelFile.lastModified())))
+                    if (deployment.getDeploymentTime().before(new Date(modelResource.getLastModified())))
                     {
-                        deploymentId = WorkflowManager.get().deployWorkflow(modelFile, null);
+                        deploymentId = WorkflowManager.get().deployWorkflow(moduleName, modelResource, null);
                         deployment = WorkflowManager.get().getDeployment(deploymentId);
                     }
                     return deployment;

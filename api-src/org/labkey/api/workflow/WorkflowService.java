@@ -22,10 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
@@ -338,7 +338,7 @@ public interface WorkflowService
 
     void deleteDeployments(@NotNull Container container);
 
-    String deployWorkflow(@NotNull File modelFile, @Nullable Container container) throws FileNotFoundException;
+    String deployWorkflow(String moduleName, Resource modelResource, @Nullable Container container) throws FileNotFoundException;
 
     void deleteWorkflow(@NotNull String deploymentId);
 }
