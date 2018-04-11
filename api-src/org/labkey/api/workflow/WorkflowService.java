@@ -24,6 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 
 import java.io.FileNotFoundException;
@@ -38,6 +39,16 @@ import java.util.Map;
 public interface WorkflowService
 {
     String TASK_KEY = "taskKey"; // the key/name for the column containing the current task description, also an indicator for filtering on a particular type of task.
+
+    static WorkflowService get()
+    {
+        return ServiceRegistry.get().getService(WorkflowService.class);
+    }
+
+    static void setInstance(WorkflowService impl)
+    {
+        ServiceRegistry.get().registerService(WorkflowService.class, impl);
+    }
 
     /**
      * Gets the list of candidate group ids for a task given its id, or an empty list if there are no candidate groups

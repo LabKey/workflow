@@ -62,7 +62,7 @@ public class WorkflowModule extends DefaultModule
         addController(WorkflowController.NAME, WorkflowController.class);
         WorkflowQuerySchema.register(this);
         WorkflowRegistry.registerPermissionsHandler(this, PermissionsHandlerImpl.class, true);
-        ServiceRegistry.get().registerService(WorkflowService.class, WorkflowManager.get());
+        WorkflowService.setInstance(WorkflowManager.get());
     }
 
     @Override
@@ -84,7 +84,7 @@ public class WorkflowModule extends DefaultModule
     public Set<Class> getUnitTests()
     {
         return new HashSet<>(Arrays.asList(
-                WorkflowManager.TestCase.class
+            WorkflowManager.TestCase.class
         ));
     }
 
