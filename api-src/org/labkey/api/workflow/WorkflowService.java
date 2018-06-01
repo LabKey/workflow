@@ -156,6 +156,7 @@ public interface WorkflowService
      * @return the workflow identified by the given key and value
      * @throws Exception if the key-value pair does not uniquely identify a single latest workflow process
      */
+    @Nullable
     WorkflowProcess getWorkflowProcessForVariable(String key, String value, Container container) throws Exception;
 
     /**
