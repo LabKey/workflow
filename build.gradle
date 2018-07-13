@@ -7,9 +7,10 @@ dependencies {
    external "org.activiti:activiti-image-generator:${activitiVersion}"
    external("org.activiti:activiti-engine:${activitiVersion}")
     {
-        // we get this jar from the api build and include it in the tomcat/lib directory
+        // we get both these jars from the api build and include them in the tomcat/lib directory
         // including here causes version compatibility problems
         exclude group: "com.sun.mail", module:"javax.mail"
+        exclude group: "javax.activation", module: "activation"
     }
    external "org.activiti:activiti-process-validation:${activitiVersion}"
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: "apiCompile")
