@@ -11,6 +11,8 @@ dependencies {
         // including here causes version compatibility problems
         exclude group: "com.sun.mail", module:"javax.mail"
         exclude group: "javax.activation", module: "activation"
+        // we get spring jars from api
+        exclude group: "org.springframework", module:"spring-beans"
     }
    external "org.activiti:activiti-process-validation:${activitiVersion}"
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:modules:core", depProjectConfig: "apiCompile")
