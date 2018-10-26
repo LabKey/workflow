@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.workflow.WorkflowRegistry;
@@ -47,7 +46,7 @@ public class WorkflowModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 18.20;
+        return 18.30;
     }
 
     @Override
