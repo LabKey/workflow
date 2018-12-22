@@ -655,7 +655,7 @@ public class WorkflowController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             User currentUser = getUser();
-            boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
+            boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
             List<User> users = SecurityManager.getUsersWithOneOf(getContainer(), _task.getReassignPermissions(getUser(), getContainer()));
             List<Map<String, Object>> userResponseList = new ArrayList<>();
             for (User user : users)
