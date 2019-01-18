@@ -7,10 +7,14 @@ dependencies {
    external "org.activiti:activiti-image-generator:${activitiVersion}"
    external("org.activiti:activiti-engine:${activitiVersion}")
     {
-        // we get both these jars from the api build and include them in the tomcat/lib directory
-        // including here causes version compatibility problems
-        exclude group: "com.sun.mail", module:"javax.mail"
-        exclude group: "javax.activation", module: "activation"
+        // We get mail and activation jars from the api build and include them in the tomcat/lib directory. They've gone
+        // by various names over the last couple years... exclude them all to prevent version compatibility problems.
+        exclude group: "com.sun.mail", module:"javax.mail"              // Old name
+        exclude group: "com.sun.mail", module:"jakarta.mail"            // New name
+        exclude group: "javax.activation", module: "activation"         // Old name
+        exclude group: "javax.activation", module: "javax.activation"   // Old name
+        exclude group: "javax.activation", module: "jakarta.activation" // New name
+
         // we get spring jars from api
         exclude group: "org.springframework", module:"spring-beans"
     }
