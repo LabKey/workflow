@@ -19,12 +19,13 @@ import org.activiti.engine.history.HistoricProcessInstance;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
@@ -483,7 +484,7 @@ public class WorkflowController extends SpringActionController
      * Shows the data about a process instance if the user has permissions to see this task
      */
     @RequiresPermission(ReadPermission.class)
-    public class ProcessInstanceDataAction extends ApiAction<ProcessInstanceDetailsForm>
+    public class ProcessInstanceDataAction extends ReadOnlyApiAction<ProcessInstanceDetailsForm>
     {
         private WorkflowProcess _processInstance;
 
@@ -532,7 +533,7 @@ public class WorkflowController extends SpringActionController
      * Shows the data about the list of process instances the user has permissions to see for a given process definition
      */
     @RequiresPermission(ReadPermission.class)
-    public class ProcessInstanceListDataAction extends ApiAction<WorkflowRequestForm>
+    public class ProcessInstanceListDataAction extends ReadOnlyApiAction<WorkflowRequestForm>
     {
         @Override
         public void validateForm(WorkflowRequestForm form, Errors errors)
@@ -572,7 +573,7 @@ public class WorkflowController extends SpringActionController
      * Shows the data about a task if the user has permissions to see this task
      */
     @RequiresPermission(ReadPermission.class)
-    public class TaskDataAction extends ApiAction<WorkflowTaskForm>
+    public class TaskDataAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         private WorkflowTask _task;
 
@@ -603,7 +604,7 @@ public class WorkflowController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetReassignPermissionNamesAction extends ApiAction<WorkflowTaskForm>
+    public class GetReassignPermissionNamesAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         private WorkflowTask _task;
 
@@ -642,7 +643,7 @@ public class WorkflowController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class CandidateUsersAction extends ApiAction<WorkflowTaskForm>
+    public class CandidateUsersAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         protected static final String PROP_USER_ID = "userId";
         protected static final String PROP_USER_NAME = "displayName";
@@ -693,7 +694,7 @@ public class WorkflowController extends SpringActionController
      * Claims a task for a user, making that user the owner and the assignee.
      */
     @RequiresPermission(ReadPermission.class)
-    public class ClaimTaskAction extends ApiAction<WorkflowTaskForm>
+    public class ClaimTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -713,7 +714,7 @@ public class WorkflowController extends SpringActionController
      * Delegates a task to a particular user.  The owner of the task remains unchanged.
      */
     @RequiresPermission(ReadPermission.class)
-    public class DelegateTaskAction extends ApiAction<WorkflowTaskForm>
+    public class DelegateTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -771,7 +772,7 @@ public class WorkflowController extends SpringActionController
      * Assigns a task to a user
      */
     @RequiresPermission(ReadPermission.class)
-    public class AssignTaskAction extends ApiAction<WorkflowTaskForm>
+    public class AssignTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -853,7 +854,7 @@ public class WorkflowController extends SpringActionController
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
     @RequiresPermission(ReadPermission.class)
-    public class StartProcessAction extends ApiAction<StartWorkflowProcessForm>
+    public class StartProcessAction extends ReadOnlyApiAction<StartWorkflowProcessForm>
     {
         @Override
         public Object execute(StartWorkflowProcessForm form, BindException errors) throws Exception
@@ -962,7 +963,7 @@ public class WorkflowController extends SpringActionController
      * process and for administrators.
      */
     @RequiresPermission(ReadPermission.class)
-    public class RemoveProcessInstanceAction extends ApiAction<RemoveWorkflowProcessForm>
+    public class RemoveProcessInstanceAction extends ReadOnlyApiAction<RemoveWorkflowProcessForm>
     {
         @Override
         public Object execute(RemoveWorkflowProcessForm form, BindException errors) throws Exception
@@ -1023,7 +1024,7 @@ public class WorkflowController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class UpdateVariablesAction extends ApiAction<ProcessVariablesForm>
+    public class UpdateVariablesAction extends ReadOnlyApiAction<ProcessVariablesForm>
     {
         private WorkflowTask _task;
 
@@ -1091,7 +1092,7 @@ public class WorkflowController extends SpringActionController
      * Complete a task in a workflow.  If the task is currently unassigned, it will be assigned to the current user.
      */
     @RequiresPermission(ReadPermission.class)
-    public class CompleteTaskAction extends ApiAction<TaskCompletionForm>
+    public class CompleteTaskAction extends ReadOnlyApiAction<TaskCompletionForm>
     {
         @Override
         public Object execute(TaskCompletionForm form, BindException errors) throws Exception
@@ -1180,7 +1181,7 @@ public class WorkflowController extends SpringActionController
      * Creates a new deployment of a process definition
      */
     @RequiresPermission(AdminPermission.class)
-    public class DeployAction extends ApiAction<DeploymentForm>
+    public class DeployAction extends MutatingApiAction<DeploymentForm>
     {
         @Override
         public Object execute(DeploymentForm form, BindException errors) throws Exception
