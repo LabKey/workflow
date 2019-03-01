@@ -694,7 +694,7 @@ public class WorkflowController extends SpringActionController
      * Claims a task for a user, making that user the owner and the assignee.
      */
     @RequiresPermission(ReadPermission.class)
-    public class ClaimTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
+    public class ClaimTaskAction extends MutatingApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -714,7 +714,7 @@ public class WorkflowController extends SpringActionController
      * Delegates a task to a particular user.  The owner of the task remains unchanged.
      */
     @RequiresPermission(ReadPermission.class)
-    public class DelegateTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
+    public class DelegateTaskAction extends MutatingApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
