@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -693,7 +694,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Claims a task for a user, making that user the owner and the assignee.
      */
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ClaimTaskAction extends MutatingApiAction<WorkflowTaskForm>
     {
         @Override
@@ -713,7 +714,7 @@ public class WorkflowController extends SpringActionController
     /**
      * Delegates a task to a particular user.  The owner of the task remains unchanged.
      */
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class DelegateTaskAction extends MutatingApiAction<WorkflowTaskForm>
     {
         @Override
@@ -771,8 +772,8 @@ public class WorkflowController extends SpringActionController
     /**
      * Assigns a task to a user
      */
-    @RequiresPermission(ReadPermission.class)
-    public class AssignTaskAction extends ReadOnlyApiAction<WorkflowTaskForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class AssignTaskAction extends MutatingApiAction<WorkflowTaskForm>
     {
         @Override
         public Object execute(WorkflowTaskForm form, BindException errors) throws Exception
@@ -853,8 +854,8 @@ public class WorkflowController extends SpringActionController
     /**
      * Creates a new instance of a process with a given processKey and returns the id of the new instance on success.
      */
-    @RequiresPermission(ReadPermission.class)
-    public class StartProcessAction extends ReadOnlyApiAction<StartWorkflowProcessForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class StartProcessAction extends MutatingApiAction<StartWorkflowProcessForm>
     {
         @Override
         public Object execute(StartWorkflowProcessForm form, BindException errors) throws Exception
@@ -962,8 +963,8 @@ public class WorkflowController extends SpringActionController
      * Deletes a particular process instance.  This is allowed for the initiator of the
      * process and for administrators.
      */
-    @RequiresPermission(ReadPermission.class)
-    public class RemoveProcessInstanceAction extends ReadOnlyApiAction<RemoveWorkflowProcessForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class RemoveProcessInstanceAction extends MutatingApiAction<RemoveWorkflowProcessForm>
     {
         @Override
         public Object execute(RemoveWorkflowProcessForm form, BindException errors) throws Exception
@@ -1023,8 +1024,8 @@ public class WorkflowController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class UpdateVariablesAction extends ReadOnlyApiAction<ProcessVariablesForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class UpdateVariablesAction extends MutatingApiAction<ProcessVariablesForm>
     {
         private WorkflowTask _task;
 
@@ -1091,8 +1092,8 @@ public class WorkflowController extends SpringActionController
     /**
      * Complete a task in a workflow.  If the task is currently unassigned, it will be assigned to the current user.
      */
-    @RequiresPermission(ReadPermission.class)
-    public class CompleteTaskAction extends ReadOnlyApiAction<TaskCompletionForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class CompleteTaskAction extends MutatingApiAction<TaskCompletionForm>
     {
         @Override
         public Object execute(TaskCompletionForm form, BindException errors) throws Exception
