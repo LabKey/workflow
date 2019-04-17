@@ -16,6 +16,7 @@
 package org.labkey.workflow.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -68,7 +69,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
     {
         super(userSchema, WorkflowQuerySchema.TABLE_TASK);
 
-        ColumnInfo idColumn = getColumn("id_");
+        BaseColumnInfo idColumn = getMutableColumn("id_");
         ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
         idColumn.setURL(detailsURL);
