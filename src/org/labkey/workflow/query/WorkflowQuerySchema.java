@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DetailsColumn;
@@ -123,25 +124,25 @@ public class WorkflowQuerySchema extends UserSchema
 
     @Nullable
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter containerFilter)
     {
         switch (name)
         {
             case TABLE_TASK:
-                return new WorkflowTaskTable(this, getUser(), getContainer());
+                return new WorkflowTaskTable(this, containerFilter, getUser(), getContainer());
             case TABLE_PROCESS_DEFINITION:
-                return new WorkflowProcessDefinitionTable(this);
+                return new WorkflowProcessDefinitionTable(this, containerFilter);
             case TABLE_PROCESS_INSTANCE:
-                return new WorkflowProcessInstanceTable(this, getUser(), getContainer());
+                return new WorkflowProcessInstanceTable(this, containerFilter, getUser(), getContainer());
             case TABLE_IDENTITY_LINK:
-                return new WorkflowIdentityLinkTable(this, getUser(), getContainer());
+                return new WorkflowIdentityLinkTable(this, containerFilter, getUser(), getContainer());
             case TABLE_VARIABLE:
-                return new WorkflowVariableTable(this, getUser(), getContainer());
+                return new WorkflowVariableTable(this, containerFilter, getUser(), getContainer());
             case TABLE_DEPLOYMENT:
             case TABLE_HISTORY_PROCESS_INSTANCE:
             case TABLE_HISTORY_ACTIVITY_INSTANCE:
             case TABLE_HISTORY_TASK_INSTANCE:
-                return new WorkflowTenantTable(this, name);
+                return new WorkflowTenantTable(this, name, containerFilter);
         }
 
         //just return a filtered table over the db table if it exists

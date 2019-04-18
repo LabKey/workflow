@@ -18,6 +18,7 @@ package org.labkey.workflow.query;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -61,9 +62,9 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
         _columnsToIgnore.add("lock_time_");
     }
 
-    public WorkflowProcessInstanceTable(WorkflowQuerySchema userSchema, User user, Container container)
+    public WorkflowProcessInstanceTable(WorkflowQuerySchema userSchema, ContainerFilter containerFilter, User user, Container container)
     {
-        super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE);
+        super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE, containerFilter);
 
         BaseColumnInfo idColumn = getMutableColumn("id_");
         ActionURL base = new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer());
