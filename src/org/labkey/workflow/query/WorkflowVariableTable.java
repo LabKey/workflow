@@ -16,6 +16,7 @@
 package org.labkey.workflow.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
@@ -27,9 +28,9 @@ import org.labkey.api.security.permissions.AdminPermission;
  */
 public class WorkflowVariableTable extends SimpleUserSchema.SimpleTable<WorkflowQuerySchema>
 {
-    public WorkflowVariableTable(WorkflowQuerySchema userSchema, User user, Container container)
+    public WorkflowVariableTable(WorkflowQuerySchema userSchema, ContainerFilter containerFilter, User user, Container container)
     {
-        super(userSchema, userSchema.getDbSchema().getTable(WorkflowQuerySchema.TABLE_VARIABLE));
+        super(userSchema, userSchema.getDbSchema().getTable(WorkflowQuerySchema.TABLE_VARIABLE), containerFilter);
         wrapAllColumns();
 
         if (!container.hasPermission(user, AdminPermission.class))

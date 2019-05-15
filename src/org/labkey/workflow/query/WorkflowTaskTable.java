@@ -16,8 +16,10 @@
 package org.labkey.workflow.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
@@ -64,11 +66,11 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         _columnsToIgnore.add("suspension_state_");
     }
 
-    public WorkflowTaskTable(@NotNull WorkflowQuerySchema userSchema, User user, Container container)
+    public WorkflowTaskTable(@NotNull WorkflowQuerySchema userSchema, ContainerFilter containerFilter, User user, Container container)
     {
-        super(userSchema, WorkflowQuerySchema.TABLE_TASK);
+        super(userSchema, WorkflowQuerySchema.TABLE_TASK, containerFilter);
 
-        ColumnInfo idColumn = getColumn("id_");
+        BaseColumnInfo idColumn = getMutableColumn("id_");
         ActionURL base = new ActionURL(WorkflowController.TaskAction.class, getContainer());
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("taskId", "id_"));
         idColumn.setURL(detailsURL);

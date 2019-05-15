@@ -16,9 +16,9 @@
 package org.labkey.workflow.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -28,9 +28,9 @@ public class WorkflowProcessDefinitionTable extends WorkflowTenantTable
 {
     private static final Set<String> _columnsToIgnore = PageFlowUtil.set("has_start_form_key_", "category_");
 
-    public WorkflowProcessDefinitionTable(WorkflowQuerySchema userSchema)
+    public WorkflowProcessDefinitionTable(WorkflowQuerySchema userSchema, ContainerFilter containerFilter)
     {
-        super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_DEFINITION);
+        super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_DEFINITION, containerFilter);
     }
 
     @Override

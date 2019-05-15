@@ -15,7 +15,8 @@
  */
 package org.labkey.workflow.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.SimpleUserSchema;
@@ -28,9 +29,9 @@ import java.util.List;
 public class WorkflowTenantTable extends SimpleUserSchema.SimpleTable<WorkflowQuerySchema>
 {
 
-    public WorkflowTenantTable(WorkflowQuerySchema userSchema, String tableName)
+    public WorkflowTenantTable(WorkflowQuerySchema userSchema, String tableName, ContainerFilter containerFilter)
     {
-        super(userSchema, userSchema.getDbSchema().getTable(tableName));
+        super(userSchema, userSchema.getDbSchema().getTable(tableName), containerFilter);
         wrapAllColumns();
     }
 
@@ -44,7 +45,7 @@ public class WorkflowTenantTable extends SimpleUserSchema.SimpleTable<WorkflowQu
     public void wrapAllColumns()
     {
         super.wrapAllColumns();
-        ColumnInfo containerColumn = getColumn("tenant_id_");
+        BaseColumnInfo containerColumn = getMutableColumn("tenant_id_");
         containerColumn.setFk(new ContainerForeignKey(getUserSchema()));
         containerColumn.setUserEditable(false);
         containerColumn.setShownInInsertView(false);
