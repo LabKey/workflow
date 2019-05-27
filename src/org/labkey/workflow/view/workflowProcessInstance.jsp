@@ -47,7 +47,7 @@
 %>
 There is no active process with id <%= h(bean.getId()) %>
 <br><br>
-<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer()))%>
+<%=link("All workflows", WorkflowController.BeginAction.class)%>
 <%
     }
     else if (!bean.canView(getUser(), getContainer()))
@@ -147,7 +147,7 @@ There is no active process with id <%= h(bean.getId()) %>
             if (task.canView(getUser(), getContainer()))
             {
     %>
-        <%= PageFlowUtil.textLink(h(task.getName()), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", task.getId())) %>
+        <%=link(task.getName(), urlFor(WorkflowController.TaskAction.class).addParameter("taskId", task.getId())) %>
     <%
             }
             else
@@ -175,7 +175,7 @@ There is no active process with id <%= h(bean.getId()) %>
         out.println("</td></tr>");
     }
 %>
-<tr class="<%=h(nextRowClass())%>"">
+<tr class="<%=h(nextRowClass())%>">
     <td class="labkey-workflow-detail-label">Completed Task(s)</td>
 <%
     if (bean.getCompletedTasks().isEmpty())
@@ -192,7 +192,7 @@ There is no active process with id <%= h(bean.getId()) %>
                 if (completedTask.canView(getUser(), getContainer()))
                 {
             %>
-            <%= PageFlowUtil.textLink(h(completedTask.getName()), new ActionURL(WorkflowController.TaskAction.class, getContainer()).addParameter("taskId", completedTask.getId())) %>
+            <%=link(completedTask.getName(), urlFor(WorkflowController.TaskAction.class).addParameter("taskId", completedTask.getId())) %>
             <%
             }
             else
@@ -232,7 +232,7 @@ There is no active process with id <%= h(bean.getId()) %>
 <br>
 <strong>Process Diagram</strong>
 <br><br>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getViewContext().getContainer()).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
+<img src="<%=urlFor(WorkflowController.ProcessDiagramAction.class).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
 <%
 
         }

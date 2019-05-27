@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
@@ -32,7 +31,7 @@
     if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {
 %>
-<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer()))%>
+<%=link("All workflows", WorkflowController.BeginAction.class)%>
 <br>
 <br>
 <%
@@ -49,23 +48,23 @@
 %>
 <ul>
     <li>
-        <%= PageFlowUtil.textLink("Active processes ", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
+        <%=link("Active processes", urlFor(WorkflowController.InstanceListAction.class).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())) %>
     </li>
 
     <li>Tasks</li>
     <ul>
         <li>
-            <%= PageFlowUtil.textLink("All tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
+            <%=link("All tasks", urlFor(WorkflowController.TaskListAction.class).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>
         </li>
 
         <li>
-            <%= PageFlowUtil.textLink("Assigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", getUser().getUserId()))%>
+            <%=link("Assigned tasks", urlFor(WorkflowController.TaskListAction.class).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", getUser().getUserId()))%>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Owned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("owner", getUser().getUserId())) %>
+            <%=link("Owned tasks", urlFor(WorkflowController.TaskListAction.class).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("owner", getUser().getUserId())) %>
         </li>
         <li>
-            <%= PageFlowUtil.textLink("Unassigned tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", "_blank")) %>
+            <%=link("Unassigned tasks", urlFor(WorkflowController.TaskListAction.class).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()).addParameter("assignee", "_blank")) %>
         </li>
     </ul>
 
@@ -97,7 +96,7 @@ No process diagram available.
     if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {
 %>
-<%= PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer()))%>
+<%=link("All workflows", WorkflowController.BeginAction.class)%>
 <%
     }
 %>

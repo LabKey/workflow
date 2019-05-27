@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.workflow.WorkflowController" %>
 <%@ page import="java.util.Map" %>
@@ -47,7 +45,7 @@ The following workflows are currently deployed in this container:
 %>
 <ul>
     <li>
-        <%= PageFlowUtil.textLink(h(entry.getValue()), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", entry.getKey()))%>
+        <%=link(entry.getValue(), urlFor(WorkflowController.SummaryAction.class).addParameter("processDefinitionKey", entry.getKey()))%>
     </li>
 </ul>
 <%
