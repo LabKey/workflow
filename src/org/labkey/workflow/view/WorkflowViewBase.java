@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.jsp.JspBase;
+import org.labkey.api.jsp.OldJspBase;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -37,9 +37,8 @@ import java.util.Map;
  * Created by susanh on 6/14/15.
  *
  */
-public abstract class WorkflowViewBase extends JspBase
+public abstract class WorkflowViewBase extends OldJspBase
 {
-
     protected String rowClass = "labkey-row";
 
     public String nextRowClass()
@@ -192,11 +191,11 @@ public abstract class WorkflowViewBase extends JspBase
     public String navigationLinks(@Nullable String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getViewContext().getContainer())));
+        builder.append(PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer())));
         builder.append("\n&nbsp;&nbsp;\n");
         if (processDefinitionName != null)
         {
-            builder.append(PageFlowUtil.textLink(h(processDefinitionName), new ActionURL(WorkflowController.SummaryAction.class, getViewContext().getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
+            builder.append(PageFlowUtil.textLink(processDefinitionName, new ActionURL(WorkflowController.SummaryAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
             builder.append("\n&nbsp;&nbsp;\n");
         }
         builder.append(PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
@@ -210,6 +209,4 @@ public abstract class WorkflowViewBase extends JspBase
 
         return builder.toString();
     }
-
-
 }
