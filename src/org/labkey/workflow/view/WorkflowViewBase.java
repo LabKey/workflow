@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.jsp.OldJspBase;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -37,7 +37,7 @@ import java.util.Map;
  * Created by susanh on 6/14/15.
  *
  */
-public abstract class WorkflowViewBase extends OldJspBase
+public abstract class WorkflowViewBase extends JspBase
 {
     protected String rowClass = "labkey-row";
 
@@ -58,7 +58,7 @@ public abstract class WorkflowViewBase extends OldJspBase
             {
                 if (variable.getKey().equalsIgnoreCase("Data Access"))
                     continue;
-                builder.append("<tr class=\"" + nextRowClass() + "\">\n");
+                builder.append("<tr class=\"").append(nextRowClass()).append("\">\n");
                 builder.append("<td>").append(h(variable.getKey())).append("</td>\n");
                 builder.append("<td>").append(h(variable.getValue())).append("</td>\n");
                 builder.append("</tr>\n");
@@ -150,8 +150,8 @@ public abstract class WorkflowViewBase extends OldJspBase
     @Nullable
     public Map<String, Object> getDisplayVariables(Container container, Map<String, Object> variables)
     {
-        String displayKey = null;
-        Object displayValue = null;
+        String displayKey;
+        Object displayValue;
         Map<String, Object> _displayVariables = new HashMap<>();
         for (String key : variables.keySet())
         {
