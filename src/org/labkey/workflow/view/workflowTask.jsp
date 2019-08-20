@@ -142,7 +142,7 @@
                 else
                 {
 %>
-<%= button(h(bean.getName())).onClick("completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
+<%= button(bean.getName()).onClick("completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", [], " + q(bean.getProcessInstanceId()) + "," + qh(bean.getProcessDefinitionKey(getContainer())) + ")")%>
 <%
                 }
             }
