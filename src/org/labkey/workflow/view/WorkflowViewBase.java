@@ -191,21 +191,21 @@ public abstract class WorkflowViewBase extends JspBase
     public String navigationLinks(@Nullable String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(PageFlowUtil.textLink("All workflows", new ActionURL(WorkflowController.BeginAction.class, getContainer())));
+        builder.append(PageFlowUtil.link("All workflows").href(new ActionURL(WorkflowController.BeginAction.class, getContainer())));
         builder.append("\n&nbsp;&nbsp;\n");
         if (processDefinitionName != null)
         {
-            builder.append(PageFlowUtil.textLink(processDefinitionName, new ActionURL(WorkflowController.SummaryAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
+            builder.append(PageFlowUtil.link(processDefinitionName).href(new ActionURL(WorkflowController.SummaryAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
             builder.append("\n&nbsp;&nbsp;\n");
         }
-        builder.append(PageFlowUtil.textLink("Process instance list", new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
+        builder.append(PageFlowUtil.link("Process instance list").href(new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
         builder.append("\n&nbsp;&nbsp;\n");
         if (processInstanceId != null)
         {
-            builder.append(PageFlowUtil.textLink("This Process Instance", new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer()).addParameter("processInstanceId", processInstanceId)));
+            builder.append(PageFlowUtil.link("This Process Instance").href(new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer()).addParameter("processInstanceId", processInstanceId)));
             builder.append("\n&nbsp;&nbsp;\n");
         }
-        builder.append(PageFlowUtil.textLink("My tasks", new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("assignee", getUser().getUserId())));
+        builder.append(PageFlowUtil.link("My tasks").href(new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("assignee", getUser().getUserId())));
 
         return builder.toString();
     }
