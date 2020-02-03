@@ -2,11 +2,11 @@ import org.labkey.gradle.util.BuildUtils;
 
 dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-   external "org.mybatis:mybatis:${mybatisVersion}"
-   external "joda-time:joda-time:${jodaTimeVersion}"
-   external "org.activiti:activiti-bpmn-model:${activitiVersion}"
-   external "org.activiti:activiti-image-generator:${activitiVersion}"
-   external("org.activiti:activiti-engine:${activitiVersion}")
+    external "org.mybatis:mybatis:${mybatisVersion}"
+    external "joda-time:joda-time:${jodaTimeVersion}"
+    external "org.activiti:activiti-bpmn-model:${activitiVersion}"
+    external "org.activiti:activiti-image-generator:${activitiVersion}"
+    external("org.activiti:activiti-engine:${activitiVersion}")
     {
         // We get mail and activation jars from the api build and include them in the tomcat/lib directory. They've gone
         // by various names over the last couple years... exclude them all to prevent version compatibility problems.
@@ -20,7 +20,7 @@ dependencies {
         exclude group: "org.springframework", module:"spring-beans"
     }
    external "org.activiti:activiti-process-validation:${activitiVersion}"
-   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: "apiCompile")
+   BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: "apiCompile")
 }
 
 // TODO move resources files into resources directory to avoid this overlap
