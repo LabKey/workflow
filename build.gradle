@@ -20,7 +20,7 @@ dependencies {
         exclude group: "org.springframework", module:"spring-beans"
     }
    external "org.activiti:activiti-process-validation:${activitiVersion}"
-   BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: "apiCompile")
+   BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: "apiJarFile")
 }
 
 // TODO move resources files into resources directory to avoid this overlap
