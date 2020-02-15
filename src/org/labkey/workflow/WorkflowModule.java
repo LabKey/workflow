@@ -16,6 +16,7 @@
 package org.labkey.workflow;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -26,11 +27,9 @@ import org.labkey.api.workflow.WorkflowService;
 import org.labkey.workflow.query.WorkflowQuerySchema;
 import org.labkey.workflow.view.WorkflowWebPart;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class WorkflowModule extends DefaultModule
@@ -44,7 +43,7 @@ public class WorkflowModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public @Nullable Double getSchemaVersion()
     {
         return 20.000;
     }
@@ -82,18 +81,17 @@ public class WorkflowModule extends DefaultModule
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
             WorkflowManager.TestCase.class
-        ));
+        );
     }
 
     @NotNull
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        ArrayList<WebPartFactory> list = new ArrayList<>();
-        SimpleWebPartFactory factory = new SimpleWebPartFactory("Workflow List", WebPartFactory.LOCATION_BODY, WorkflowWebPart.class, null);
-        list.add(factory);
-        return list;
+        return List.of(
+            new SimpleWebPartFactory("Workflow List", WebPartFactory.LOCATION_BODY, WorkflowWebPart.class, null)
+        );
     }
 }
