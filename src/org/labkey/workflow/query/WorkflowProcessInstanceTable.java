@@ -15,7 +15,6 @@
  */
 package org.labkey.workflow.query;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -66,7 +65,7 @@ public class WorkflowProcessInstanceTable extends WorkflowTenantTable
     {
         super(userSchema, WorkflowQuerySchema.TABLE_PROCESS_INSTANCE, containerFilter);
 
-        BaseColumnInfo idColumn = getMutableColumn("id_");
+        var idColumn = getMutableColumn("id_");
         ActionURL base = new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer());
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("processInstanceId", "proc_inst_id_"));
 
