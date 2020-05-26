@@ -64,21 +64,25 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         _taskInfo = taskInfo;
     }
 
+    @Override
     public String getId()
     {
         return _taskInfo == null ? _id : _taskInfo.getId();
     }
 
+    @Override
     public String getExecutionId()
     {
         return _taskInfo == null ? _executionId : _taskInfo.getExecutionId();
     }
 
+    @Override
     public String getName()
     {
         return _taskInfo == null ? null : _taskInfo.getName();
     }
 
+    @Override
     public String getDescription()
     {
         return _taskInfo == null ? null : _taskInfo.getDescription();
@@ -94,11 +98,13 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return _processInstance;
     }
 
+    @Override
     public String getProcessDefinitionKey(Container container)
     {
         return _taskInfo == null || !isActive() ? null : getProcessInstance().getProcessDefinitionKey();
     }
 
+    @Override
     public String getProcessDefinitionName(Container container)
     {
         String key = getProcessDefinitionKey(container);
@@ -115,11 +121,13 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         }
     }
 
+    @Override
     public boolean isActive()
     {
         return getProcessInstance().isActive();
     }
 
+    @Override
     @Nullable
     @JsonIgnore
     public User getOwner()
@@ -131,6 +139,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return UserManager.getUser(id);
     }
 
+    @Override
     @Nullable
     public Integer getOwnerId()
     {
@@ -151,17 +160,20 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return null;
     }
 
+    @Override
     public void assign(@NotNull Integer assigneeId, User user, Container container) throws Exception
     {
         WorkflowManager.get().assignTask(getId(), assigneeId, user, container);
         this.setAssignee(UserManager.getUser(assigneeId));
     }
 
+    @Override
     public boolean isAssigned(@NotNull User user)
     {
         return getAssigneeId() != null && getAssigneeId() == user.getUserId();
     }
 
+    @Override
     @Nullable
     @JsonIgnore
     public User getAssignee()
@@ -173,6 +185,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
             return UserManager.getUser(id);
     }
 
+    @Override
     @Nullable
     public Integer getAssigneeId()
     {
@@ -191,46 +204,55 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return null;
     }
 
+    @Override
     public String getProcessInstanceId()
     {
         return _taskInfo == null ? null : _taskInfo.getProcessInstanceId();
     }
 
+    @Override
     public String getProcessDefinitionId()
     {
         return _taskInfo == null ? null : _taskInfo.getProcessDefinitionId();
     }
 
+    @Override
     public Date getCreateTime()
     {
         return _taskInfo == null ? null : _taskInfo.getCreateTime();
     }
 
+    @Override
     public String getTaskDefinitionKey()
     {
         return _taskInfo == null ? null : _taskInfo.getTaskDefinitionKey();
     }
 
+    @Override
     public Date getDueDate()
     {
         return _taskInfo == null ? null : _taskInfo.getDueDate();
     }
 
+    @Override
     public String getParentTaskId()
     {
         return _taskInfo == null ? null : _taskInfo.getParentTaskId();
     }
 
+    @Override
     public Map<String, Object> getTaskLocalVariables()
     {
         return _taskInfo == null ? Collections.emptyMap() : _taskInfo.getTaskLocalVariables();
     }
 
+    @Override
     public Map<String, Object> getProcessVariables()
     {
         return _taskInfo == null ? Collections.emptyMap() : _taskInfo.getProcessVariables();
     }
 
+    @Override
     @JsonIgnore
     @Nullable
     public Map<String, Object> getVariables()
@@ -247,17 +269,20 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return variables;
     }
 
+    @Override
     @JsonIgnore // for some reason this comes back as the empty string, but it is also available as one of the process variables
     public String getContainer()
     {
         return _taskInfo == null ? null : _taskInfo.getTenantId();
     }
 
+    @Override
     public boolean isInCandidateGroups(User user)
     {
         return hasCandidateGroups() && CollectionUtils.containsAny(getGroupIds(), Arrays.asList(ArrayUtils.toObject(user.getGroups())));
     }
 
+    @Override
     public boolean hasCandidateGroups()
     {
         return getGroupIds() != null && !_groupIds.isEmpty();
@@ -272,46 +297,55 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
         return _permissionsHandler;
     }
 
+    @Override
     public boolean canClaim(User user, Container container)
     {
         return getAssigneeId() == null && isActive() && getPermissionsHandler(user, container).canClaim(this);
     }
 
+    @Override
     public boolean canDelegate(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canDelegate(this);
     }
 
+    @Override
     public boolean canAssign(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canAssign(this);
     }
 
+    @Override
     public boolean canView(User user, Container container)
     {
         return getPermissionsHandler(user, container).canView(this);
     }
 
+    @Override
     public boolean canAccessData(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canAccessData(this);
     }
 
+    @Override
     public boolean canComplete(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canComplete(this);
     }
 
+    @Override
     public boolean canUpdate(User user, Container container)
     {
         return isActive() && getPermissionsHandler(user, container).canUpdate(this);
     }
 
+    @Override
     public Set<Class<? extends Permission>> getReassignPermissions(User user, Container container)
     {
         return getPermissionsHandler(user, container).getCandidateUserPermissions(this);
     }
 
+    @Override
     @JsonIgnore
     @NotNull
     public Map<String, TaskFormField> getFormFields()

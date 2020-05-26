@@ -139,6 +139,7 @@ public class WorkflowManager implements WorkflowService
      * @param taskId id of the task to get groups for
      * @return list of candidate group ids.
      */
+    @Override
     @NotNull
     public List<Integer> getCandidateGroupIds(@NotNull String taskId)
     {
@@ -162,6 +163,7 @@ public class WorkflowManager implements WorkflowService
      * @param assignee the user the tasks are assigned to
      * @param container the container in which the tasks are defined   @return count of the workflow tasks
      */
+    @Override
     public long getTaskCount(@NotNull String processDefinitionKey, @Nullable SimpleFilter filter, @Nullable User assignee, @Nullable Container container)
     {
         TaskQuery query = getTaskService().createTaskQuery().processDefinitionKey(processDefinitionKey);
@@ -190,6 +192,7 @@ public class WorkflowManager implements WorkflowService
         return query.count();
     }
 
+    @Override
     @Nullable
     public WorkflowProcess getWorkflowProcessForVariable(String key, String value, @NotNull Container container) throws Exception
     {
@@ -208,6 +211,7 @@ public class WorkflowManager implements WorkflowService
      * @param container the container context for this table   @return column that will display the assignee
      * TODO this assumes the key is a long_, which may not always be true
      */
+    @Override
     public ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeVarName, String identifierVarName, String identifierColName, User user, Container container)
     {
         SQLFragment sql = new SQLFragment("(SELECT text_ FROM workflow.act_hi_varinst WHERE name_ = '" + assigneeVarName  + "' AND proc_inst_id_ IN ");
@@ -256,6 +260,7 @@ public class WorkflowManager implements WorkflowService
      * @param identifierColumnName the name of the column in the table that contains the identifier
      * @return a column with the id of the current task.
      */
+    @Override
     public ColumnInfo getTaskTypeColumn(TableInfo tableInfo, final String colLabel, String identifierVarName, String identifierColumnName)
     {
         SQLFragment sql = new SQLFragment("(SELECT t.task_def_key_ FROM ");
@@ -310,6 +315,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container in which the task is defined
      * @return a workflow task of the given Id.  If there is no such task, an exception is thrown.
      */
+    @Override
     public WorkflowTask getTask(@NotNull String taskId, @Nullable Container container)
     {
         Task engineTask = getEngineTask(taskId, container);
@@ -335,6 +341,7 @@ public class WorkflowManager implements WorkflowService
         return query.singleResult();
     }
 
+    @Override
     @Nullable
     public QueryView getTaskListQueryView(ViewContext context, @Nullable SimpleFilter filter)
     {
@@ -360,6 +367,7 @@ public class WorkflowManager implements WorkflowService
      * @param executionId - identifier for the execution receiving the message (the id of the execution to deliver the message to)
      * @param processVariables - variables that represent the payload of this message
      */
+    @Override
     public void sendMessage(String messageName, String executionId, @Nullable Map<String, Object> processVariables)
     {
         if (processVariables != null)
@@ -376,6 +384,7 @@ public class WorkflowManager implements WorkflowService
      * @throws ActivitiObjectNotFoundException when no task exists with the given id.
      * @throws ActivitiException when this task is pending delegation.
      */
+    @Override
     public void completeTask(@NotNull String taskId, User user, Container container) throws Exception
     {
         WorkflowTask task = new WorkflowEngineTaskImpl(getTaskService().createTaskQuery().taskId(taskId).singleResult());
@@ -398,6 +407,7 @@ public class WorkflowManager implements WorkflowService
      * @param container the container in which the task is being handled
      * @throws Exception if user
      */
+    @Override
     public void claimTask(@NotNull String taskId, @NotNull Integer userId, Container container) throws Exception
     {
         User user = UserManager.getUser(userId);
@@ -423,6 +433,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container context for this assignment
      * @throws Exception if there is no user or task specified
      */
+    @Override
     public void assignTask(@NotNull String taskId, @NotNull Integer assigneeId, User user, Container container) throws Exception
     {
         if (assigneeId == null)
@@ -459,6 +470,7 @@ public class WorkflowManager implements WorkflowService
      * @param container context in which the delegation is being made
      * @throws Exception if there is no delegate or task specified or if the user cannot delegate the task
      */
+    @Override
     public void delegateTask(@NotNull String taskId, @NotNull User user, @NotNull Integer designateeId, Container container) throws Exception
     {
 
@@ -486,6 +498,7 @@ public class WorkflowManager implements WorkflowService
      * @return id of the process instance created
      * @throws FileNotFoundException if the bpmn.xml file that defines the process does not exist and it is necessary to deploy a new instance of this model in this container
      */
+    @Override
     public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @NotNull Map<String, Object> processVariables, @NotNull Container container, @NotNull String startMessage) throws FileNotFoundException
     {
         makeContainerDeployment(moduleName, processDefinitionKey, container);
@@ -523,6 +536,7 @@ public class WorkflowManager implements WorkflowService
      * @param container the container in which this process is being created
      * @return the id of the new process instance for this workflow
     */
+    @Override
     public String startWorkflow(@NotNull String moduleName, @NotNull String processDefinitionKey, @Nullable String name, @NotNull Map<String, Object> processVariables, @Nullable Container container) throws FileNotFoundException
     {
 
@@ -551,6 +565,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container in which the process instnace is active
      * @return list of workflow jobs, or an empty list of there are none
      */
+    @Override
     public List<WorkflowJob> getCurrentProcessJobs(@NotNull String processInstanceId, @Nullable Container container)
     {
         JobQuery query = getManagementService().createJobQuery().processInstanceId(processInstanceId);
@@ -571,6 +586,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container in which the process instance is active
      * @return list of workflow tasks, or an empty list if there are none
      */
+    @Override
     @NotNull
     public List<WorkflowTask> getCurrentProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
     {
@@ -592,6 +608,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container in which the process instance is active
      * @return list of workflow tasks, or an empty list of there are none
      */
+    @Override
     @NotNull
     public List<WorkflowTask> getCompletedProcessTasks(@NotNull String processInstanceId, @Nullable Container container)
     {
@@ -615,6 +632,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container of context, or null for all containers
      * @return number of process instances
      */
+    @Override
     @NotNull
     public Long getProcessInstanceCount(String processDefinitionKey, @NotNull User user, @Nullable Container container)
     {
@@ -635,6 +653,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container of context, or null for all containers
      * @return number of active and inactive process instances, excluding deleted instances
      */
+    @Override
     @NotNull
     public Long getProcessInstanceCount(String processDefinitionKey, @Nullable Container container)
     {
@@ -660,6 +679,7 @@ public class WorkflowManager implements WorkflowService
         return query.list();
     }
 
+    @Override
     public WorkflowProcess getWorkflowProcess(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getProcessInstance(processInstanceId);
@@ -717,6 +737,7 @@ public class WorkflowManager implements WorkflowService
      * @param processInstanceId id of the historic process instance in question
      * @return the set of process instance variables for this historic process instance
      */
+    @Override
     public Map<String, Object> getHistoricProcessInstanceVariables(@NotNull String processInstanceId)
     {
         try
@@ -740,6 +761,7 @@ public class WorkflowManager implements WorkflowService
      *                  variables that will be merged into the existing set of variables
      *
      */
+    @Override
     public void updateProcessVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
     {
         getTaskService().setVariables(taskId, variables);
@@ -754,6 +776,7 @@ public class WorkflowManager implements WorkflowService
      *                  variables that will be merged into the existing set of variables
      *
      */
+    @Override
     public void updateTaskVariables(@NotNull String taskId, @Nullable Map<String, Object> variables)
     {
         getTaskService().setVariablesLocal(taskId, variables);
@@ -764,6 +787,7 @@ public class WorkflowManager implements WorkflowService
      * @param processInstanceId id of the process instance to be removed
      * @param reason reason for deletion (may be null)
      */
+    @Override
     public void deleteProcessInstance(@NotNull String processInstanceId, @Nullable String reason)
     {
         logger.info("Deleting process instance for processInstanceId " + processInstanceId);
@@ -779,6 +803,7 @@ public class WorkflowManager implements WorkflowService
      * @param container the container context
      * @throws RuntimeException if there are problems retrieving the process instance using the given variable data or deleting it
      */
+    @Override
     public void deleteProcessInstance(String key, String value, @Nullable String reason, @NotNull Container container) throws RuntimeException
     {
         try
@@ -803,6 +828,7 @@ public class WorkflowManager implements WorkflowService
      * @param container the container context
      * @throws RuntimeException if there are problems retrieving a process instance using the given variable data or deleting one
      */
+    @Override
     public void deleteProcessInstances(String key, List<Object> values, @Nullable String reason, @NotNull Container container)  throws RuntimeException
     {
         for (Object value : values)
@@ -817,6 +843,7 @@ public class WorkflowManager implements WorkflowService
      * @param processInstanceId id of the process instance in question
      * @return the set of process instance variables for this process instance
      */
+    @Override
     public Map<String, Object> getProcessInstanceVariables(@NotNull String processInstanceId)
     {
         try
@@ -839,6 +866,7 @@ public class WorkflowManager implements WorkflowService
      * @param taskId id of the task in question
      * @return the set of task variables for this task
      */
+    @Override
     public Map<String, Object> getTaskVariables(@NotNull String taskId)
     {
         return getTaskService().getVariablesLocal(taskId);
@@ -869,6 +897,7 @@ public class WorkflowManager implements WorkflowService
      * @param container container in which the process is defined
      * @return name of the module that this process definition comes from
      */
+    @Override
     public String getProcessDefinitionModule(@NotNull String processDefinitionId, Container container)
     {
         Lsid lsid = new Lsid(WorkflowManager.get().getProcessDefinition(getProcessDefinitionKey(processDefinitionId), container).getCategory());
@@ -899,6 +928,7 @@ public class WorkflowManager implements WorkflowService
         return query.latestVersion().list();
     }
 
+    @Override
     public Map<String, String> getProcessDefinitionNames(@Nullable Container container)
     {
         Map<String, String> keyToNameMap = new HashMap<>();
@@ -911,6 +941,7 @@ public class WorkflowManager implements WorkflowService
         return keyToNameMap;
     }
 
+    @Override
     public Map<String, TaskFormField> getStartFormFields(String processDefinitionKey)
     {
         StartFormData form = getFormService().getStartFormData(processDefinitionKey);
@@ -923,6 +954,7 @@ public class WorkflowManager implements WorkflowService
         return fields;
     }
 
+    @Override
     public Map<String, TaskFormField> getFormFields(String taskId)
     {
         TaskFormData form =  getFormService().getTaskFormData(taskId);
@@ -935,6 +967,7 @@ public class WorkflowManager implements WorkflowService
         return fields;
     }
 
+    @Override
     public String getProcessDefinitionKey(@NotNull String processDefinitionId)
     {
         ProcessDefinition definition =  getRepositoryService().createProcessDefinitionQuery().processDefinitionId(processDefinitionId).singleResult();
@@ -944,6 +977,7 @@ public class WorkflowManager implements WorkflowService
             return null;
     }
 
+    @Override
     public InputStream getProcessDiagram(@NotNull String processInstanceId)
     {
         ProcessInstance instance = getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
@@ -951,6 +985,7 @@ public class WorkflowManager implements WorkflowService
         return getRepositoryService().getProcessDiagram(instance.getProcessDefinitionId());
     }
 
+    @Override
     public InputStream getProcessDiagramByKey(@NotNull String processDefinitionKey, @Nullable Container container)
     {
         ProcessDefinitionQuery query = getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey);
@@ -1019,6 +1054,7 @@ public class WorkflowManager implements WorkflowService
         return getRepositoryService().createDeploymentQuery().deploymentTenantId(container.getId()).list();
     }
 
+    @Override
     public void deleteDeployments(@NotNull Container container)
     {
         for (Deployment deployment : getDeployments(container))
@@ -1032,6 +1068,7 @@ public class WorkflowManager implements WorkflowService
         return deployWorkflow(moduleName, modelFile.getName(), new FileInputStream(modelFile), container);
     }
 
+    @Override
     public String deployWorkflow(@NotNull String moduleName, @NotNull Resource modelResource, @Nullable Container container) throws FileNotFoundException
     {
         try
@@ -1053,6 +1090,7 @@ public class WorkflowManager implements WorkflowService
         return deployment.getId();
     }
 
+    @Override
     public void deleteWorkflow(@NotNull String deploymentId)
     {
         getRepositoryService().deleteDeployment(deploymentId);

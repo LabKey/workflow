@@ -132,6 +132,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _container;
     }
 
+    @Override
     public String getId()
     {
         if (_engineProcessInstance != null)
@@ -146,6 +147,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _id = id;
     }
 
+    @Override
     public String getProcessDefinitionKey()
     {
         if (_processDefinitionKey == null)
@@ -165,6 +167,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _processDefinitionKey;
     }
 
+    @Override
     public String getProcessDefinitionName()
     {
         if (getProcessDefinitionKey() == null)
@@ -176,6 +179,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
             return null;
     }
 
+    @Override
     public String getProcessDefinitionModule()
     {
         if (_engineProcessInstance == null && _historicEngineProcessInstance == null)
@@ -188,12 +192,14 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _moduleName;
     }
 
+    @Override
     public void setProcessDefinitionKey(String processKey)
     {
         _processDefinitionKey = processKey;
     }
 
 
+    @Override
     public Map<String, Object> getProcessVariables()
     {
         return _processVariables;
@@ -231,6 +237,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _viewContext;
     }
 
+    @Override
     public Integer getInitiatorId()
     {
         return _initiatorId;
@@ -249,6 +256,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _initiatorId = initiatorId;
     }
 
+    @Override
     public String getProcessInstanceId()
     {
         if (_engineProcessInstance != null)
@@ -263,6 +271,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _processInstanceId = processInstanceId;
     }
 
+    @Override
     public String getName()
     {
         if (_engineProcessInstance != null)
@@ -277,6 +286,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _name = name;
     }
 
+    @Override
     @JsonIgnore
     public User getInitiator()
     {
@@ -287,6 +297,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return null;
     }
 
+    @Override
     public List<WorkflowTask> getCurrentTasks()
     {
         return _currentTasks;
@@ -297,6 +308,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _currentTasks = currentTasks;
     }
 
+    @Override
     public List<WorkflowTask> getCompletedTasks()
     {
         return _completedTasks;
@@ -307,6 +319,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         _completedTasks = completedTasks;
     }
 
+    @Override
     public List<WorkflowJob> getCurrentJobs()
     {
         return _currentJobs;
@@ -326,16 +339,19 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return _permissionsHandler;
     }
 
+    @Override
     public boolean canAccessData(User user, Container container)
     {
         return getPermissionsHandler(user, container).canAccessData(this);
     }
 
+    @Override
     public boolean canView(User user, Container container)
     {
         return getPermissionsHandler(user, container).canView(this);
     }
 
+    @Override
     public boolean canDelete(User user, Container container)
     {
         return getPermissionsHandler(user, container).canDelete(this);
@@ -347,6 +363,7 @@ public class WorkflowProcessImpl implements WorkflowProcess, HasViewContext
         return getPermissionsHandler(user, container).canDeployProcess(getProcessDefinitionKey());
     }
 
+    @Override
     public boolean hasDiagram(Container container)
     {
         if (_engineProcessInstance == null)
