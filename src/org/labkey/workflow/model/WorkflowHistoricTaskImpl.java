@@ -47,40 +47,50 @@ public class WorkflowHistoricTaskImpl extends WorkflowTaskImpl
 
 
     // Don't do anything for set methods for a HistoricTaskInstance
+    @Override
     public void setName(String name)
     {}
+    @Override
     public void setDescription(String description)
     {}
+    @Override
     public void setOwner(User owner)
     {}
+    @Override
     public void setAssignee(User assignee)
     {}
     public void setReadyForReview()
     {}
+    @Override
     public void setDueDate(Date dueDate)
     {}
     public void setParentTaskId(String parentTaskId)
     {}
     public void setContainer(String containerId)
     {}
+    @Override
     public void delegate(User user)
     {}
 
+    @Override
     public boolean isDelegated()
     {
         return false;
     }
 
+    @Override
     public boolean isReadyForReview()
     {
         return false;
     }
 
+    @Override
     public boolean isSuspended()
     {
         return false;
     }
 
+    @Override
     public boolean isActive() { return false; }
 
     @Override

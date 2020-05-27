@@ -97,6 +97,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
         ret.setFk(new GroupForeignKey(this.getUserSchema()));
         ret.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new GroupDisplayColumn(colInfo);
@@ -117,11 +118,13 @@ public class WorkflowTaskTable extends WorkflowTenantTable
             _groupId = groupId;
         }
 
+        @Override
         public String getName()
         {
             return "group";
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             String id = (String)getBoundColumn().getValue(ctx);
@@ -148,6 +151,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
             out.write("&nbsp;");
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             set.add(_groupId);
@@ -164,6 +168,7 @@ public class WorkflowTaskTable extends WorkflowTenantTable
             _userSchema = userSchema;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();

@@ -40,11 +40,13 @@ public abstract class DataManagerConfig extends WorkflowDelegateActionBase
 
     public abstract void doAction() throws Exception;
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public User getInitiator()
     {
         return _initiator;

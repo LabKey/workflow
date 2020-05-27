@@ -47,11 +47,13 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
     }
 
 
+    @Override
     public void setName(String name)
     {
         _engineTask.setName(name);
     }
 
+    @Override
     public void setDescription(String description)
     {
         _engineTask.setDescription(description);
@@ -62,6 +64,7 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
      * if the task has been delegated
      * @param owner
      */
+    @Override
     public void setOwner(User owner)
     {
         _engineTask.setOwner(String.valueOf(owner.getUserId()));
@@ -71,16 +74,19 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
      * Set the user who is currently assigned to work on this task
      * @param assignee
      */
+    @Override
     public void setAssignee(User assignee)
     {
         _engineTask.setOwner(String.valueOf(assignee.getUserId()));
     }
 
+    @Override
     public boolean isDelegated()
     {
         return _engineTask.getDelegationState() == DelegationState.PENDING;
     }
 
+    @Override
     public boolean isReadyForReview()
     {
         return _engineTask.getDelegationState() == DelegationState.RESOLVED;
@@ -91,11 +97,13 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
         _engineTask.setDelegationState(DelegationState.RESOLVED);
     }
 
+    @Override
     public void setDueDate(Date dueDate)
     {
         _engineTask.setDueDate(dueDate);
     }
 
+    @Override
     public void delegate(User user)
     {
         _engineTask.delegate(String.valueOf(user.getUserId()));
@@ -111,13 +119,16 @@ public class WorkflowEngineTaskImpl extends WorkflowTaskImpl
         _engineTask.setTenantId(containerId);
     }
 
+    @Override
     public boolean isSuspended()
     {
         return _engineTask.isSuspended();
     }
 
+    @Override
     public boolean isActive() { return _engineTask != null; }
 
+    @Override
     public List<Integer> getGroupIds()
     {
         if (_groupIds == null)

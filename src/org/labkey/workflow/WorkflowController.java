@@ -99,6 +99,7 @@ public class WorkflowController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setTitle("Workflows");
@@ -106,9 +107,10 @@ public class WorkflowController extends SpringActionController
             return wp;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Workflow Process List");
+            root.addChild("Workflow Process List");
         }
     }
 
@@ -143,6 +145,7 @@ public class WorkflowController extends SpringActionController
     {
         private String _navLabel = "Workflow Summary";
 
+        @Override
         public ModelAndView getView(WorkflowRequestForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
@@ -160,9 +163,10 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processDefinitionKey", ERROR_MSG, PROCESS_DEFINITION_KEY_MISSING);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_navLabel);
+            root.addChild(_navLabel);
         }
     }
 
@@ -185,9 +189,8 @@ public class WorkflowController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -246,11 +249,9 @@ public class WorkflowController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
-
     }
 
     /**
@@ -297,11 +298,9 @@ public class WorkflowController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
-
     }
 
     private String validateProcessDefinitionKey(WorkflowRequestForm form)
@@ -330,6 +329,7 @@ public class WorkflowController extends SpringActionController
         private String _navLabel = "Task details";
         private WorkflowTask _task;
 
+        @Override
         public ModelAndView getView(WorkflowTaskForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
@@ -353,9 +353,10 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("taskId", ERROR_MSG, TASK_ID_UNKNOWN);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_navLabel);
+            root.addChild(_navLabel);
         }
     }
 
@@ -374,6 +375,7 @@ public class WorkflowController extends SpringActionController
                 errors.rejectValue("processInstanceId", ERROR_MSG, PROCESS_INSTANCE_ID_MISSING);
         }
 
+        @Override
         public ModelAndView getView(ProcessInstanceDetailsForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
@@ -390,10 +392,10 @@ public class WorkflowController extends SpringActionController
             return new JspView<>("/org/labkey/workflow/view/workflowProcessInstance.jsp", bean, errors);
         }
 
-
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_navLabel);
+            root.addChild(_navLabel);
         }
     }
 
