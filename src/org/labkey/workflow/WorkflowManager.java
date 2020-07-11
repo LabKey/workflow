@@ -46,7 +46,8 @@ import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -112,7 +113,7 @@ import java.util.stream.Stream;
 
 public class WorkflowManager implements WorkflowService
 {
-    private static final Logger logger = Logger.getLogger(WorkflowManager.class);
+    private static final Logger logger = LogManager.getLogger(WorkflowManager.class);
 
     private static final String ACTIVITI_CONFIG_FILE = "resources/workflow/config/activiti.cfg.xml";
     private static final String WORKFLOW_FILE_NAME_EXTENSION = ".bpmn20.xml";
