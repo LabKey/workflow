@@ -15,7 +15,8 @@
  */
 package org.labkey.api.workflow;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -36,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class WorkflowRegistry
 {
-    private static final Logger _log = Logger.getLogger(WorkflowRegistry.class);
+    private static final Logger _log = LogManager.getLogger(WorkflowRegistry.class);
     private static String _defaultHandler = null;
     private static final WorkflowRegistry _instance = new WorkflowRegistry();
     private static final Map<String, Class<? extends PermissionsHandler>> _permissionsRegistry = new ConcurrentHashMap<>();

@@ -21,8 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.workflow.WorkflowProcessEventListener;
 import org.labkey.api.workflow.WorkflowProcess;
+import org.labkey.api.workflow.WorkflowProcessEventListener;
 import org.labkey.api.workflow.WorkflowRegistry;
 import org.labkey.workflow.model.WorkflowProcessImpl;
 

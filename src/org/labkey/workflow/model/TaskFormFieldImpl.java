@@ -17,7 +17,6 @@ package org.labkey.workflow.model;
 
 
 import org.activiti.engine.form.FormProperty;
-import org.activiti.engine.form.FormType;
 import org.labkey.api.workflow.TaskFormField;
 
 /**

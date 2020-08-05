@@ -18,7 +18,8 @@ package org.labkey.workflow.delegate;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
@@ -47,7 +48,7 @@ import java.util.Map;
  */
 public class EmailNotifier implements JavaDelegate
 {
-    private static final Logger _log = Logger.getLogger(EmailNotifier.class);
+    private static final Logger _log = LogManager.getLogger(EmailNotifier.class);
     private Expression _notificationClassName;
 
     public Expression getNotificationClassName()
