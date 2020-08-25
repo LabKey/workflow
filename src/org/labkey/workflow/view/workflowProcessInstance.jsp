@@ -112,11 +112,11 @@ There is no active process with id <%= h(bean.getId()) %>
     <%
         if (bean.getCurrentJobs().isEmpty())
         {
-            out.println("<td>None</td></tr>");
+            out.println(unsafe("<td>None</td></tr>"));
         }
         else
         {
-            out.println("<td>");
+            out.println(unsafe("<td>"));
             for (WorkflowJob job: bean.getCurrentJobs())
             {
     %>
@@ -124,7 +124,7 @@ There is no active process with id <%= h(bean.getId()) %>
             <br>
     <%
             }
-            out.println("</td></tr>");
+            out.println(unsafe("</td></tr>"));
         }
     %>
 <tr class="<%=h(nextRowClass())%>">
@@ -132,12 +132,12 @@ There is no active process with id <%= h(bean.getId()) %>
 <%
     if (bean.getCurrentTasks().isEmpty())
     {
-        out.println("<td>None</td></tr>");
+        out.println(unsafe("<td>None</td></tr>"));
     }
     else
     {
 
-        out.println("<td>");
+        out.println(unsafe("<td>"));
         for (WorkflowTask task: bean.getCurrentTasks())
         {
 %>
@@ -170,7 +170,7 @@ There is no active process with id <%= h(bean.getId()) %>
         <br>
 <%
         }
-        out.println("</td></tr>");
+        out.println(unsafe("</td></tr>"));
     }
 %>
 <tr class="<%=h(nextRowClass())%>">
@@ -178,11 +178,11 @@ There is no active process with id <%= h(bean.getId()) %>
 <%
     if (bean.getCompletedTasks().isEmpty())
     {
-        out.println("<td>None</td></tr>");
+        out.println(unsafe("<td>None</td></tr>"));
     }
     else
     {
-        out.println("<td>");
+        out.println(unsafe("<td>"));
         for (WorkflowTask completedTask: bean.getCompletedTasks())
         {
 %>
@@ -215,7 +215,7 @@ There is no active process with id <%= h(bean.getId()) %>
         <br>
     <%
         }
-        out.println("</td></tr>");
+        out.println(unsafe("</td></tr>"));
     %>
 
 <%
