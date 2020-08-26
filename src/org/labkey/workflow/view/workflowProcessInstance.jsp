@@ -230,7 +230,7 @@ There is no active process with id <%= h(bean.getId()) %>
 <br>
 <strong>Process Diagram</strong>
 <br><br>
-<img src="<%=urlFor(WorkflowController.ProcessDiagramAction.class).addParameter("processInstanceId", bean.getProcessInstanceId())%>">
+<img src="<%=h(urlFor(WorkflowController.ProcessDiagramAction.class).addParameter("processInstanceId", bean.getProcessInstanceId()))%>">
 <%
 
         }
