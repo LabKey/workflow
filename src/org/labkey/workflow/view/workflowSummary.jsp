@@ -79,7 +79,7 @@
     if (bean.hasDiagram())
     {
 %>
-<img src="<%= new ActionURL(WorkflowController.ProcessDiagramAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey())%>">
+<img src="<%=h(new ActionURL(WorkflowController.ProcessDiagramAction.class, getContainer()).addParameter("processDefinitionKey", bean.getProcessDefinitionKey()))%>">
 <%
     }
     else
