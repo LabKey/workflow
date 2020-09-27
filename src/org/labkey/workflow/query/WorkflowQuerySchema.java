@@ -44,6 +44,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.workflow.WorkflowController;
@@ -236,15 +237,15 @@ public class WorkflowQuerySchema extends UserSchema
     private DisplayColumn getReassignmentColumn(@NotNull TableInfo table, @NotNull String linkText, @Nullable String title)
     {
         AliasedColumn reassignmentColumn = new AliasedColumn(linkText, table.getColumn("id_"));
-        reassignmentColumn.setDisplayColumnFactory(new ReassignmentDisplayColumnFactory(linkText));
+        reassignmentColumn.setDisplayColumnFactory(new ReassignmentDisplayColumnFactory(HtmlString.of(linkText)));
         return reassignmentColumn.getRenderer();
     }
 
     private class ReassignmentDisplayColumnFactory implements DisplayColumnFactory
     {
-        private final String _assignmentType;
+        private final HtmlString _assignmentType;
 
-        public ReassignmentDisplayColumnFactory(String assignmentType)
+        public ReassignmentDisplayColumnFactory(HtmlString assignmentType)
         {
             _assignmentType = assignmentType;
         }
@@ -258,7 +259,7 @@ public class WorkflowQuerySchema extends UserSchema
             {
                 @NotNull
                 @Override
-                public String getFormattedValue(RenderContext ctx)
+                public HtmlString getFormattedHtml(RenderContext ctx)
                 {
                     return _assignmentType;
                 }
