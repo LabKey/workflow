@@ -1,4 +1,5 @@
 import org.labkey.gradle.util.BuildUtils;
+import org.labkey.gradle.util.ExternalDependency
 
 plugins {
     id 'org.labkey.build.module'
@@ -6,24 +7,97 @@ plugins {
 
 dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-    external "org.mybatis:mybatis:${mybatisVersion}"
-    external "joda-time:joda-time:${jodaTimeVersion}"
-    external "org.activiti:activiti-bpmn-model:${activitiVersion}"
-    external "org.activiti:activiti-image-generator:${activitiVersion}"
-    external("org.activiti:activiti-engine:${activitiVersion}")
-    {
-        // We get mail and activation jars from the api build and include them in the tomcat/lib directory. They've gone
-        // by various names over the last couple years... exclude them all to prevent version compatibility problems.
-        exclude group: "com.sun.mail", module:"javax.mail"              // Old name
-        exclude group: "com.sun.mail", module:"jakarta.mail"            // New name
-        exclude group: "javax.activation", module: "activation"         // Old name
-        exclude group: "javax.activation", module: "javax.activation"   // Old name
-        exclude group: "javax.activation", module: "jakarta.activation" // New name
 
-        // we get spring jars from api
-        exclude group: "org.springframework", module:"spring-beans"
-    }
-   external "org.activiti:activiti-process-validation:${activitiVersion}"
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.activiti:activiti-bpmn-model:${activitiVersion}",
+            "Workflow",
+            "Activiti",
+            "http://activiti.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "BPMN 2.0 modeling library",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.activiti:activiti-engine:${activitiVersion}",
+            "Workflow",
+            "Activiti",
+            "http://activiti.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "BPMN Engine",
+        ),
+        {
+            // We get mail and activation jars from the api build and include them in the tomcat/lib directory. They've gone
+            // by various names over the last couple years... exclude them all to prevent version compatibility problems.
+            exclude group: "com.sun.mail", module:"javax.mail"              // Old name
+            exclude group: "com.sun.mail", module:"jakarta.mail"            // New name
+            exclude group: "javax.activation", module: "activation"         // Old name
+            exclude group: "javax.activation", module: "javax.activation"   // Old name
+            exclude group: "javax.activation", module: "jakarta.activation" // New name
+
+            // we get spring jars from api
+            exclude group: "org.springframework", module:"spring-beans"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.activiti:activiti-image-generator:${activitiVersion}",
+            "Workflow",
+            "Activiti",
+            "http://activiti.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "BPMN 2.0 model image library",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.activiti:activiti-process-validation:${activitiVersion}",
+            "Workflow",
+            "Activiti",
+            "http://activiti.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "BPMN 2.0 model validation",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "joda-time:joda-time:${jodaTimeVersion}",
+            "Workflow",
+            "Joda.org",
+            "http://www.joda.org/joda-time/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Dependency of Activiti workflow engine",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.mybatis:mybatis:${mybatisVersion}",
+            "Workflow",
+            "Mybatis",
+            "https://mybatis.github.io/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Dependency of Activiti for database interaction",
+        )
+    )
+
    BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: "apiJarFile")
 }
 
