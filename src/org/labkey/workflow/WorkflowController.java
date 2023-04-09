@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -64,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -447,30 +449,41 @@ public class WorkflowController extends SpringActionController
         @Override
         protected String getCommandClassMethodName()
         {
-            return null;
+            return "validate";
         }
 
         @Override
         public ModelAndView handleRequest() throws Exception
         {
+            Pair<InputStream, String> ret = getInputStream(getViewContext().getRequest());
+
+            try (InputStream stream = ret.first)
+            {
+                byte[] imageBytes = IOUtils.toByteArray(stream);
+                HttpServletResponse response = getViewContext().getResponse();
+
+                response.setContentType(ret.second);
+                response.setContentLength(imageBytes.length);
+                response.getOutputStream().write(imageBytes);
+            }
+
+            return null;
+        }
+
+        private Pair<InputStream, String> getInputStream(HttpServletRequest request)
+        {
             InputStream stream = null;
             String contentType = "image/png";
-            if (getViewContext().getRequest().getParameter("processInstanceId") != null)
-                stream = WorkflowManager.get().getProcessDiagram(getViewContext().getRequest().getParameter("processInstanceId"));
-            else if (getViewContext().getRequest().getParameter("processDefinitionKey") != null)
-                stream = WorkflowManager.get().getProcessDiagramByKey(getViewContext().getRequest().getParameter("processDefinitionKey"), getContainer());
+            if (request.getParameter("processInstanceId") != null)
+                stream = WorkflowManager.get().getProcessDiagram(request.getParameter("processInstanceId"));
+            else if (request.getParameter("processDefinitionKey") != null)
+                stream = WorkflowManager.get().getProcessDiagramByKey(request.getParameter("processDefinitionKey"), getContainer());
             if (stream == null)
             {
                 contentType = "text/plain";
-                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes("UTF-8"));
+                stream = new ByteArrayInputStream("Unable to retrieve process diagram.  Perhaps you need to deploy the process.".getBytes(StandardCharsets.UTF_8));
             }
-            byte[] imageBytes = IOUtils.toByteArray(stream);
-            HttpServletResponse response = getViewContext().getResponse();
-
-            response.setContentType(contentType);
-            response.setContentLength(imageBytes.length);
-            response.getOutputStream().write(imageBytes);
-            return null;
+            return Pair.of(stream, contentType);
         }
 
         @Override
