@@ -455,14 +455,14 @@ public class WorkflowController extends SpringActionController
         @Override
         public ModelAndView handleRequest() throws Exception
         {
-            Pair<InputStream, String> ret = getInputStream(getViewContext().getRequest());
+            Pair<InputStream, String> pair = getInputStream(getViewContext().getRequest());
 
-            try (InputStream stream = ret.first)
+            try (InputStream stream = pair.first)
             {
                 byte[] imageBytes = IOUtils.toByteArray(stream);
                 HttpServletResponse response = getViewContext().getResponse();
 
-                response.setContentType(ret.second);
+                response.setContentType(pair.second);
                 response.setContentLength(imageBytes.length);
                 response.getOutputStream().write(imageBytes);
             }
