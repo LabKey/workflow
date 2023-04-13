@@ -57,11 +57,13 @@ import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -197,7 +199,7 @@ public class WorkflowManager implements WorkflowService
     @Nullable
     public WorkflowProcess getWorkflowProcessForVariable(String key, String value, @NotNull Container container) throws Exception
     {
-        return getWorkflowProcessForVariable(key, "text_",  "'" + value + "'", container);
+        return getWorkflowProcessForVariable(key, "text_", value, container);
     }
 
     /**
@@ -215,10 +217,10 @@ public class WorkflowManager implements WorkflowService
     @Override
     public ColumnInfo getAssigneeColumn(TableInfo tableInfo, final String colName, String assigneeVarName, String identifierVarName, String identifierColName, User user, Container container)
     {
-        SQLFragment sql = new SQLFragment("(SELECT text_ FROM workflow.act_hi_varinst WHERE name_ = '" + assigneeVarName  + "' AND proc_inst_id_ IN ");
+        SQLFragment sql = new SQLFragment("(SELECT text_ FROM workflow.act_hi_varinst WHERE name_ = ").appendValue(assigneeVarName).append(" AND proc_inst_id_ IN ");
         sql.append(" (SELECT pi.proc_inst_id_ FROM workflow.act_hi_procinst pi, (SELECT MAX(start_time_) startTime, v.long_ FROM workflow.act_hi_procinst p ");
         sql.append(" JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
-        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'");
+        sql.append(" WHERE v.name_ = ").appendValue(identifierVarName);
         sql.append(" GROUP BY v.long_) AS sub WHERE pi.start_time_ = sub.startTime AND sub.long_ = ").append(identifierColName).append(")");
         sql.append(")");
         ExprColumn ret = new ExprColumn(tableInfo, colName, sql, JdbcType.VARCHAR);
@@ -242,7 +244,7 @@ public class WorkflowManager implements WorkflowService
         SQLFragment sql = new SQLFragment("(SELECT t.id_ FROM ");
         sql.append(" workflow.act_ru_task t ");
         sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
-        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" WHERE v.name_ = ").appendValue(identifierVarName);
         sql.append(" AND v.long_ = ").append(identifierColumnName);
         sql.append(")");
 
@@ -267,7 +269,7 @@ public class WorkflowManager implements WorkflowService
         SQLFragment sql = new SQLFragment("(SELECT t.task_def_key_ FROM ");
         sql.append(" workflow.act_ru_task t ");
         sql.append(" LEFT JOIN workflow.act_ru_variable v ON t.proc_inst_id_ = v.proc_inst_id_ ");
-        sql.append(" WHERE v.name_ = '").append(identifierVarName).append("'" );
+        sql.append(" WHERE v.name_ = ").appendValue(identifierVarName);
         sql.append(" AND v.long_ = ").append(identifierColumnName);
         sql.append(")");
 
@@ -289,16 +291,19 @@ public class WorkflowManager implements WorkflowService
      * CONSIDER: value could be an Object and internally we map to the proper field based on the type of the object
      */
     @Nullable
-    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String sqlValue, @NotNull Container container) throws Exception
+    public WorkflowProcess getWorkflowProcessForVariable(String key, String valueField, String value, @NotNull Container container) throws Exception
     {
+        DbSchema schema = WorkflowSchema.getInstance().getSchema();
+        SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sql = new SQLFragment("SELECT * FROM workflow.act_hi_procinst pi, ");
         sql.append("    (SELECT MAX(start_time_) startTime, v.").append(valueField).append(" FROM workflow.act_hi_procinst p ");
         sql.append("        JOIN workflow.act_hi_varinst v ON p.proc_inst_id_ = v.proc_inst_id_ ");
-        sql.append("        WHERE v.name_ = '").append(key).append("'");
+        sql.append("        WHERE v.name_ = ").appendStringLiteral(key, dialect);
         sql.append("        GROUP BY v.").append(valueField).append(") AS sub ");
-        sql.append("    WHERE pi.tenant_id_ = '").append(container.getId()).append("' AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").append(sqlValue);
+        sql.append("    WHERE pi.tenant_id_ = ").appendStringLiteral(container.getId(), dialect).append(" AND pi.start_time_ = sub.startTime AND sub.").append(valueField).append(" = ").appendStringLiteral(value, dialect);
         try
         {
+            assert(sql.getParams().isEmpty());
             HistoricProcessInstance instance = getHistoryService().createNativeHistoricProcessInstanceQuery().sql(sql.getSQL()).singleResult();
             if (instance == null)
                 return null;
@@ -306,7 +311,7 @@ public class WorkflowManager implements WorkflowService
         }
         catch (ActivitiException e)
         {
-            throw new Exception("More than one process identified by the given key-value pair: " + key + "= " + sqlValue + " in this container");
+            throw new Exception("More than one process identified by the given key-value pair: " + key + "= " + value + " in this container");
         }
     }
 
