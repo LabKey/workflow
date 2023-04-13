@@ -5,6 +5,13 @@ plugins {
     id 'org.labkey.build.module'
 }
 
+configurations.all {
+    resolutionStrategy {
+        // Force to get a fix for CVEs
+        force "org.apache.commons:commons-email:1.5"
+    }
+}
+
 dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
