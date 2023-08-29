@@ -1224,7 +1224,7 @@ public class WorkflowManager implements WorkflowService
             _processVariables.put(WorkflowProcess.INITIATOR_ID, _user.getUserId());
 
             deleteTestContainer();
-            _container = ContainerManager.ensureContainer(_testDirName);
+            _container = ContainerManager.ensureContainer(_testDirName, _user);
         }
 
         @AfterClass
