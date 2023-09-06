@@ -18,7 +18,6 @@ package org.labkey.workflow.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.activiti.engine.task.TaskInfo;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Marshal;
@@ -35,16 +34,13 @@ import org.labkey.api.workflow.WorkflowTask;
 import org.labkey.workflow.WorkflowManager;
 import org.labkey.workflow.WorkflowModule;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Created by susanh on 5/3/15.
- */
 @Marshal(Marshaller.Jackson)
 public abstract class WorkflowTaskImpl implements WorkflowTask
 {
@@ -52,7 +48,6 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     protected String _id;
     protected String _executionId;
     protected List<Integer> _groupIds = null;
-    private Map<String, TaskFormField> _formFields = Collections.emptyMap();
     private WorkflowProcess _processInstance = null;
     private PermissionsHandler _permissionsHandler = null;
 
@@ -279,7 +274,7 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     @Override
     public boolean isInCandidateGroups(User user)
     {
-        return hasCandidateGroups() && CollectionUtils.containsAny(getGroupIds(), Arrays.asList(ArrayUtils.toObject(user.getGroups())));
+        return hasCandidateGroups() && CollectionUtils.containsAny(getGroupIds(), user.getGroups().stream().collect(Collectors.toSet()));
     }
 
     @Override
@@ -352,5 +347,4 @@ public abstract class WorkflowTaskImpl implements WorkflowTask
     {
         return WorkflowManager.get().getFormFields(getId());
     }
-
 }
