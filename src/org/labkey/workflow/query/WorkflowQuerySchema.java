@@ -254,8 +254,8 @@ public class WorkflowQuerySchema extends UserSchema
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             Collection<String> dependencies = Collections.singletonList("workflow/view/reassignTask.js");
-            String javaScriptEvent = "onclick=\"createReassignTaskWindow(${id_:jsString}, ${assignee_:jsString});\"";
-            return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
+            String onClickJavaScript = "createReassignTaskWindow(${id_:jsString}, ${assignee_:jsString});";
+            return new JavaScriptDisplayColumn(colInfo, dependencies, onClickJavaScript, "labkey-text-link")
             {
                 @NotNull
                 @Override
