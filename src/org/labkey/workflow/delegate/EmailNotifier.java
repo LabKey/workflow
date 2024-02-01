@@ -31,8 +31,8 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.workflow.NotificationConfig;
 
-import javax.mail.Address;
-import javax.mail.internet.AddressException;
+import jakarta.mail.Address;
+import jakarta.mail.internet.AddressException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
