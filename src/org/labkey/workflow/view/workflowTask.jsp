@@ -49,7 +49,7 @@
         String changeAssigneeLabel = bean.getAssigneeId() == null ? "Assign" : "Reassign";
         boolean canChangeAssignee = bean.canClaim(getUser(), getContainer()) || (bean.isDelegated() && bean.canDelegate(getUser(), getContainer())) || bean.canAssign(getUser(), getContainer());
 %>
-<%= text(navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId())) %>
+<%= unsafe(navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId())) %>
 <br>
 <br>
 <table class="labkey-proj">
@@ -97,7 +97,7 @@
 <table class="labkey-proj">
     <tr class="<%=h(nextRowClass())%>">
         <td>Status</td>
-        <td><strong><%= text(bean.isActive() ? "Active" : "Inactive") %></strong></td>
+        <td><strong><%= unsafe(bean.isActive() ? "Active" : "Inactive") %></strong></td>
     </tr>
     <%
         if (bean.getOwner() != null)
@@ -122,9 +122,9 @@
         }
     %>
 
-<%= text(variablesTableRows(bean.getVariables())) %>
+<%= unsafe(variablesTableRows(bean.getVariables())) %>
 </table>
-<%= text(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
+<%= unsafe(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
 
 <br>
 <%
@@ -149,7 +149,7 @@
             else
             {
 %>
-<%= text(actionForm(bean.getName(), bean.getTaskDefinitionKey(),
+<%= unsafe(actionForm(bean.getName(), bean.getTaskDefinitionKey(),
         "javascript:completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields, null)) %>
 <br>
 <%

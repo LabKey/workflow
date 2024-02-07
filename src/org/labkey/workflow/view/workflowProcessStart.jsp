@@ -43,7 +43,7 @@
 %>
 <labkey:errors></labkey:errors>
 
-<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
+<%= unsafe(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 <br><br>
 <%
     if (!bean.isDeployed(getContainer()))
@@ -72,7 +72,7 @@ No process deployed with key <%= h(bean.getProcessDefinitionKey()) %>
     if (bean.isDeployed(getContainer()))
     {
 %>
-<%= text(actionForm(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(),
+<%= unsafe(actionForm(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(),
         "javascript:startWorkflowProcess(" + qh(bean.getProcessDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "', '" + StringUtils.join(hiddenFields.keySet(), "', '") + "'], " + qh(bean.getProcessDefinitionKey()) + ")",
         fields, hiddenFields))
 %>
