@@ -57,7 +57,7 @@ There is no active process with id <%= h(bean.getId()) %>
     else
     {
 %>
-<%= text(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
+<%= unsafe(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
 
 <br>
 <br>
@@ -90,7 +90,7 @@ There is no active process with id <%= h(bean.getId()) %>
 <table class="labkey-proj">
     <tr class="<%=h(nextRowClass())%>">
         <td>Status</td>
-        <td><strong><%= text(bean.isActive() ? "Active" : "Inactive")%></strong></td>
+        <td><strong><%= unsafe(bean.isActive() ? "Active" : "Inactive")%></strong></td>
     </tr>
     <%
         if (bean.getInitiator() != null)
@@ -105,7 +105,7 @@ There is no active process with id <%= h(bean.getId()) %>
         }
     %>
 
-<%= text(variablesTableRows(bean.getVariables())) %>
+<%= unsafe(variablesTableRows(bean.getVariables())) %>
 <tr class="<%=h(nextRowClass())%>">
     <td class="labkey-workflow-detail-label">Current Job(s)</td>
 
@@ -222,7 +222,7 @@ There is no active process with id <%= h(bean.getId()) %>
     }
 %>
 </table>
-<%= text(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
+<%= unsafe(dataAccessTable(bean.getVariables(), bean.canAccessData(getUser(), getContainer()))) %>
 <%
         if (bean.hasDiagram(getContainer()))
         {
