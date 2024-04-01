@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -188,7 +189,7 @@ public abstract class WorkflowViewBase extends JspBase
 
     }
 
-    public String navigationLinks(@Nullable String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
+    public HtmlString navigationLinks(@Nullable String processDefinitionName, @NotNull String processDefinitionKey, @Nullable String processInstanceId)
     {
         StringBuilder builder = new StringBuilder();
         builder.append(PageFlowUtil.link("All workflows").href(new ActionURL(WorkflowController.BeginAction.class, getContainer())));
@@ -207,6 +208,6 @@ public abstract class WorkflowViewBase extends JspBase
         }
         builder.append(PageFlowUtil.link("My tasks").href(new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("assignee", getUser().getUserId())));
 
-        return builder.toString();
+        return HtmlString.of(builder.toString());
     }
 }

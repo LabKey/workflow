@@ -34,7 +34,7 @@
 %>
 
 <labkey:errors></labkey:errors>
-<%= unsafe(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
+<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
 <br>
 <br>
 
@@ -49,5 +49,5 @@
 <%
     }
 %>
-<%= unsafe(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
+<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
 

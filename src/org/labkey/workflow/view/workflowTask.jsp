@@ -49,7 +49,7 @@
         String changeAssigneeLabel = bean.getAssigneeId() == null ? "Assign" : "Reassign";
         boolean canChangeAssignee = bean.canClaim(getUser(), getContainer()) || (bean.isDelegated() && bean.canDelegate(getUser(), getContainer())) || bean.canAssign(getUser(), getContainer());
 %>
-<%= unsafe(navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId())) %>
+<%= navigationLinks(bean.getProcessDefinitionName(getContainer()), bean.getProcessDefinitionKey(getContainer()), bean.getProcessInstanceId()) %>
 <br>
 <br>
 <table class="labkey-proj">

@@ -43,7 +43,7 @@
 %>
 <labkey:errors></labkey:errors>
 
-<%= unsafe(navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null)) %>
+<%= navigationLinks(bean.getProcessDefinitionName(), bean.getProcessDefinitionKey(), null) %>
 <br><br>
 <%
     if (!bean.isDeployed(getContainer()))
