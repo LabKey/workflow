@@ -195,20 +195,20 @@ public abstract class WorkflowViewBase extends JspBase
         HtmlStringBuilder builder = HtmlStringBuilder.of();
 
         builder.append(PageFlowUtil.link("All workflows").href(new ActionURL(WorkflowController.BeginAction.class, getContainer())));
-        builder.append(HtmlString.BR);
+        builder.append(HtmlString.NBSP).append(HtmlString.NBSP);
         if (processDefinitionName != null)
         {
             builder.append(PageFlowUtil.link(processDefinitionName).href(new ActionURL(WorkflowController.SummaryAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
-            builder.append(HtmlString.BR);
+            builder.append(HtmlString.NBSP).append(HtmlString.NBSP);
 
         }
         builder.append(PageFlowUtil.link("Process instance list").href(new ActionURL(WorkflowController.InstanceListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey)));
-        builder.append(HtmlString.BR);
+        builder.append(HtmlString.NBSP).append(HtmlString.NBSP);
 
         if (processInstanceId != null)
         {
             builder.append(PageFlowUtil.link("This Process Instance").href(new ActionURL(WorkflowController.ProcessInstanceAction.class, getContainer()).addParameter("processInstanceId", processInstanceId)));
-            builder.append(HtmlString.BR);
+            builder.append(HtmlString.NBSP).append(HtmlString.NBSP);
         }
         builder.append(PageFlowUtil.link("My tasks").href(new ActionURL(WorkflowController.TaskListAction.class, getContainer()).addParameter("processDefinitionKey", processDefinitionKey).addParameter("assignee", getUser().getUserId())));
 
