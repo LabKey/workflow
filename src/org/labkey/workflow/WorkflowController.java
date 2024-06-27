@@ -173,29 +173,6 @@ public class WorkflowController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    public class StartProcessFormAction extends SimpleViewAction<StartWorkflowProcessForm>
-    {
-        @Override
-        public ModelAndView getView(StartWorkflowProcessForm form, BindException errors) throws Exception
-        {
-            WorkflowProcess bean = new WorkflowProcessImpl(form.getProcessDefinitionKey(), form.getWorkflowModelModule());
-            JspView jsp = new JspView<>("/org/labkey/workflow/view/workflowProcessStart.jsp", bean, errors);
-            return jsp;
-        }
-
-        @Override
-        public void validate(StartWorkflowProcessForm form, BindException errors)
-        {
-            form.validate(getUser(), getContainer(), errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
     /**
      * Shows a list of tasks that are associated with a particular workflow.
      */
@@ -326,7 +303,7 @@ public class WorkflowController extends SpringActionController
      * Shows the data about a task if the user has permissions to see this task
      */
     @RequiresPermission(ReadPermission.class)
-    public class TaskAction extends SimpleViewAction<WorkflowTaskForm>
+    public static class TaskAction extends SimpleViewAction<WorkflowTaskForm>
     {
         private String _navLabel = "Task details";
         private WorkflowTask _task;
