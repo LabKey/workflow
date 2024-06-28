@@ -27,7 +27,6 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.workflow.WorkflowController;
 
