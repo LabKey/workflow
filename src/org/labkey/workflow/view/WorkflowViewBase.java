@@ -27,7 +27,6 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.workflow.TaskFormField;
 import org.labkey.api.workflow.WorkflowProcess;
 import org.labkey.workflow.WorkflowController;
 
@@ -101,51 +100,6 @@ public abstract class WorkflowViewBase extends JspBase
     private Object getParameterValue(String key, Object value)
     {
         return value;
-    }
-
-    public String actionForm(String name, String formName, String formAction, Map<String, TaskFormField> fields, @Nullable Map<String, String> hiddenFields)
-    {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<strong>").append(h(name)).append("</strong>");
-        builder.append("<br><br>\n");
-        builder.append("<form name=\"").append(h(formName)).append("\" action=\"").append(h(formAction)).append("\">\n");
-        for (Map.Entry<String, TaskFormField> field : fields.entrySet())
-        {
-            // TODO add a type that is text area that has "information" for the rows and columns
-            // TODO handle other input field types as well: date, long, boolean
-            if (field.getValue().getType().equals("string"))
-            {
-                builder.append(h(field.getValue().getName()));
-                builder.append("\n<br>\n");
-                builder.append("<textarea title=\"").append(field.getValue().getName()).append("\" name=\"").append(field.getValue().getId()).append("\" rows=\"10\" cols=\"100\"></textarea>\n<br>\n");
-            }
-            else if (field.getValue().getType().equals("enum"))
-            {
-                Map<String, String> choices = (Map<String, String>) field.getValue().getInformation("values");
-                if (choices != null && !choices.isEmpty())
-                {
-                    builder.append(h(field.getValue().getName()));
-                    builder.append("<select title=\"").append(h(field.getValue().getName())).append("\" name=\"").append(h(field.getValue().getId())).append("\">");
-                    for (Map.Entry<String, String> choice : ((Map<String, String>) field.getValue().getInformation("values")).entrySet())
-                    {
-                        builder.append("<option value=\"").append(h(choice.getKey())).append("\">").append(h(choice.getValue())).append("</option>");
-                    }
-                    builder.append("</select>\n");
-                    builder.append("<br>\n");
-                }
-            }
-        }
-        if (hiddenFields != null)
-        {
-            for (Map.Entry<String, String> hiddenField : hiddenFields.entrySet())
-            {
-                builder.append("<input type=\"hidden\" name=\"").append(h(hiddenField.getKey())).append("\" value=\"").append(h(hiddenField.getValue())).append("\" >\n");
-            }
-        }
-        builder.append("<br><br>\n");
-        builder.append(PageFlowUtil.button("Submit").submit(true));
-        builder.append("\n</form>\n");
-        return builder.toString();
     }
 
 

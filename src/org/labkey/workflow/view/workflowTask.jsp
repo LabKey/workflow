@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -146,12 +145,9 @@
 <%
                 }
             }
-            else
-            {
+            else {
 %>
-<%= unsafe(actionForm(bean.getName(), bean.getTaskDefinitionKey(),
-        "javascript:completeWorkflowTask(" + q(bean.getId()) + "," + qh(bean.getTaskDefinitionKey()) + ", ['" + StringUtils.join(fields.keySet(), "', '") + "']," + q(bean.getProcessInstanceId()) + ", " + qh(bean.getProcessDefinitionKey(getContainer())) + ")", fields, null)) %>
-<br>
+                <div>Unsupported in UI</div>
 <%
             }
         }
