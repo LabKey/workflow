@@ -139,7 +139,7 @@ public class WorkflowManager implements WorkflowService
             @Override
             public String getName()
             {
-                return "WorkflowManager shutdown";
+                return "WorkflowManager process engine";
             }
 
             @Override
