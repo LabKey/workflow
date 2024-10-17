@@ -83,7 +83,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -130,6 +132,35 @@ public class WorkflowManager implements WorkflowService
     private WorkflowManager()
     {
         // prevent external construction with a private default constructor
+
+        // Don't leave activiti ProcessEngine running with an invalid data source
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "WorkflowManager process engine";
+            }
+
+            @Override
+            public void shutdownPre()
+            {
+                if (_processEngine != null)
+                {
+                    try
+                    {
+                        _processEngine.close();
+                    }
+                    finally
+                    {
+                        _processEngine = null;
+                    }
+                }
+            }
+
+            @Override
+            public void shutdownStarted() { /* Nothing to do */ }
+        });
     }
 
     public static WorkflowManager get()
@@ -283,7 +314,7 @@ public class WorkflowManager implements WorkflowService
      * finds the workflow process with that process variable value that was started last.
      * @param key the name of the process variable
      * @param valueField the field in the act_hi_varinst table in which the value is stored
-     * @param sqlValue the string representation of the comparison value to be used in the SQL statement (e.g., for a string
+     * @param value the string representation of the comparison value to be used in the SQL statement (e.g., for a string
      *                 value, this should contain the single quotes ('string'), but for an integer value it should not (123))
      * @param container the container context
      * @return the lates workflow instance with a variable with the given name and value
@@ -1132,7 +1163,7 @@ public class WorkflowManager implements WorkflowService
         return getProcessEngine().getFormService();
     }
 
-    private ProcessEngine getProcessEngine()
+    private synchronized ProcessEngine getProcessEngine()
     {
         if (_processEngine == null)
         {
